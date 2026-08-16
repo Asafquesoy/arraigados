@@ -137,7 +137,15 @@ export function FormularioRegistro() {
       if (showShirtSize && form.talla_camisa) body.append("talla_camisa", form.talla_camisa);
       body.append("ticket", ticket as File);
 
-      const res = await fetch("/api/registros", { method: "POST", body });
+      // El header ngrok-skip-browser-warning evita que, al probar detrás de
+      // un túnel de ngrok, la advertencia interstitial de ngrok intercepte
+      // este POST y devuelva HTML en vez de JSON — inofensivo fuera de
+      // ngrok, cualquier otro servidor simplemente lo ignora.
+      const res = await fetch("/api/registros", {
+        method: "POST",
+        body,
+        headers: { "ngrok-skip-browser-warning": "true" },
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new ApiError(data?.detail ?? "No se pudo completar el registro.", res.status);

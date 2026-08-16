@@ -22,6 +22,10 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const res = await fetch(`${BASE}${path}`, {
     credentials: "include",
     ...options,
+    // ngrok-skip-browser-warning evita que la advertencia interstitial de
+    // ngrok intercepte la llamada y devuelva HTML en vez de JSON al probar
+    // detrás de un túnel — inofensivo fuera de ngrok.
+    headers: { "ngrok-skip-browser-warning": "true", ...options.headers },
   });
 
   if (!res.ok) {

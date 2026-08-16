@@ -42,6 +42,11 @@ npm run dev        # http://localhost:5173, proxies /api -> http://localhost:800
 npm run build       # tsc -b && vite build — this is the only typecheck step, there's no separate lint/test command
 ```
 
+- `vite.config.ts` sets `server.allowedHosts: true` — Vite 6 otherwise rejects requests whose
+  `Host` header it doesn't recognize, which blocks tunneling the dev server through something
+  like `ngrok http 5173` to demo it remotely. Dev-only setting, irrelevant to the production
+  Nginx-served build.
+
 ### Full stack via Docker (prod-parity)
 
 ```bash
@@ -120,7 +125,12 @@ this shape exists to avoid.
 
 - `src/lib/api.ts` is a thin typed `fetch` wrapper (`apiFetch`) that always sends
   `credentials: "include"` so the session cookie round-trips; `ApiError` carries the HTTP status
-  for callers that need to branch on it (e.g. 401 → redirect to login).
+  for callers that need to branch on it (e.g. 401 → redirect to login). It also always sends
+  `ngrok-skip-browser-warning: true` — harmless against the real backend, but without it every
+  request gets intercepted by ngrok's browser-warning interstitial (HTML instead of JSON) when
+  the app is tunneled for a remote demo. `FormularioRegistro.tsx`'s registration `POST` bypasses
+  `apiFetch` (needs raw `fetch` for `FormData`) and sets the same header directly — keep both in
+  sync if this ever changes.
 - `src/lib/AdminAuthContext.tsx` holds admin session state app-wide (checks `/auth/me` on
   mount); `pages/AdminLogin.tsx` and `pages/AdminPanel.tsx` both redirect via `<Navigate>` based
   on this context rather than route guards/middleware.
@@ -136,7 +146,11 @@ this shape exists to avoid.
 - Animation uses `motion` (Framer Motion v11) — the only animation dependency in the project.
   Reusable motion primitives already exist; reach for them instead of hand-rolling new
   `AnimatePresence`/`useScroll` logic: `components/Reveal.tsx` (scroll fade-up),
-  `components/RootGrow.tsx` (self-drawing root SVG), `components/PageTransition.tsx` (route
+  `components/RootGrow.tsx` (self-drawing root SVG — the path data is *generated*, not
+  hand-written: a small seeded-PRNG recursive branching algorithm builds ~150+ tapering segments
+  per render so it reads as a dense, fibrous root like the logo's, not a handful of symmetric
+  curves; tune density/look via `childCountFor()` and the `primaryAngles` array, same seed always
+  produces the same layout), `components/PageTransition.tsx` (route
   transitions), `components/StepProgress.tsx` (multi-step form progress). All must respect
   `useReducedMotion()` — every existing component branches on it, follow that pattern for new ones.
   **Pitfall already hit once:** don't gate an `AnimatePresence` key change behind app state that
@@ -168,8 +182,8 @@ inside this direction rather than introducing an unrelated palette or mood.
   primary-button fill; `--gradiente-dosel` is the base page background.
 - **Type — three fonts, loaded via Google Fonts `<link>` in `index.html`, never add a fourth
   without updating this doc:**
-  - `--fuente-display`: **Bagel Fat One** — hero title, page titles (`.display-title`), the
-    folio on the confirmation page. Chosen to echo the hand-drawn lettering in the logo/poster.
+  - `--fuente-display`: **Bagel Fat One** — hero title, page titles (`.display-title`). Chosen to
+    echo the hand-drawn lettering in the logo/poster.
   - `--fuente-texto`: **Bricolage Grotesque** — all body copy, labels, buttons, the default.
   - `--fuente-mono`: **IBM Plex Mono** — folios, dates, and tabular/numeric data specifically
     (e.g. the admin table's folio column) via the `.mono` utility class; not for general UI text.
