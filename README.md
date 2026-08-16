@@ -35,6 +35,19 @@ npm run dev
 El frontend en desarrollo corre en `http://localhost:5173` y proxya `/api` hacia
 `http://localhost:8000` (ver `vite.config.ts`).
 
+Para que alguien más vea el avance sin desplegar nada, se puede exponer el dev server con
+[ngrok](https://ngrok.com/):
+
+```bash
+ngrok http 5173
+```
+
+Con backend y frontend ya corriendo en local, un solo túnel al puerto 5173 alcanza — el proxy de
+Vite reenvía `/api` a `localhost:8000` del lado del servidor, así que no hace falta un segundo
+túnel. `vite.config.ts` ya trae `server.allowedHosts: true` para que Vite no rechace el dominio de
+ngrok, y las llamadas a la API ya mandan el header `ngrok-skip-browser-warning` para que la
+página de advertencia de ngrok no intercepte las peticiones.
+
 ## Ajustes editables desde el panel admin
 
 `app_settings` (una sola fila, `id=1`) guarda valores que el equipo organizador debe poder

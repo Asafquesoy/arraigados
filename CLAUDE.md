@@ -219,6 +219,14 @@ see the Runtime settings pattern above). `Sexo`, `TallaCamisa`, and `AdminRole`
 (`ADMIN`/`VERIFICADOR_PAGO`/`VISUALIZADOR`) are Python/DB enums defined in `models.py` and reused
 in `schemas.py`.
 
+`folio` is staff-facing only — the backend still generates and returns it from
+`POST /api/registros`, and it's how the admin panel (`AdminPanel.tsx` table) identifies a
+registration, but `pages/Confirmacion.tsx` deliberately does not display it (or the folio in the
+`POST` response at all — `FormularioRegistro.tsx` only reads `data.nombre` off that response).
+Payment verification is an internal-only step done from the admin panel; the public confirmation
+screen just states the registration succeeded and never promises the camper any follow-up
+notification about verification.
+
 **Authorization**: `get_current_admin` (`security.py`) resolves the JWT cookie to a real
 `AdminUser` row on every request (not just a decoded claim) — this is deliberate so a role change
 or a deleted account takes effect immediately without waiting for the token to expire.
