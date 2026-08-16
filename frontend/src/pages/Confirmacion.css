@@ -40,23 +40,6 @@
   margin: 0 0 0.75rem;
 }
 
-.confirmacion-ticket {
-  margin-top: 1.5rem;
-  padding: 1.25rem 1rem;
-  border-radius: var(--radio-m);
-  background: rgba(255, 200, 0, 0.08);
-  border: 1px dashed var(--vidrio-borde);
-}
-
-.confirmacion-folio {
-  font-size: 1.7rem;
-  margin: 0.15rem 0 0.75rem;
-}
-
-.confirmacion-copy {
-  min-width: 130px;
-}
-
 .confirmacion-root {
   width: min(220px, 60%);
   margin: 1.25rem auto 0.5rem;

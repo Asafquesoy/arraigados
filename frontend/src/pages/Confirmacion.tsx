@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import { RootGrow } from "../components/RootGrow";
@@ -7,7 +6,6 @@ import { SOCIAL_LINKS } from "../config";
 import "./Confirmacion.css";
 
 interface LocationState {
-  folio: string;
   nombre: string;
 }
 
@@ -15,20 +13,9 @@ export function Confirmacion() {
   const location = useLocation();
   const state = location.state as LocationState | null;
   const reduce = useReducedMotion();
-  const [copied, setCopied] = useState(false);
 
-  if (!state?.folio) {
+  if (!state?.nombre) {
     return <Navigate to="/" replace />;
-  }
-
-  async function copyFolio() {
-    try {
-      await navigator.clipboard.writeText(state!.folio);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // clipboard no disponible: sin acción, el folio sigue visible para copiarlo a mano
-    }
   }
 
   return (
@@ -67,18 +54,7 @@ export function Confirmacion() {
         </motion.div>
 
         <h1 className="display-title confirmacion-title">¡Registro exitoso!</h1>
-        <p className="muted">
-          Gracias, {state.nombre}. Hemos recibido tu comprobante y tu lugar quedará confirmado en
-          cuanto el equipo verifique el pago.
-        </p>
-
-        <div className="confirmacion-ticket">
-          <p className="eyebrow">Tu folio</p>
-          <p className="display-title confirmacion-folio mono">{state.folio}</p>
-          <button type="button" className="btn btn-ghost btn-sm confirmacion-copy" onClick={copyFolio}>
-            {copied ? "¡Copiado!" : "Copiar folio"}
-          </button>
-        </div>
+        <p className="muted">Gracias, {state.nombre}. Tu registro para Arraigados 2026 fue exitoso.</p>
 
         <div className="confirmacion-root">
           <RootGrow delay={0.4} />

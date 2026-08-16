@@ -10,6 +10,9 @@
   gap: 0.4rem;
   transition: border-color var(--dur-rapida) ease, background var(--dur-rapida) ease;
   color: var(--hueso-tenue);
+  /* Grid item de .form-grid: sin esto, el min-width: auto por defecto deja que
+     una imagen ancha de vista previa infle la columna y se desborde. */
+  min-width: 0;
 }
 
 .file-drop:hover,
@@ -27,9 +30,12 @@
 .file-drop-preview-wrap {
   display: flex;
   justify-content: center;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .file-drop-preview {
+  max-width: 100%;
   max-height: 220px;
   border-radius: var(--radio-s);
   object-fit: contain;

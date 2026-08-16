@@ -143,7 +143,7 @@ export function FormularioRegistro() {
         throw new ApiError(data?.detail ?? "No se pudo completar el registro.", res.status);
       }
       const data = (await res.json()) as { folio: string; nombre: string };
-      navigate("/registro-exitoso", { state: { folio: data.folio, nombre: data.nombre } });
+      navigate("/registro-exitoso", { state: { nombre: data.nombre } });
     } catch (err) {
       setServerError(err instanceof ApiError ? err.message : "No se pudo completar el registro. Intenta de nuevo.");
     } finally {
