@@ -41,7 +41,10 @@ export function Confirmacion() {
             style={{ left: `${(i * 7.3) % 100}%` }}
             initial={reduce ? { opacity: 0 } : { y: -40, opacity: 0, rotate: 0 }}
             animate={
-              reduce ? { opacity: 0 } : { y: "70vh", opacity: [0, 0.8, 0], rotate: 220 + i * 10 }
+              // "vh" cae fuera del alto real de .confirmacion-leaves (que sigue al
+              // de la tarjeta, no al del viewport) y se recorta antes de tiempo en
+              // pantallas cortas; un valor fijo queda contenido de forma predecible.
+              reduce ? { opacity: 0 } : { y: 520, opacity: [0, 0.8, 0], rotate: 220 + i * 10 }
             }
             transition={{ duration: 3 + (i % 5) * 0.4, delay: i * 0.08, ease: "easeIn" }}
           />

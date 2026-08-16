@@ -56,6 +56,8 @@
   --t-xl: clamp(1.5rem, 1.2rem + 1.4vw, 2.1rem);
   --t-2xl: clamp(2rem, 1.5rem + 2.2vw, 3rem);
   --t-hero: clamp(2.6rem, 1.6rem + 5vw, 5.4rem);
+  /* Nunca por debajo de 16px: evita el zoom automático de Safari iOS al enfocar un input */
+  --t-input: max(16px, var(--t-base));
 
   /* ---- Espaciado ---- */
   --e-1: 0.25rem;
@@ -89,6 +91,10 @@
 
   --transicion-resorte: 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
+  /* ---- Viewport ---- */
+  /* 100vh en móvil incluye el área bajo la barra de URL dinámica; 100dvh no. */
+  --alto-viewport: 100vh;
+
   /* ---- Capas ---- */
   --z-fondo: 0;
   --z-contenido: 1;
@@ -97,4 +103,11 @@
 
   /* ---- Textura de grano (overlay muy sutil) ---- */
   --grano: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+}
+
+/* 100dvh excluye el área que tapan las barras dinámicas del navegador móvil */
+@supports (height: 100dvh) {
+  :root {
+    --alto-viewport: 100dvh;
+  }
 }

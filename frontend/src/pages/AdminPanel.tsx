@@ -11,6 +11,7 @@ import { DownloadIcon, ReceiptIcon, SearchIcon, ShieldCheckIcon } from "../compo
 import { SHOW_SHIRT_SIZE } from "../config";
 import { useAdminAuth } from "../lib/AdminAuthContext";
 import { apiFetch, ApiError, type CamperListResponse, type CamperOut, type Sexo } from "../lib/api";
+import { useMediaQuery } from "../lib/useMediaQuery";
 import "./AdminPanel.css";
 
 const PAGE_SIZE = 15;
@@ -26,6 +27,9 @@ export function AdminPanel() {
   const [page, setPage] = useState(1);
   const [ticketModal, setTicketModal] = useState<{ id: number; nombre: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  // Coincide con el breakpoint de .admin-table-wrap en AdminPanel.css — se renderiza una
+  // sola variante (tabla o tarjetas) en vez de las dos a la vez con una oculta por CSS.
+  const isDesktop = useMediaQuery("(min-width: 1180px)");
 
   function buildQuery(extra: Record<string, string> = {}) {
     const params = new URLSearchParams({ page: String(page), page_size: String(PAGE_SIZE), ...extra });
@@ -181,7 +185,7 @@ export function AdminPanel() {
           </div>
         )}
 
-        {!loading && (data?.items.length ?? 0) > 0 && (
+        {!loading && (data?.items.length ?? 0) > 0 && isDesktop && (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
@@ -202,7 +206,7 @@ export function AdminPanel() {
                   <tr key={camper.id}>
                     <td className="mono">{camper.folio}</td>
                     <td className="admin-table-name">{camper.nombre}</td>
-                    <td>{camper.ciudad}</td>
+                    <td className="admin-table-city">{camper.ciudad}</td>
                     <td className="admin-table-truncate">{camper.iglesia}</td>
                     <td>{camper.edad}</td>
                     <td>{camper.sexo === "M" ? "M" : "F"}</td>
@@ -229,8 +233,9 @@ export function AdminPanel() {
         )}
 
         {!loading &&
+          !isDesktop &&
           data?.items.map((camper) => (
-            <div className="glass-card admin-row" key={`card-${camper.id}`}>
+            <div className="glass-card admin-row" key={camper.id}>
               <div className="admin-row-main">
                 <div>
                   <p className="admin-row-name">{camper.nombre}</p>

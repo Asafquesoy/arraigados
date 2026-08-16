@@ -83,8 +83,20 @@
   background: var(--gradiente-raiz);
 }
 
+.step-progress-mobile-label {
+  display: none;
+  margin: 0 0 0.85rem;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--amarillo-suave);
+}
+
 @media (max-width: 560px) {
   .step-progress-label {
     display: none;
+  }
+  /* Los puntos se quedan sin contexto sin sus etiquetas — este texto lo repone. */
+  .step-progress-mobile-label {
+    display: block;
   }
 }

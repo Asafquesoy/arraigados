@@ -50,6 +50,20 @@
   animation-duration: 14s;
 }
 
+/* Los rayos son la capa más cara del fondo (blur grande + animación en bucle).
+   En móvil se recortan: menos blur y más lento en vez de apagarlos del todo,
+   para conservar algo de atmósfera sin castigar la GPU. */
+@media (max-width: 640px) {
+  .canopy-rayo {
+    width: 90vw;
+    filter: blur(14px);
+    animation-duration: 16s;
+  }
+  .canopy-rayo--b {
+    width: 70vw;
+  }
+}
+
 .canopy-hojas {
   position: absolute;
   inset: 0;

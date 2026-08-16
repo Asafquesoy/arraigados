@@ -1,37 +1,28 @@
-import { useState, type ReactElement } from "react";
-import { useLocation, type Location } from "react-router-dom";
+import type { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 /**
- * Envuelve un único <Routes> y anima la transición entre páginas. Mantiene
- * la ruta anterior visible (displayLocation) mientras sale, y solo avanza a
- * la nueva ruta cuando la animación de salida termina — evita que <Routes>
- * cambie de contenido antes de que la animación de salida alcance a jugar.
+ * Envuelve <Routes> y anima la transición entre páginas, siempre en la
+ * ubicación real actual (no una "retrasada"): retrasar el cambio de ruta
+ * hasta el fin de la animación de salida se ve elegante en el papel, pero si
+ * la condición para avanzar nunca se cumple, la navegación se queda
+ * congelada — justo lo que pasaba antes al confirmar el registro.
  */
-export function PageTransition({ children }: { children: (location: Location) => ReactElement }) {
+export function PageTransition({ children }: { children: ReactNode }) {
   const location = useLocation();
   const reduce = useReducedMotion();
-  const [displayLocation, setDisplayLocation] = useState(location);
-
-  const isNewLocation = location.pathname !== displayLocation.pathname;
-  const shownLocation = isNewLocation ? displayLocation : location;
 
   return (
-    <AnimatePresence
-      mode="wait"
-      initial={false}
-      onExitComplete={() => {
-        if (isNewLocation) setDisplayLocation(location);
-      }}
-    >
+    <AnimatePresence mode="wait" initial={false}>
       <motion.div
-        key={shownLocation.pathname}
+        key={location.pathname}
         initial={reduce ? { opacity: 1 } : { opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         exit={reduce ? { opacity: 1 } : { opacity: 0, y: -10 }}
         transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
       >
-        {children(shownLocation)}
+        {children}
       </motion.div>
     </AnimatePresence>
   );

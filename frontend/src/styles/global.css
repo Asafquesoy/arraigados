@@ -167,7 +167,7 @@ button {
   border-radius: var(--radio-s);
   padding: 0.75rem 0.9rem;
   color: var(--hueso);
-  font-size: var(--t-base);
+  font-size: var(--t-input);
   outline: none;
   transition: border-color var(--dur-rapida) ease, background var(--dur-rapida) ease,
     box-shadow var(--dur-rapida) ease;
@@ -178,6 +178,15 @@ button {
   border-color: var(--amarillo);
   background: rgba(255, 255, 255, 0.1);
   box-shadow: 0 0 0 3px rgba(255, 200, 0, 0.14);
+}
+
+/* El <select> hereda color: var(--hueso) (claro, pensado para su fondo oscuro),
+   pero el menú desplegable nativo lo pinta el sistema operativo casi siempre
+   sobre fondo blanco — texto claro sobre blanco queda invisible. Las <option>
+   necesitan su propio color oscuro explícito. */
+.field select option {
+  color: var(--corteza);
+  background: var(--hueso);
 }
 
 .field.has-error input,
@@ -284,6 +293,24 @@ button {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 700;
+}
+
+/* En pantallas táctiles, agrandar el área de golpeo por debajo de los 44px recomendados */
+@media (pointer: coarse) {
+  .btn-sm {
+    min-height: 44px;
+  }
+  .admin-chip {
+    min-height: 36px;
+    padding-block: 0.5rem;
+  }
+  .file-drop-remove,
+  .form-summary-edit {
+    padding: 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

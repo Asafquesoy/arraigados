@@ -21,14 +21,12 @@ function AppRoutes() {
         <Navbar />
         <main style={{ flex: 1 }}>
           <PageTransition>
-            {(loc) => (
-              <Routes location={loc}>
-                <Route path="/" element={<Registro />} />
-                <Route path="/registro-exitoso" element={<Confirmacion />} />
-                <Route path="/admin" element={<AdminLogin />} />
-                <Route path="/admin/panel" element={<AdminPanel />} />
-              </Routes>
-            )}
+            <Routes location={location}>
+              <Route path="/" element={<Registro />} />
+              <Route path="/registro-exitoso" element={<Confirmacion />} />
+              <Route path="/admin" element={<AdminLogin />} />
+              <Route path="/admin/panel" element={<AdminPanel />} />
+            </Routes>
           </PageTransition>
         </main>
         <Footer />

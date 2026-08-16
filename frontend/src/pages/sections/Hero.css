@@ -1,6 +1,7 @@
 .hero {
   position: relative;
   min-height: min(92vh, 820px);
+  min-height: min(calc(var(--alto-viewport) * 0.92), 820px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -88,5 +89,29 @@
 @media (max-width: 640px) {
   .hero-scroll-hint {
     display: none;
+  }
+}
+
+/* Móvil en horizontal: el hero completo (logo + badge + título + raíz + CTA)
+   no cabe en un alto tan corto — se reduce todo para que quepa sin recortes. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .hero {
+    min-height: 100%;
+  }
+  .hero-content {
+    padding-block: 1.5rem;
+  }
+  .hero-logo {
+    width: min(180px, 40vw);
+  }
+  .hero-title {
+    font-size: clamp(1.8rem, 4vw + 1rem, 3rem);
+  }
+  .hero-root {
+    width: min(140px, 30vw);
+    margin-top: 0.25rem;
+  }
+  .hero-cta {
+    margin-top: 1rem;
   }
 }

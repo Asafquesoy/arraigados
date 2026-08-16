@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { useRef } from "react";
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { RootGrow } from "../../components/RootGrow";
+import { useMediaQuery } from "../../lib/useMediaQuery";
 import { CAMP_DATE, CAMP_NAME, ORGANIZER } from "../../config";
 import "./Hero.css";
 
@@ -8,22 +9,20 @@ const TITLE_WORDS = ["Regístrate", "para", `${CAMP_NAME}.`];
 
 export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
   const reduce = useReducedMotion();
-  const [offset, setOffset] = useState(0);
+  const isCoarse = useMediaQuery("(pointer: coarse)");
+  const heroRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    if (reduce) return;
-    function onScroll() {
-      setOffset(window.scrollY * 0.25);
-    }
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [reduce]);
+  // Parallax escrito directo al DOM por motion (sin pasar por setState/render de
+  // React en cada scroll) y acotado al alto del propio hero, no de toda la página.
+  // Desactivado en pantallas táctiles: ahí el costo de GPU pesa más que el efecto.
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const posterY = useTransform(scrollYProgress, [0, 1], reduce || isCoarse ? ["0%", "0%"] : ["0%", "18%"]);
 
   return (
-    <section className="hero">
-      <div className="hero-poster" style={{ transform: `translateY(${offset}px)` }}>
+    <section className="hero" ref={heroRef}>
+      <motion.div className="hero-poster" style={{ y: posterY }}>
         <img src="/poster.jpg" alt="" aria-hidden="true" />
-      </div>
+      </motion.div>
       <div className="hero-scrim" />
 
       <div className="hero-content">

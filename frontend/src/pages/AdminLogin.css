@@ -1,6 +1,11 @@
 .admin-login {
   display: flex;
-  min-height: calc(100vh - 64px - 90px);
+  /* Solo se descuenta el navbar (alto fijo, 64px). El footer NO se descuenta:
+     su alto varía según si hace flex-wrap en pantallas angostas, así que
+     restarlo a mano (como antes) dejaba hueco muerto o empujaba el footer
+     fuera de pantalla según el ancho. Si el contenido crece más que esto, la
+     página simplemente scrollea — preferible a un cálculo incorrecto. */
+  min-height: calc(var(--alto-viewport) - 64px);
 }
 
 .admin-login-art {
