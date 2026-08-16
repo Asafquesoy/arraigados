@@ -1,0 +1,43 @@
+.stat-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.1rem 1.3rem;
+  border-radius: var(--radio-m);
+  background: var(--tarjeta-fondo);
+  border: 1px solid var(--tarjeta-borde);
+}
+
+.stat-tile-icon {
+  display: inline-flex;
+  padding: 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 200, 0, 0.1);
+  color: var(--amarillo);
+  flex-shrink: 0;
+}
+
+.stat-tile--verde .stat-tile-icon {
+  background: rgba(127, 181, 57, 0.16);
+  color: var(--verde-claro);
+}
+
+.stat-tile--amarillo .stat-tile-icon {
+  background: rgba(255, 200, 0, 0.16);
+  color: var(--amarillo);
+}
+
+.stat-tile-value {
+  font-size: var(--t-xl);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--hueso);
+}
+
+.stat-tile-label {
+  margin-top: 0.3rem;
+  font-size: var(--t-xs);
+  color: var(--hueso-tenue);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}

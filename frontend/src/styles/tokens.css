@@ -1,0 +1,100 @@
+:root {
+  /* ---- Paleta: luz que atraviesa el dosel (logo + póster) ---- */
+  --noche-dosel: #08150e;
+  --corteza: #14210f;
+  --corteza-alta: #1c2e15;
+  --corteza-baja: #0b1509;
+
+  --amarillo: #ffc800;
+  --amarillo-suave: #ffe27a;
+  --ambar: #f5a623;
+  --naranja-raiz: #ff8a3c;
+
+  --verde-follaje: #7fb539;
+  --verde-claro: #a7d94f;
+  --verde-profundo: #2e5a22;
+
+  --azul-cielo: #2c9be0;
+  --azul-hondo: #0f4c75;
+
+  --hueso: #f7f3e3;
+  --hueso-tenue: rgba(247, 243, 227, 0.72);
+  --hueso-apagado: rgba(247, 243, 227, 0.5);
+
+  --coral-error: #ff9d8a;
+
+  /* ---- Gradientes ---- */
+  --gradiente-dosel: radial-gradient(
+      circle at 50% -10%,
+      rgba(44, 155, 224, 0.35),
+      transparent 55%
+    ),
+    radial-gradient(circle at 15% 25%, rgba(127, 181, 57, 0.28), transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(255, 200, 0, 0.14), transparent 40%),
+    linear-gradient(180deg, var(--corteza-alta) 0%, var(--corteza) 60%, var(--corteza-baja) 100%);
+
+  --gradiente-raiz: linear-gradient(180deg, var(--amarillo) 0%, var(--ambar) 55%, var(--naranja-raiz) 100%);
+  --gradiente-luz: radial-gradient(circle, rgba(255, 200, 0, 0.9) 0%, rgba(255, 200, 0, 0) 70%);
+
+  /* ---- Vidrio / tarjetas ---- */
+  --vidrio-fondo: rgba(20, 33, 15, 0.55);
+  --vidrio-borde: rgba(255, 200, 0, 0.25);
+
+  --tarjeta-fondo: rgba(247, 243, 227, 0.06);
+  --tarjeta-fondo-alta: rgba(247, 243, 227, 0.1);
+  --tarjeta-borde: rgba(247, 243, 227, 0.12);
+
+  /* ---- Tipografía ---- */
+  --fuente-display: "Bagel Fat One", "Segoe UI", system-ui, sans-serif;
+  --fuente-texto: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --fuente-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --t-xs: clamp(0.76rem, 0.72rem + 0.2vw, 0.85rem);
+  --t-sm: clamp(0.85rem, 0.82rem + 0.2vw, 0.95rem);
+  --t-base: clamp(0.95rem, 0.92rem + 0.2vw, 1.05rem);
+  --t-lg: clamp(1.1rem, 1rem + 0.5vw, 1.35rem);
+  --t-xl: clamp(1.5rem, 1.2rem + 1.4vw, 2.1rem);
+  --t-2xl: clamp(2rem, 1.5rem + 2.2vw, 3rem);
+  --t-hero: clamp(2.6rem, 1.6rem + 5vw, 5.4rem);
+
+  /* ---- Espaciado ---- */
+  --e-1: 0.25rem;
+  --e-2: 0.5rem;
+  --e-3: 0.75rem;
+  --e-4: 1rem;
+  --e-5: 1.5rem;
+  --e-6: 2rem;
+  --e-7: 3rem;
+  --e-8: 4.5rem;
+  --e-9: 7rem;
+
+  /* ---- Radios / sombras ---- */
+  --radio-s: 10px;
+  --radio-m: 16px;
+  --radio-l: 26px;
+  --radio-xl: 36px;
+
+  --sombra-suave: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --sombra-alta: 0 24px 60px rgba(0, 0, 0, 0.45);
+  --resplandor-amarillo: 0 0 0 1px rgba(255, 200, 0, 0.35), 0 8px 28px rgba(255, 200, 0, 0.18);
+
+  /* ---- Movimiento ---- */
+  --ease-suave: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-resorte: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-salida: cubic-bezier(0.7, 0, 0.84, 0);
+
+  --dur-rapida: 180ms;
+  --dur-media: 380ms;
+  --dur-lenta: 700ms;
+
+  --transicion-resorte: 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ---- Capas ---- */
+  --z-fondo: 0;
+  --z-contenido: 1;
+  --z-navbar: 50;
+  --z-modal: 100;
+
+  /* ---- Textura de grano (overlay muy sutil) ---- */
+  --grano: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+}

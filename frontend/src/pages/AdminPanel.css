@@ -1,0 +1,216 @@
+.admin-title {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  margin: 0.3rem 0 1.25rem;
+}
+
+.admin-stats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+@media (min-width: 640px) {
+  .admin-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.admin-filters {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding: 1.5rem;
+  align-items: end;
+  position: sticky;
+  top: 76px;
+  z-index: 10;
+}
+
+@media (min-width: 768px) {
+  .admin-filters {
+    grid-template-columns: repeat(4, 1fr) auto;
+  }
+}
+
+.admin-export {
+  white-space: nowrap;
+  height: fit-content;
+}
+
+.admin-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.admin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 200, 0, 0.12);
+  border: 1px solid var(--vidrio-borde);
+  color: var(--amarillo-suave);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-chip:hover {
+  background: rgba(255, 200, 0, 0.2);
+}
+
+.admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 1.5rem;
+}
+
+.admin-empty {
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+/* ---- Tabla (≥1024px) ---- */
+.admin-table-wrap {
+  display: none;
+  overflow-x: auto;
+  border-radius: var(--radio-l);
+  border: 1px solid var(--tarjeta-borde);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+}
+
+.admin-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--corteza-alta);
+  text-align: left;
+  padding: 0.85rem 1rem;
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--hueso-tenue);
+  border-bottom: 1px solid var(--tarjeta-borde);
+  white-space: nowrap;
+}
+
+.admin-table tbody td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--tarjeta-borde);
+  vertical-align: middle;
+}
+
+.admin-table tbody tr {
+  background: var(--tarjeta-fondo);
+  transition: background var(--dur-rapida) ease;
+}
+
+.admin-table tbody tr:hover {
+  background: var(--tarjeta-fondo-alta);
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table-name {
+  font-weight: 700;
+}
+
+.admin-table-truncate {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+  .admin-table-wrap {
+    display: block;
+  }
+  .admin-row {
+    display: none;
+  }
+}
+
+/* ---- Tarjetas (móvil / tablet) ---- */
+.admin-row {
+  padding: 1.1rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+@media (min-width: 768px) {
+  .admin-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.admin-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 0;
+}
+
+@media (min-width: 560px) {
+  .admin-row-main {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.admin-row-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.admin-row-meta {
+  font-size: 0.85rem;
+}
+
+.admin-ticket-btn {
+  white-space: nowrap;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.85rem;
+}
+
+.admin-row-status {
+  flex-shrink: 0;
+}
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  margin-top: 1.75rem;
+}
+
+.admin-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--corteza-alta);
+  border: 1px solid var(--coral-error);
+  color: var(--hueso);
+  padding: 0.85rem 1.5rem;
+  border-radius: var(--radio-m);
+  box-shadow: var(--sombra-alta);
+  z-index: var(--z-modal);
+  font-size: var(--t-sm);
+}

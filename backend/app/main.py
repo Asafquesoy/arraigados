@@ -1,0 +1,62 @@
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import ProgrammingError
+
+from .config import settings
+from .database import SessionLocal
+from .models import AdminUser
+from .routers import admin, auth, public
+from .security import hash_password
+
+logger = logging.getLogger("arraigados")
+
+
+def seed_admin() -> None:
+    """Crea el usuario admin inicial. Se omite en silencio si las tablas
+    aún no existen (p. ej. antes de correr `alembic upgrade head` la primera
+    vez) — el backend puede iniciar igual y el seed se reintenta en el
+    siguiente arranque/reinicio del contenedor."""
+    db = SessionLocal()
+    try:
+        if not db.query(AdminUser).filter(AdminUser.username == settings.admin_username).first():
+            db.add(
+                AdminUser(
+                    username=settings.admin_username,
+                    password_hash=hash_password(settings.admin_password),
+                )
+            )
+            db.commit()
+    except ProgrammingError:
+        db.rollback()
+        logger.warning("No se pudo sembrar el admin: las migraciones aún no se han aplicado.")
+    finally:
+        db.close()
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    seed_admin()
+    yield
+
+
+app = FastAPI(title=f"{settings.camp_name} — API de registro", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[settings.public_origin],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(public.router)
+app.include_router(auth.router)
+app.include_router(admin.router)
+
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok", "camp": settings.camp_name}

@@ -1,0 +1,100 @@
+import { useState } from "react";
+import { Link, Navigate, useLocation } from "react-router-dom";
+import { motion, useReducedMotion } from "motion/react";
+import { RootGrow } from "../components/RootGrow";
+import { FacebookIcon, InstagramIcon, ShieldCheckIcon } from "../components/icons";
+import { SOCIAL_LINKS } from "../config";
+import "./Confirmacion.css";
+
+interface LocationState {
+  folio: string;
+  nombre: string;
+}
+
+export function Confirmacion() {
+  const location = useLocation();
+  const state = location.state as LocationState | null;
+  const reduce = useReducedMotion();
+  const [copied, setCopied] = useState(false);
+
+  if (!state?.folio) {
+    return <Navigate to="/" replace />;
+  }
+
+  async function copyFolio() {
+    try {
+      await navigator.clipboard.writeText(state!.folio);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // clipboard no disponible: sin acción, el folio sigue visible para copiarlo a mano
+    }
+  }
+
+  return (
+    <div className="page-container confirmacion">
+      <div className="confirmacion-leaves" aria-hidden="true">
+        {Array.from({ length: 14 }).map((_, i) => (
+          <motion.span
+            key={i}
+            className="confirmacion-leaf"
+            style={{ left: `${(i * 7.3) % 100}%` }}
+            initial={reduce ? { opacity: 0 } : { y: -40, opacity: 0, rotate: 0 }}
+            animate={
+              reduce ? { opacity: 0 } : { y: "70vh", opacity: [0, 0.8, 0], rotate: 220 + i * 10 }
+            }
+            transition={{ duration: 3 + (i % 5) * 0.4, delay: i * 0.08, ease: "easeIn" }}
+          />
+        ))}
+      </div>
+
+      <motion.div
+        className="glass-card confirmacion-card"
+        initial={reduce ? { opacity: 1 } : { opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <motion.div
+          className="confirmacion-badge"
+          initial={reduce ? { scale: 1 } : { scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+        >
+          <ShieldCheckIcon size={36} />
+        </motion.div>
+
+        <h1 className="display-title confirmacion-title">¡Registro exitoso!</h1>
+        <p className="muted">
+          Gracias, {state.nombre}. Hemos recibido tu comprobante y tu lugar quedará confirmado en
+          cuanto el equipo verifique el pago.
+        </p>
+
+        <div className="confirmacion-ticket">
+          <p className="eyebrow">Tu folio</p>
+          <p className="display-title confirmacion-folio mono">{state.folio}</p>
+          <button type="button" className="btn btn-ghost btn-sm confirmacion-copy" onClick={copyFolio}>
+            {copied ? "¡Copiado!" : "Copiar folio"}
+          </button>
+        </div>
+
+        <div className="confirmacion-root">
+          <RootGrow delay={0.4} />
+        </div>
+
+        <p className="muted">¿Alguna duda? Escríbenos por nuestras redes sociales:</p>
+        <div className="confirmacion-social">
+          <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" className="btn btn-ghost">
+            <InstagramIcon size={18} /> Instagram
+          </a>
+          <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noreferrer" className="btn btn-ghost">
+            <FacebookIcon size={18} /> Facebook
+          </a>
+        </div>
+
+        <Link to="/" className="muted confirmacion-back">
+          ← Volver al inicio
+        </Link>
+      </motion.div>
+    </div>
+  );
+}

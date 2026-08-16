@@ -1,0 +1,156 @@
+.canopy {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-fondo);
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--gradiente-dosel);
+}
+
+.canopy-rayo {
+  position: absolute;
+  width: 60vw;
+  height: 140vh;
+  top: -20vh;
+  background: var(--gradiente-luz);
+  opacity: 0.14;
+  filter: blur(30px);
+  animation: rayo-respirar 9s ease-in-out infinite;
+}
+
+.canopy-rayo--a {
+  left: 8%;
+  transform: rotate(12deg);
+  animation-delay: 0s;
+}
+
+.canopy-rayo--b {
+  right: 4%;
+  width: 45vw;
+  background: radial-gradient(circle, rgba(127, 181, 57, 0.5) 0%, rgba(127, 181, 57, 0) 70%);
+  transform: rotate(-10deg);
+  animation-delay: 3.5s;
+  opacity: 0.1;
+}
+
+@keyframes rayo-respirar {
+  0%,
+  100% {
+    opacity: 0.08;
+    transform: translateY(0) rotate(12deg) scale(1);
+  }
+  50% {
+    opacity: 0.2;
+    transform: translateY(2vh) rotate(12deg) scale(1.04);
+  }
+}
+
+.canopy--sutil .canopy-rayo {
+  opacity: 0.06;
+  animation-duration: 14s;
+}
+
+.canopy-hojas {
+  position: absolute;
+  inset: 0;
+}
+
+.canopy-hoja {
+  position: absolute;
+  top: -5%;
+  width: 7px;
+  height: 10px;
+  border-radius: 0 70% 0 70%;
+  background: var(--verde-follaje);
+  opacity: 0.35;
+  animation: hoja-caer linear infinite;
+}
+
+.canopy--sutil .canopy-hoja {
+  opacity: 0.18;
+  animation-duration: 34s;
+}
+
+.canopy-hoja--1 {
+  left: 6%;
+  background: var(--amarillo);
+  animation-duration: 19s;
+  animation-delay: -2s;
+}
+.canopy-hoja--2 {
+  left: 22%;
+  background: var(--verde-claro);
+  animation-duration: 24s;
+  animation-delay: -8s;
+}
+.canopy-hoja--3 {
+  left: 41%;
+  background: var(--amarillo-suave);
+  animation-duration: 21s;
+  animation-delay: -4s;
+}
+.canopy-hoja--4 {
+  left: 63%;
+  background: var(--verde-follaje);
+  animation-duration: 27s;
+  animation-delay: -12s;
+}
+.canopy-hoja--5 {
+  left: 82%;
+  background: var(--naranja-raiz);
+  animation-duration: 22s;
+  animation-delay: -6s;
+}
+.canopy-hoja--1:nth-child(6) {
+  left: 12%;
+}
+.canopy-hoja--2:nth-child(7) {
+  left: 33%;
+}
+.canopy-hoja--3:nth-child(8) {
+  left: 52%;
+}
+.canopy-hoja--4:nth-child(9) {
+  left: 74%;
+}
+.canopy-hoja--5:nth-child(10) {
+  left: 91%;
+}
+
+@keyframes hoja-caer {
+  0% {
+    transform: translateY(-10vh) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.4;
+  }
+  90% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(110vh) translateX(6vw) rotate(240deg);
+    opacity: 0;
+  }
+}
+
+.canopy-grano {
+  position: absolute;
+  inset: 0;
+  background-image: var(--grano);
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canopy-rayo,
+  .canopy-hoja {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .canopy-hojas {
+    display: none;
+  }
+}

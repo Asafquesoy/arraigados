@@ -1,0 +1,35 @@
+.skeleton {
+  display: inline-block;
+  background: linear-gradient(
+    100deg,
+    rgba(247, 243, 227, 0.06) 30%,
+    rgba(247, 243, 227, 0.14) 50%,
+    rgba(247, 243, 227, 0.06) 70%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-row {
+  padding: 1.1rem 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.skeleton-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}

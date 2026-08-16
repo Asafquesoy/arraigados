@@ -1,0 +1,31 @@
+.site-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--tarjeta-borde);
+  padding-block: 1.5rem;
+}
+
+.site-footer-inner {
+  width: min(1040px, 100% - 2.5rem);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.site-footer-social {
+  display: flex;
+  gap: 1rem;
+}
+
+.site-footer-social a {
+  color: var(--hueso-tenue);
+  display: inline-flex;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.site-footer-social a:hover {
+  color: var(--amarillo);
+  transform: translateY(-2px);
+}
