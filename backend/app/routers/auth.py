@@ -33,7 +33,7 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
         max_age=settings.jwt_expire_minutes * 60,
         path="/",
     )
-    return AdminOut(username=admin.username)
+    return AdminOut(username=admin.username, role=admin.role)
 
 
 @router.post("/logout")
@@ -43,5 +43,5 @@ def logout(response: Response):
 
 
 @router.get("/me", response_model=AdminOut)
-def me(username: str = Depends(get_current_admin)):
-    return AdminOut(username=username)
+def me(admin: AdminUser = Depends(get_current_admin)):
+    return AdminOut(username=admin.username, role=admin.role)

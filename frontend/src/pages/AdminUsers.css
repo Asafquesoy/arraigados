@@ -1,0 +1,108 @@
+.admin-users-title {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  margin: 0.3rem 0 0.4rem;
+}
+
+.admin-users-form {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-users-form-title {
+  margin: 0 0 1rem;
+  font-size: var(--t-lg);
+  color: var(--amarillo-suave);
+}
+
+.admin-users-form-error {
+  margin-top: 1rem;
+}
+
+.admin-users-form-submit {
+  margin-top: 1.25rem;
+}
+
+.admin-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.admin-users-row {
+  padding: 1.1rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+@media (min-width: 900px) {
+  .admin-users-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.admin-users-row-main {
+  min-width: 0;
+}
+
+.admin-users-row-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.admin-users-you {
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+.admin-users-row-meta {
+  font-size: 0.85rem;
+  margin-top: 0.2rem;
+}
+
+.admin-users-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.admin-users-role-select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-s);
+  padding: 0.55rem 0.8rem;
+  color: var(--hueso);
+  font-size: var(--t-input);
+}
+
+.admin-users-role-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Mismo bug que .field select: el menú nativo del navegador ignora el color
+   claro heredado y renderiza sobre fondo blanco — hay que fijarlo a mano. */
+.admin-users-role-select option {
+  color: var(--corteza);
+  background: var(--hueso);
+}
+
+.admin-users-reset {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-users-reset input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-s);
+  padding: 0.55rem 0.8rem;
+  color: var(--hueso);
+  font-size: var(--t-input);
+  width: 160px;
+  max-width: 40vw;
+}

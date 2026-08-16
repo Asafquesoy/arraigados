@@ -10,8 +10,9 @@ interface ShirtSizeFieldProps {
 }
 
 /**
- * Campo aislado a propósito: se muestra u oculta por completo desde
- * SHOW_SHIRT_SIZE en src/config.ts, sin tocar el resto del formulario.
+ * Campo aislado a propósito: se muestra u oculta por completo según
+ * useSettings().showShirtSize (editable desde el panel admin, sección
+ * "Camisetas"), sin tocar el resto del formulario.
  */
 export function ShirtSizeField({ value, onChange, error }: ShirtSizeFieldProps) {
   return (

@@ -5,10 +5,10 @@ import { FileDrop } from "../../components/FileDrop";
 import { Reveal } from "../../components/Reveal";
 import { ShirtSizeField } from "../../components/ShirtSizeField";
 import { StepProgress } from "../../components/StepProgress";
-import { SHOW_SHIRT_SIZE } from "../../config";
 import { CityIcon, ChurchIcon, UserIcon } from "../../components/icons";
 import { ApiError } from "../../lib/api";
 import type { Sexo, TallaCamisa } from "../../lib/api";
+import { useSettings } from "../../lib/SettingsContext";
 import "./FormularioRegistro.css";
 
 interface FormState {
@@ -33,7 +33,7 @@ const INITIAL_STATE: FormState = {
 
 const STEPS = ["Quién eres", "De dónde vienes", "Tu comprobante"];
 
-function fieldError(key: FieldKey, form: FormState, ticket: File | null): string | null {
+function fieldError(key: FieldKey, form: FormState, ticket: File | null, showShirtSize: boolean): string | null {
   switch (key) {
     case "nombre":
       return form.nombre.trim().length < 2 ? "Escribe el nombre completo del campero." : null;
@@ -48,7 +48,7 @@ function fieldError(key: FieldKey, form: FormState, ticket: File | null): string
     case "sexo":
       return !form.sexo ? "Selecciona una opción." : null;
     case "talla_camisa":
-      return SHOW_SHIRT_SIZE && !form.talla_camisa ? "Selecciona una talla." : null;
+      return showShirtSize && !form.talla_camisa ? "Selecciona una talla." : null;
     case "ticket":
       return !ticket ? "Sube la imagen o PDF de tu comprobante de pago." : null;
     default:
@@ -65,8 +65,15 @@ const STEP_FIELDS: FieldKey[][] = [
 export function FormularioRegistro() {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
+  const { showShirtSize } = useSettings();
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
+  // Arranca en false a propósito: si el primer campo tuviera autoFocus desde
+  // el montaje inicial, el navegador haría scroll automático hacia él apenas
+  // carga la página, saltándose el hero por completo. Solo se activa tras la
+  // primera navegación explícita entre pasos (goNext/goBack) — ahí sí es
+  // buena UX enfocar el primer campo del paso nuevo.
+  const [hasNavigated, setHasNavigated] = useState(false);
   const [form, setForm] = useState<FormState>(INITIAL_STATE);
   const [ticket, setTicket] = useState<File | null>(null);
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
@@ -79,7 +86,7 @@ export function FormularioRegistro() {
     const next: typeof errors = { ...errors };
     let ok = true;
     for (const key of fields) {
-      const err = fieldError(key, form, ticket);
+      const err = fieldError(key, form, ticket, showShirtSize);
       if (err) {
         next[key] = err;
         ok = false;
@@ -92,7 +99,7 @@ export function FormularioRegistro() {
   }
 
   function validateField(key: FieldKey) {
-    const err = fieldError(key, form, ticket);
+    const err = fieldError(key, form, ticket, showShirtSize);
     setErrors((prev) => {
       const next = { ...prev };
       if (err) next[key] = err;
@@ -104,11 +111,13 @@ export function FormularioRegistro() {
   function goNext() {
     if (!validateStep(step)) return;
     setDirection(1);
+    setHasNavigated(true);
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
 
   function goBack() {
     setDirection(-1);
+    setHasNavigated(true);
     setStep((s) => Math.max(s - 1, 0));
   }
 
@@ -125,7 +134,7 @@ export function FormularioRegistro() {
       body.append("iglesia", form.iglesia.trim());
       body.append("edad", form.edad);
       body.append("sexo", form.sexo);
-      if (SHOW_SHIRT_SIZE && form.talla_camisa) body.append("talla_camisa", form.talla_camisa);
+      if (showShirtSize && form.talla_camisa) body.append("talla_camisa", form.talla_camisa);
       body.append("ticket", ticket as File);
 
       const res = await fetch("/api/registros", { method: "POST", body });
@@ -182,7 +191,7 @@ export function FormularioRegistro() {
                       id="nombre"
                       ref={firstFieldRef}
                       type="text"
-                      autoFocus
+                      autoFocus={hasNavigated}
                       value={form.nombre}
                       onChange={(e) => setForm({ ...form, nombre: e.target.value })}
                       onBlur={() => validateField("nombre")}
@@ -256,7 +265,7 @@ export function FormularioRegistro() {
                     {errors.iglesia && <span className="field-error">{errors.iglesia}</span>}
                   </div>
 
-                  {SHOW_SHIRT_SIZE && (
+                  {showShirtSize && (
                     <ShirtSizeField
                       value={form.talla_camisa}
                       onChange={(v) => setForm({ ...form, talla_camisa: v })}
@@ -291,7 +300,7 @@ export function FormularioRegistro() {
                         <dt>Iglesia</dt>
                         <dd>{form.iglesia || "—"}</dd>
                       </div>
-                      {SHOW_SHIRT_SIZE && (
+                      {showShirtSize && (
                         <div>
                           <dt>Talla</dt>
                           <dd>{form.talla_camisa || "—"}</dd>

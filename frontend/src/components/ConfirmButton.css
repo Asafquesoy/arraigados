@@ -1,0 +1,14 @@
+.confirm-btn {
+  color: var(--coral-error);
+  border-color: rgba(255, 157, 138, 0.3);
+  white-space: nowrap;
+}
+
+.confirm-btn:not(:disabled):hover {
+  border-color: var(--coral-error);
+}
+
+.confirm-btn.is-armed {
+  background: rgba(255, 157, 138, 0.14);
+  border-color: var(--coral-error);
+}

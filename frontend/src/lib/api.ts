@@ -56,3 +56,39 @@ export interface CamperListResponse {
   page: number;
   page_size: number;
 }
+
+export interface AppSettings {
+  show_shirt_size: boolean;
+}
+
+export type AdminRole = "ADMIN" | "VERIFICADOR_PAGO" | "VISUALIZADOR";
+
+export interface AdminUserOut {
+  id: number;
+  username: string;
+  role: AdminRole;
+  created_at: string;
+}
+
+export interface AdminUserCreate {
+  username: string;
+  password: string;
+  role: AdminRole;
+}
+
+export interface AdminUserUpdate {
+  role?: AdminRole;
+  password?: string;
+}
+
+export interface TallaStatsItem {
+  talla: TallaCamisa;
+  total: number;
+  verificados: number;
+}
+
+export interface TallaStatsResponse {
+  items: TallaStatsItem[];
+  sin_talla: number;
+  total_campers: number;
+}

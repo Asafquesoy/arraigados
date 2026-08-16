@@ -1,23 +1,28 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import { AdminShirtStats } from "../components/AdminShirtStats";
+import { ConfirmButton } from "../components/ConfirmButton";
 import { Reveal } from "../components/Reveal";
 import { RootDivider } from "../components/RootDivider";
 import { SkeletonRow } from "../components/Skeleton";
 import { StatTile } from "../components/StatTile";
 import { TicketModal } from "../components/TicketModal";
+import { Toast } from "../components/Toast";
 import { ToggleSwitch } from "../components/ToggleSwitch";
 import { DownloadIcon, ReceiptIcon, SearchIcon, ShieldCheckIcon } from "../components/icons";
-import { SHOW_SHIRT_SIZE } from "../config";
 import { useAdminAuth } from "../lib/AdminAuthContext";
 import { apiFetch, ApiError, type CamperListResponse, type CamperOut, type Sexo } from "../lib/api";
 import { useMediaQuery } from "../lib/useMediaQuery";
+import { useSettings } from "../lib/SettingsContext";
+import { useToast } from "../lib/useToast";
 import "./AdminPanel.css";
 
 const PAGE_SIZE = 15;
 
 export function AdminPanel() {
-  const { username, loading: authLoading } = useAdminAuth();
+  const { username, role, loading: authLoading } = useAdminAuth();
+  const { showShirtSize } = useSettings();
   const [data, setData] = useState<CamperListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -26,10 +31,13 @@ export function AdminPanel() {
   const [sexo, setSexo] = useState<"" | Sexo>("");
   const [page, setPage] = useState(1);
   const [ticketModal, setTicketModal] = useState<{ id: number; nombre: string } | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useToast();
   // Coincide con el breakpoint de .admin-table-wrap en AdminPanel.css — se renderiza una
   // sola variante (tabla o tarjetas) en vez de las dos a la vez con una oculta por CSS.
   const isDesktop = useMediaQuery("(min-width: 1180px)");
+
+  const puedeVerificarPago = role === "ADMIN" || role === "VERIFICADOR_PAGO";
+  const puedeBorrar = role === "ADMIN";
 
   function buildQuery(extra: Record<string, string> = {}) {
     const params = new URLSearchParams({ page: String(page), page_size: String(PAGE_SIZE), ...extra });
@@ -64,12 +72,6 @@ export function AdminPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, pago, ciudad, sexo]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3200);
-    return () => clearTimeout(t);
-  }, [toast]);
-
   if (!authLoading && !username) {
     return <Navigate to="/admin" replace />;
   }
@@ -93,6 +95,15 @@ export function AdminPanel() {
         prev ? { ...prev, items: prev.items.map((c) => (c.id === camper.id ? { ...c, pago_verificado: !verificado } : c)) } : prev
       );
       setToast(err instanceof ApiError ? err.message : "No se pudo actualizar el pago. Intenta de nuevo.");
+    }
+  }
+
+  async function borrarRegistro(camper: CamperOut) {
+    try {
+      await apiFetch(`/admin/registros/${camper.id}`, { method: "DELETE" });
+      await fetchData();
+    } catch (err) {
+      setToast(err instanceof ApiError ? err.message : "No se pudo borrar el registro. Intenta de nuevo.");
     }
   }
 
@@ -120,6 +131,8 @@ export function AdminPanel() {
           <StatTile label="Pendientes (esta página)" value={pendientes} icon={<SearchIcon size={18} />} />
         </div>
       </Reveal>
+
+      <AdminShirtStats canEdit={role === "ADMIN"} />
 
       <RootDivider />
 
@@ -196,9 +209,10 @@ export function AdminPanel() {
                   <th>Iglesia</th>
                   <th>Edad</th>
                   <th>Sexo</th>
-                  {SHOW_SHIRT_SIZE && <th>Talla</th>}
+                  {showShirtSize && <th>Talla</th>}
                   <th>Comprobante</th>
                   <th>Pago</th>
+                  {puedeBorrar && <th></th>}
                 </tr>
               </thead>
               <tbody>
@@ -210,7 +224,7 @@ export function AdminPanel() {
                     <td className="admin-table-truncate">{camper.iglesia}</td>
                     <td>{camper.edad}</td>
                     <td>{camper.sexo === "M" ? "M" : "F"}</td>
-                    {SHOW_SHIRT_SIZE && <td>{camper.talla_camisa ?? "—"}</td>}
+                    {showShirtSize && <td>{camper.talla_camisa ?? "—"}</td>}
                     <td>
                       <button
                         className="btn btn-ghost btn-sm"
@@ -222,9 +236,20 @@ export function AdminPanel() {
                     <td>
                       <ToggleSwitch
                         checked={camper.pago_verificado}
+                        disabled={!puedeVerificarPago}
                         onChange={(checked) => togglePago(camper, checked)}
                       />
                     </td>
+                    {puedeBorrar && (
+                      <td>
+                        <ConfirmButton
+                          label="Borrar"
+                          confirmLabel="¿Seguro?"
+                          className="btn-sm admin-delete-btn"
+                          onConfirm={() => borrarRegistro(camper)}
+                        />
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -242,22 +267,33 @@ export function AdminPanel() {
                   <p className="muted admin-row-meta mono">
                     {camper.folio} · {camper.ciudad} · {camper.edad} años ·{" "}
                     {camper.sexo === "M" ? "Masculino" : "Femenino"}
-                    {SHOW_SHIRT_SIZE && camper.talla_camisa ? ` · Talla ${camper.talla_camisa}` : ""}
+                    {showShirtSize && camper.talla_camisa ? ` · Talla ${camper.talla_camisa}` : ""}
                   </p>
                   <p className="muted admin-row-meta">{camper.iglesia}</p>
                 </div>
 
-                <button
-                  className="btn btn-ghost admin-ticket-btn"
-                  onClick={() => setTicketModal({ id: camper.id, nombre: camper.nombre })}
-                >
-                  <ReceiptIcon size={16} /> Ver comprobante
-                </button>
+                <div className="admin-row-actions">
+                  <button
+                    className="btn btn-ghost admin-ticket-btn"
+                    onClick={() => setTicketModal({ id: camper.id, nombre: camper.nombre })}
+                  >
+                    <ReceiptIcon size={16} /> Ver comprobante
+                  </button>
+                  {puedeBorrar && (
+                    <ConfirmButton
+                      label="Borrar registro"
+                      confirmLabel="¿Seguro? Sí, borrar"
+                      className="admin-delete-btn"
+                      onConfirm={() => borrarRegistro(camper)}
+                    />
+                  )}
+                </div>
               </div>
 
               <div className="admin-row-status">
                 <ToggleSwitch
                   checked={camper.pago_verificado}
+                  disabled={!puedeVerificarPago}
                   onChange={(checked) => togglePago(camper, checked)}
                   label={camper.pago_verificado ? "Pagado / Verificado" : "Pendiente"}
                 />
@@ -286,19 +322,7 @@ export function AdminPanel() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            className="admin-toast"
-            role="alert"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 16 }}
-          >
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Toast message={toast} />
     </div>
   );
 }

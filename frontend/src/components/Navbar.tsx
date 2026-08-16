@@ -7,7 +7,7 @@ import "./Navbar.css";
 
 export function Navbar() {
   const location = useLocation();
-  const { username, logout } = useAdminAuth();
+  const { username, role, logout } = useAdminAuth();
   const isAdminArea = location.pathname.startsWith("/admin");
   const [scrolled, setScrolled] = useState(false);
 
@@ -36,6 +36,11 @@ export function Navbar() {
           )}
           {isAdminArea && username && (
             <>
+              {role === "ADMIN" && (
+                <Link to="/admin/usuarios" className="navbar-link">
+                  Usuarios
+                </Link>
+              )}
               <span className="navbar-admin-name">{username}</span>
               <button className="navbar-link navbar-link-button" onClick={() => logout()}>
                 Cerrar sesión

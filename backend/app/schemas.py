@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .models import Sexo, TallaCamisa
+from .models import AdminRole, Sexo, TallaCamisa
 
 
 class CamperCreateResponse(BaseModel):
@@ -45,3 +45,44 @@ class LoginRequest(BaseModel):
 
 class AdminOut(BaseModel):
     username: str
+    role: AdminRole
+
+
+class AdminUserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    username: str
+    role: AdminRole
+    created_at: datetime
+
+
+class AdminUserCreate(BaseModel):
+    username: str = Field(min_length=3, max_length=100)
+    password: str = Field(min_length=8, max_length=200)
+    role: AdminRole
+
+
+class AdminUserUpdate(BaseModel):
+    role: AdminRole | None = None
+    password: str | None = Field(default=None, min_length=8, max_length=200)
+
+
+class TallaStatsItem(BaseModel):
+    talla: TallaCamisa
+    total: int
+    verificados: int
+
+
+class TallaStatsResponse(BaseModel):
+    items: list[TallaStatsItem]
+    sin_talla: int
+    total_campers: int
+
+
+class AppSettingsOut(BaseModel):
+    show_shirt_size: bool
+
+
+class AppSettingsUpdate(BaseModel):
+    show_shirt_size: bool

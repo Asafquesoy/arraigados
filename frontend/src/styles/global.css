@@ -10,6 +10,12 @@ body {
 
 html {
   scroll-behavior: smooth;
+  /* Reserva el espacio de la barra de scroll vertical siempre, la haya o no.
+     Sin esto, cada vez que cambias a una pantalla con distinta altura de
+     contenido (p. ej. la lista de campers vs. la de usuarios, o pocas filas
+     vs. muchas), la barra aparece/desaparece y le quita ~15px de ancho a
+     todo el contenido — se ve como si la lista "cambiara de tamaño". */
+  scrollbar-gutter: stable;
 }
 
 body {

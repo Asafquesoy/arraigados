@@ -5,8 +5,10 @@ import { Footer } from "./components/Footer";
 import { Navbar } from "./components/Navbar";
 import { PageTransition } from "./components/PageTransition";
 import { AdminAuthProvider } from "./lib/AdminAuthContext";
+import { SettingsProvider } from "./lib/SettingsContext";
 import { AdminLogin } from "./pages/AdminLogin";
 import { AdminPanel } from "./pages/AdminPanel";
+import { AdminUsers } from "./pages/AdminUsers";
 import { Confirmacion } from "./pages/Confirmacion";
 import { Registro } from "./pages/Registro";
 
@@ -26,6 +28,7 @@ function AppRoutes() {
               <Route path="/registro-exitoso" element={<Confirmacion />} />
               <Route path="/admin" element={<AdminLogin />} />
               <Route path="/admin/panel" element={<AdminPanel />} />
+              <Route path="/admin/usuarios" element={<AdminUsers />} />
             </Routes>
           </PageTransition>
         </main>
@@ -38,7 +41,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <AdminAuthProvider>
-      <AppRoutes />
+      <SettingsProvider>
+        <AppRoutes />
+      </SettingsProvider>
     </AdminAuthProvider>
   );
 }

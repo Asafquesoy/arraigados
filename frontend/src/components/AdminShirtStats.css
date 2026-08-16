@@ -1,0 +1,69 @@
+.admin-shirt-stats-card {
+  padding: 1.5rem;
+}
+
+.admin-shirt-stats-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  color: var(--amarillo);
+  margin-bottom: 1rem;
+}
+
+.admin-shirt-stats-header h2 {
+  margin: 0;
+  font-size: var(--t-lg);
+  color: var(--hueso);
+}
+
+.admin-shirt-stats-total {
+  margin-left: auto;
+  font-size: var(--t-xs);
+}
+
+.admin-shirt-stats-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--tarjeta-borde);
+}
+
+.admin-shirt-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-shirt-stats-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.85rem 0.5rem;
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--tarjeta-borde);
+  text-align: center;
+}
+
+.admin-shirt-stats-talla {
+  font-size: var(--t-sm);
+  color: var(--amarillo-suave);
+  font-weight: 700;
+}
+
+.admin-shirt-stats-count {
+  font-size: var(--t-2xl);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.admin-shirt-stats-verif {
+  font-size: var(--t-xs);
+}

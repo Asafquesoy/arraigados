@@ -6,8 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Registration system for the **Arraigados** camp (Dunamis, November 2026): a public form where
 campers register and upload a payment receipt, plus a protected admin panel to verify payments.
-Visual design (colors, fonts, motifs) was derived directly from `imagenes/logo.png` and
-`imagenes/poster.jpg` — not from a generic template.
+Visual design (colors, fonts, motifs) was derived directly from `frontend/public/logo.png` and
+`frontend/public/poster.jpg` — not from a generic template. See **Design system** below before
+touching any styling.
 
 Stack: **React + TypeScript + Vite** (served by Nginx in prod) / **FastAPI + SQLAlchemy +
 Alembic** / **PostgreSQL** in prod, **SQLite** in local dev. Contenerized for a DigitalOcean
@@ -56,18 +57,27 @@ SQLite in dev).
 
 ## Architecture
 
-### Feature flag pattern
+### Runtime settings pattern (admin-editable flags)
 
-`frontend/src/config.ts` exports `SHOW_SHIRT_SIZE` (and other constants like `CAMP_NAME`,
-`SOCIAL_LINKS`). This is the *only* switch needed to hide the shirt-size field end-to-end:
-- The field's UI lives isolated in `components/ShirtSizeField.tsx`; `pages/Registro.tsx` renders
-  it conditionally and omits the form key entirely when the flag is off.
-- `pages/AdminPanel.tsx` hides the corresponding column with the same constant.
-- The backend never needs touching: `talla_camisa` is optional in `schemas.py` and nullable in
-  the DB, so toggling the flag requires no migration.
+The shirt-size toggle used to be a compile-time constant in `config.ts` — it no longer is. It's
+now a runtime setting stored in the `app_settings` table (single row, `id=1`,
+`backend/app/models.py::AppSettings`), seeded on startup by `seed_settings()` in `main.py` (same
+shape as `seed_admin()`). Exposed via `GET /api/settings` (public, unauthenticated — the
+registration form needs it) and `PATCH /api/admin/settings` (Admin role only). On the frontend,
+`src/lib/SettingsContext.tsx` (`useSettings()`) fetches it once at app mount and is the single
+source of truth — `showShirtSize` — consumed by `FormularioRegistro.tsx` and `AdminPanel.tsx`.
+The toggle UI itself lives inside `components/AdminShirtStats.tsx` (the "Camisetas" panel
+section), gated to Admin via a `canEdit` prop, not a route guard.
 
-When adding other optional/toggleable fields, follow this same shape: isolated component + flag
-in `config.ts` + nullable backend column, rather than branching logic inline.
+**Use this pattern — DB-backed setting + context, not a `config.ts` constant — for any other
+value the organizing team should be able to change without a redeploy.** `config.ts` remains the
+right place only for values that genuinely need a code change to alter (copy strings, social
+links, camp name).
+
+The end-to-end shape to copy for a new optional/toggleable **form field** (as opposed to a
+top-level setting) is still: isolated field component (see `components/ShirtSizeField.tsx`) +
+nullable backend column + a boolean somewhere the UI can read — branching logic inline is what
+this shape exists to avoid.
 
 ### Backend request flow
 
@@ -103,25 +113,97 @@ in `config.ts` + nullable backend column, rather than branching logic inline.
 - `src/lib/AdminAuthContext.tsx` holds admin session state app-wide (checks `/auth/me` on
   mount); `pages/AdminLogin.tsx` and `pages/AdminPanel.tsx` both redirect via `<Navigate>` based
   on this context rather than route guards/middleware.
-- Design tokens (colors, gradients, fonts) derived from the logo/poster live in
-  `src/styles/tokens.css` as CSS custom properties — reuse these (`var(--amarillo)`,
-  `var(--gradiente-raiz)`, etc.) instead of introducing new colors.
-- Glassmorphism (`backdrop-filter: blur(...)`) is intentionally scoped to `Navbar.css` only —
-  don't spread it to other components, per the original design requirement.
+- `src/lib/useMediaQuery.ts` is a `matchMedia` hook used to pick between layout variants (e.g.
+  `AdminPanel.tsx` table vs. cards) — prefer it over rendering both variants and hiding one with
+  CSS, which duplicates the DOM (and duplicates state like `ToggleSwitch`) for no benefit.
 - Icons in `src/components/icons/` are hand-drawn SVGs specific to this project (root, leaf,
   church, shirt, receipt, shield-check, etc.) — no icon library is used; add new icons following
-  the same `IconProps { size, className }` shape (`icons/types.ts`).
+  the same `IconProps { size, className, strokeWidth? }` shape (`icons/types.ts`).
 - `ToggleSwitch` (`components/ToggleSwitch.tsx`) is the custom animated switch used both for the
   admin payment-verified control and anywhere else a boolean toggle is needed — reuse it rather
   than a plain checkbox.
+- Animation uses `motion` (Framer Motion v11) — the only animation dependency in the project.
+  Reusable motion primitives already exist; reach for them instead of hand-rolling new
+  `AnimatePresence`/`useScroll` logic: `components/Reveal.tsx` (scroll fade-up),
+  `components/RootGrow.tsx` (self-drawing root SVG), `components/PageTransition.tsx` (route
+  transitions), `components/StepProgress.tsx` (multi-step form progress). All must respect
+  `useReducedMotion()` — every existing component branches on it, follow that pattern for new ones.
+  **Pitfall already hit once:** don't gate an `AnimatePresence` key change behind app state that
+  only advances once the animation completes (e.g. "wait for exit, then swap the route") unless
+  you're certain the completion callback actually fires — a previous version of
+  `PageTransition.tsx` did this and silently froze all navigation because the key never changed
+  to begin with. Key `AnimatePresence` directly off real state (e.g. `location.pathname` from
+  `useLocation()`), not off a derived/delayed copy of it.
+
+### Design system
+
+Colors, type, and motion were derived directly from `frontend/public/logo.png` (hand-drawn
+yellow/amber root-and-lettering mark) and `poster.jpg` (photo of sunlight through a forest
+canopy) — the direction is **"dosel nocturno con luz dorada"** (night canopy, golden light):
+a deep green-black base with the logo's yellow/amber acting as light breaking through, and roots
+as a recurring structural motif (dividers, form step-progress, hero decoration). Keep new UI
+inside this direction rather than introducing an unrelated palette or mood.
+
+- **Tokens live in `src/styles/tokens.css`** (CSS custom properties, Spanish names, all on
+  `:root`) and **must be reused** — don't hardcode hex colors, font stacks, radii, shadows, or
+  easing curves in component CSS. If a value you need doesn't exist as a token, add it to
+  `tokens.css` rather than inlining it.
+- **Color:** base `--noche-dosel`/`--corteza`/`--corteza-alta`/`--corteza-baja` (near-black
+  greens); light `--amarillo`/`--amarillo-suave`/`--ambar`/`--naranja-raiz` (the logo's palette —
+  this is the accent/CTA color family); foliage `--verde-follaje`/`--verde-claro`/
+  `--verde-profundo`; sky `--azul-cielo`/`--azul-hondo` (used sparingly, mostly in the original
+  background gradient); neutrals `--hueso`/`--hueso-tenue`/`--hueso-apagado` (body text on dark);
+  `--coral-error` for validation/error states. `--gradiente-raiz` (yellow→amber→orange) is the
+  primary-button fill; `--gradiente-dosel` is the base page background.
+- **Type — three fonts, loaded via Google Fonts `<link>` in `index.html`, never add a fourth
+  without updating this doc:**
+  - `--fuente-display`: **Bagel Fat One** — hero title, page titles (`.display-title`), the
+    folio on the confirmation page. Chosen to echo the hand-drawn lettering in the logo/poster.
+  - `--fuente-texto`: **Bricolage Grotesque** — all body copy, labels, buttons, the default.
+  - `--fuente-mono`: **IBM Plex Mono** — folios, dates, and tabular/numeric data specifically
+    (e.g. the admin table's folio column) via the `.mono` utility class; not for general UI text.
+  - Fluid type scale `--t-xs` … `--t-hero` (all `clamp()`) — use these instead of raw `rem`/`px`
+    font sizes. `--t-input` (`max(16px, var(--t-base))`) is mandatory on any `<input>`/`<select>`
+    — dropping below 16px makes iOS Safari zoom the viewport on focus and never zoom back out;
+    this was a real, reported bug (see `.field input`/`.field select` in `global.css`).
+- **Spacing/radii/shadows/motion tokens:** `--e-1`…`--e-9` (spacing scale), `--radio-s/m/l/xl`,
+  `--sombra-suave/-alta`, `--ease-suave/-resorte/-salida` + `--dur-rapida/-media/-lenta`.
+  `--alto-viewport` (100vh, overridden to 100dvh where supported via `@supports`) should back
+  any full-viewport-height layout instead of raw `vh` — raw `vh` on mobile is sized to the
+  viewport with the URL bar hidden, so content gets clipped while the bar is showing.
+- **Glassmorphism is scoped to `Navbar.css` only** — `backdrop-filter: blur(...)` must not
+  spread to other components; `.glass-card` (the general card style, `global.css`) also uses a
+  light blur but that's the pre-existing baseline, not a new instance to imitate elsewhere.
+- **Select dropdown text color:** `<option>` elements ignore the dark-theme `color` set on their
+  parent `<select>` once the browser renders its native (usually white) dropdown — always pair
+  `.field select` styling with an explicit `.field select option { color: var(--corteza); }`
+  rule (already in `global.css`), or new selects will render invisible white-on-white text.
+- **Touch targets:** interactive elements should be ≥44px under `@media (pointer: coarse)` —
+  see the block in `global.css` for the pattern (`.btn-sm`, chip buttons, icon-only buttons).
+- Full context and the original audit trail (design direction rationale, responsive-audit
+  findings) lives in the plan files under `~/.claude/plans/` from the sessions that built this —
+  not duplicated here, but this doc should stay the source of truth for *current* conventions as
+  they evolve.
 
 ### Data model
 
-Two tables (`backend/app/models.py`): `campers` (registration + `folio` unique short code +
-`pago_verificado`/`verificado_en`/`verificado_por` audit fields) and `admin_users`
-(username/bcrypt hash, seeded from `ADMIN_USERNAME`/`ADMIN_PASSWORD` env vars — there's no
-self-serve admin creation UI). `Sexo` and `TallaCamisa` are Python/DB enums defined in
-`models.py` and reused in `schemas.py`.
+Three tables (`backend/app/models.py`): `campers` (registration + `folio` unique short code +
+`pago_verificado`/`verificado_en`/`verificado_por` audit fields), `admin_users`
+(username/bcrypt hash/`role`), and `app_settings` (single row, `id=1` — runtime-editable flags,
+see the Runtime settings pattern above). `Sexo`, `TallaCamisa`, and `AdminRole`
+(`ADMIN`/`VERIFICADOR_PAGO`/`VISUALIZADOR`) are Python/DB enums defined in `models.py` and reused
+in `schemas.py`.
+
+**Authorization**: `get_current_admin` (`security.py`) resolves the JWT cookie to a real
+`AdminUser` row on every request (not just a decoded claim) — this is deliberate so a role change
+or a deleted account takes effect immediately without waiting for the token to expire.
+`require_role(*roles)` stacks on top of it as a dependency factory; FastAPI's per-request
+dependency caching means stacking it on a route that's already behind the router-level
+`Depends(get_current_admin)` doesn't cost a second DB query. The seeded bootstrap admin (from
+`ADMIN_USERNAME`/`ADMIN_PASSWORD` env vars) is always created with `role=ADMIN`; every other
+account is created from the panel itself (`/admin/usuarios`, Admin role only) — `POST/PATCH/DELETE
+/api/admin/usuarios/*` guard against an admin deleting their own account, changing their own
+role, or deleting the last remaining Admin.
 
 ## Deployment
 

@@ -30,6 +30,12 @@ class TallaCamisa(str, enum.Enum):
     XXL = "XXL"
 
 
+class AdminRole(str, enum.Enum):
+    ADMIN = "ADMIN"
+    VERIFICADOR_PAGO = "VERIFICADOR_PAGO"
+    VISUALIZADOR = "VISUALIZADOR"
+
+
 class Camper(Base):
     __tablename__ = "campers"
 
@@ -57,4 +63,16 @@ class AdminUser(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
+    role: Mapped[AdminRole] = mapped_column(Enum(AdminRole, name="admin_role_enum"), default=AdminRole.ADMIN)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class AppSettings(Base):
+    """Fila única (id=1) de interruptores editables desde el panel admin sin
+    tocar código ni redeploy — hoy solo `show_shirt_size`. sembrada en el
+    arranque por seed_settings() en main.py, igual que seed_admin()."""
+
+    __tablename__ = "app_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    show_shirt_size: Mapped[bool] = mapped_column(Boolean, default=False)

@@ -1,9 +1,12 @@
 /**
- * Feature flags del sitio. Apaga SHOW_SHIRT_SIZE para ocultar por completo
- * el campo de talla de camisa en el formulario y en el panel admin —
- * ningún otro cambio de código es necesario.
+ * El interruptor de "mostrar talla de camisa" YA NO vive aquí como
+ * constante — se volvió editable desde el panel admin (sección "Camisetas")
+ * sin necesitar redeploy. Fuente de verdad: tabla `app_settings` en el
+ * backend, expuesta vía GET /api/settings y leída en el cliente a través de
+ * `useSettings().showShirtSize` (src/lib/SettingsContext.tsx). Los
+ * consumidores (FormularioRegistro.tsx, AdminPanel.tsx) usan ese hook en vez
+ * de importar un valor fijo de este archivo.
  */
-export const SHOW_SHIRT_SIZE = true;
 
 export const CAMP_NAME = "Arraigados";
 export const CAMP_DATE = "Noviembre 2026";
