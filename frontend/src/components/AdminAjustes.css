@@ -1,0 +1,56 @@
+.admin-ajustes-card {
+  padding: 1.5rem;
+}
+
+.admin-ajustes-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  color: var(--amarillo);
+}
+
+.admin-ajustes-header h2 {
+  margin: 0;
+  font-size: var(--t-lg);
+  color: var(--hueso);
+}
+
+.admin-ajustes-current {
+  margin-left: auto;
+  font-size: var(--t-base);
+  font-weight: 600;
+  color: var(--amarillo-suave);
+}
+
+.admin-ajustes-form {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--tarjeta-borde);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.admin-ajustes-form label {
+  font-size: var(--t-xs);
+  color: var(--hueso-tenue);
+}
+
+.admin-ajustes-form-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-ajustes-form-row input {
+  flex: 1;
+  min-width: 120px;
+  font-size: var(--t-input);
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radio-s);
+  border: 1px solid var(--tarjeta-borde);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--hueso);
+}

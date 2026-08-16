@@ -82,7 +82,13 @@ class TallaStatsResponse(BaseModel):
 
 class AppSettingsOut(BaseModel):
     show_shirt_size: bool
+    precio_mxn: int
 
 
 class AppSettingsUpdate(BaseModel):
-    show_shirt_size: bool
+    """Ambos campos opcionales: el PATCH es parcial — el panel admin tiene dos
+    controles independientes (toggle de camisetas, precio) y cada uno debe
+    poder guardarse sin pisar el otro."""
+
+    show_shirt_size: bool | None = None
+    precio_mxn: int | None = Field(default=None, ge=0, le=100_000)

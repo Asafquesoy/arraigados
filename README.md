@@ -1,7 +1,8 @@
 # Arraigados — Sistema de registro de campamento
 
-Registro web para el campamento **Arraigados** (Dunamis, noviembre 2026): formulario público
-con carga de comprobante de pago y panel administrativo protegido para verificar pagos.
+Registro web para el campamento **Arraigados** (Dúnamis, del 13 al 16 de noviembre de 2026 en
+Campamento Mahanaim, Tamaulipas): formulario público con carga de comprobante de pago y panel
+administrativo protegido para verificar pagos.
 
 ## Stack
 
@@ -34,17 +35,20 @@ npm run dev
 El frontend en desarrollo corre en `http://localhost:5173` y proxya `/api` hacia
 `http://localhost:8000` (ver `vite.config.ts`).
 
-## Feature flag: talla de camisa
+## Ajustes editables desde el panel admin
 
-El campo de talla de camisa se controla con una sola constante en
-`frontend/src/config.ts`:
+`app_settings` (una sola fila, `id=1`) guarda valores que el equipo organizador debe poder
+cambiar sin redeploy. Se editan en el panel admin, no en código:
 
-```ts
-export const SHOW_SHIRT_SIZE = true; // cámbialo a false para ocultarlo
-```
+- **Talla de camisa** (sección "Camisetas"): toggle que muestra u oculta el campo de talla en el
+  formulario público y en la columna correspondiente del panel. El campo es opcional en la base
+  de datos, así que apagarlo no rompe nada ni requiere migración.
+- **Costo del campamento** (sección "Costo del campamento"): monto en pesos (`precio_mxn`) que se
+  muestra en la sección "Cómo pagar" de la landing. Cambia con el tiempo, por eso vive en la base
+  de datos y no como constante en `frontend/src/config.ts`.
 
-Al apagarlo desaparece del formulario de registro y de la columna correspondiente en el panel
-admin. El campo es opcional en la base de datos, así que no rompe nada ni requiere migración.
+Ambos se leen vía `GET /api/settings` (público) y se editan vía `PATCH /api/admin/settings`
+(rol Admin), consumidos en el cliente con `useSettings()` (`frontend/src/lib/SettingsContext.tsx`).
 
 ## Despliegue en un Droplet de DigitalOcean
 

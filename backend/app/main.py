@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from .config import settings
 from .database import SessionLocal
@@ -30,7 +30,7 @@ def seed_admin() -> None:
                 )
             )
             db.commit()
-    except ProgrammingError:
+    except (ProgrammingError, OperationalError):
         db.rollback()
         logger.warning("No se pudo sembrar el admin: las migraciones aún no se han aplicado.")
     finally:
@@ -44,9 +44,9 @@ def seed_settings() -> None:
     db = SessionLocal()
     try:
         if not db.get(AppSettings, 1):
-            db.add(AppSettings(id=1, show_shirt_size=False))
+            db.add(AppSettings(id=1, show_shirt_size=False, precio_mxn=350))
             db.commit()
-    except ProgrammingError:
+    except (ProgrammingError, OperationalError):
         db.rollback()
         logger.warning("No se pudo sembrar app_settings: las migraciones aún no se han aplicado.")
     finally:

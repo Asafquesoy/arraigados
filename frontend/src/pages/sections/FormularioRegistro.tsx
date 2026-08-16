@@ -163,7 +163,8 @@ export function FormularioRegistro() {
         <p className="eyebrow">Formulario</p>
         <h2 className="display-title form-title">Tu lugar te espera</h2>
         <p className="muted">
-          Completa tus datos y sube tu comprobante de pago. Tu registro será verificado por el equipo organizador.
+          Completa tus datos y sube tu comprobante de pago. Tu registro será verificado por el equipo organizador.{" "}
+          <a href="#pago">¿Todavía no pagas? Consulta los datos de pago.</a>
         </p>
       </Reveal>
 
@@ -311,6 +312,10 @@ export function FormularioRegistro() {
                       Editar datos
                     </button>
                   </div>
+
+                  <p className="muted span-2 form-pago-hint">
+                    ¿No tienes tu comprobante a la mano? <a href="#pago">Consulta los datos de pago aquí.</a>
+                  </p>
 
                   <FileDrop file={ticket} onChange={setTicket} error={errors.ticket} />
                 </div>

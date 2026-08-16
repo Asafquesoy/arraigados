@@ -59,6 +59,7 @@ export interface CamperListResponse {
 
 export interface AppSettings {
   show_shirt_size: boolean;
+  precio_mxn: number;
 }
 
 export type AdminRole = "ADMIN" | "VERIFICADOR_PAGO" | "VISUALIZADOR";

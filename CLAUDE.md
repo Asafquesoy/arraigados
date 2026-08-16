@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Registration system for the **Arraigados** camp (Dunamis, November 2026): a public form where
+Registration system for the **Arraigados** camp (Dúnamis, November 13–16 2026, Campamento
+Mahanaim, Tamaulipas): a public form where
 campers register and upload a payment receipt, plus a protected admin panel to verify payments.
 Visual design (colors, fonts, motifs) was derived directly from `frontend/public/logo.png` and
 `frontend/public/poster.jpg` — not from a generic template. See **Design system** below before
@@ -68,6 +69,16 @@ registration form needs it) and `PATCH /api/admin/settings` (Admin role only). O
 source of truth — `showShirtSize` — consumed by `FormularioRegistro.tsx` and `AdminPanel.tsx`.
 The toggle UI itself lives inside `components/AdminShirtStats.tsx` (the "Camisetas" panel
 section), gated to Admin via a `canEdit` prop, not a route guard.
+
+`app_settings` has a second field, `precio_mxn` (int, pesos — the camp fee, which changes over
+time so it isn't a `config.ts` constant either), following the exact same shape: seeded in
+`seed_settings()`, exposed via the same GET/PATCH pair, `useSettings().precioMxn` /
+`setPrecioMxn()`, edited from `components/AdminAjustes.tsx` ("Costo del campamento" panel
+section, same `canEdit` gating), and rendered publicly by `pages/sections/Pago.tsx`.
+`AppSettingsUpdate` (`backend/app/schemas.py`) makes every field optional and the PATCH handler
+(`routers/admin.py::actualizar_settings`) applies only the fields present via
+`model_dump(exclude_unset=True)` — this is what lets the two panel controls save independently
+without one clobbering the other.
 
 **Use this pattern — DB-backed setting + context, not a `config.ts` constant — for any other
 value the organizing team should be able to change without a redeploy.** `config.ts` remains the

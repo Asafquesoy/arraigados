@@ -3,9 +3,11 @@ import { apiFetch, ApiError, type AppSettings } from "./api";
 
 interface SettingsState {
   showShirtSize: boolean;
+  precioMxn: number;
   loading: boolean;
   /** Optimista: refleja el cambio de inmediato y revierte si el PATCH falla (lanza en ese caso). */
   setShowShirtSize: (value: boolean) => Promise<void>;
+  setPrecioMxn: (value: number) => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsState | undefined>(undefined);
@@ -13,35 +15,55 @@ const SettingsContext = createContext<SettingsState | undefined>(undefined);
 export function SettingsProvider({ children }: { children: ReactNode }) {
   // Por defecto false: coincide con el estado real actual (fecha límite de
   // playera ya pasada) y evita un parpadeo del campo mientras carga.
-  const [showShirtSize, setState] = useState(false);
+  const [showShirtSize, setShowShirtSizeState] = useState(false);
+  // 350 como default: coincide con el precio actual del póster y evita un
+  // parpadeo del monto mientras carga la configuración real.
+  const [precioMxn, setPrecioMxnState] = useState(350);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     apiFetch<AppSettings>("/settings")
-      .then((res) => setState(res.show_shirt_size))
+      .then((res) => {
+        setShowShirtSizeState(res.show_shirt_size);
+        setPrecioMxnState(res.precio_mxn);
+      })
       .catch(() => {
         /* se queda en el valor por defecto si falla la carga inicial */
       })
       .finally(() => setLoading(false));
   }, []);
 
-  async function setShowShirtSize(value: boolean) {
-    const previous = showShirtSize;
-    setState(value);
+  /** PATCH parcial con reflejo optimista de un solo campo; revierte ese
+   * campo si la llamada falla y relanza para que el caller muestre el error. */
+  async function patch<K extends keyof AppSettings>(
+    field: K,
+    value: AppSettings[K],
+    setLocal: (value: AppSettings[K]) => void,
+    previous: AppSettings[K]
+  ) {
+    setLocal(value);
     try {
       await apiFetch<AppSettings>("/admin/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ show_shirt_size: value }),
+        body: JSON.stringify({ [field]: value }),
       });
     } catch (err) {
-      setState(previous);
+      setLocal(previous);
       throw err instanceof ApiError ? err : new Error("No se pudo actualizar la configuración.");
     }
   }
 
+  async function setShowShirtSize(value: boolean) {
+    await patch("show_shirt_size", value, setShowShirtSizeState, showShirtSize);
+  }
+
+  async function setPrecioMxn(value: number) {
+    await patch("precio_mxn", value, setPrecioMxnState, precioMxn);
+  }
+
   return (
-    <SettingsContext.Provider value={{ showShirtSize, loading, setShowShirtSize }}>
+    <SettingsContext.Provider value={{ showShirtSize, precioMxn, loading, setShowShirtSize, setPrecioMxn }}>
       {children}
     </SettingsContext.Provider>
   );

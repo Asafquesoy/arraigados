@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { AnimatePresence } from "motion/react";
+import { AdminAjustes } from "../components/AdminAjustes";
 import { AdminShirtStats } from "../components/AdminShirtStats";
 import { ConfirmButton } from "../components/ConfirmButton";
 import { Reveal } from "../components/Reveal";
@@ -131,6 +132,8 @@ export function AdminPanel() {
           <StatTile label="Pendientes (esta página)" value={pendientes} icon={<SearchIcon size={18} />} />
         </div>
       </Reveal>
+
+      <AdminAjustes canEdit={role === "ADMIN"} />
 
       <AdminShirtStats canEdit={role === "ADMIN"} />
 

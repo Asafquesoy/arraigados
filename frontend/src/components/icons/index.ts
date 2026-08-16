@@ -12,3 +12,5 @@ export * from "./DownloadIcon";
 export * from "./LockIcon";
 export * from "./InstagramIcon";
 export * from "./FacebookIcon";
+export * from "./CopyIcon";
+export * from "./WhatsAppIcon";

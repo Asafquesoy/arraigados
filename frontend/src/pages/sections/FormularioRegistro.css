@@ -65,6 +65,11 @@
   overflow-wrap: anywhere;
 }
 
+.form-pago-hint {
+  margin: -0.4rem 0 0.2rem;
+  font-size: var(--t-sm);
+}
+
 .form-summary-edit {
   margin-top: 1rem;
   background: none;

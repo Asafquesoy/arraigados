@@ -189,17 +189,18 @@ def actualizar_settings(
     _admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
     db: Session = Depends(get_db),
 ):
+    updates = payload.model_dump(exclude_unset=True)
     row = db.get(AppSettings, 1)
     if not row:
         # No debería pasar (seed_settings() la crea al arrancar), pero si la fila
         # sembrada faltara por alguna razón, se crea aquí en vez de fallar.
-        row = AppSettings(id=1, show_shirt_size=payload.show_shirt_size)
+        row = AppSettings(id=1)
         db.add(row)
-    else:
-        row.show_shirt_size = payload.show_shirt_size
+    for field, value in updates.items():
+        setattr(row, field, value)
     db.commit()
     db.refresh(row)
-    return AppSettingsOut(show_shirt_size=row.show_shirt_size)
+    return AppSettingsOut(show_shirt_size=row.show_shirt_size, precio_mxn=row.precio_mxn)
 
 
 # ---- Gestión de cuentas de admin (todas exigen rol Admin) ----

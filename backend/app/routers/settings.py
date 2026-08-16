@@ -15,4 +15,7 @@ def obtener_settings(db: Session = Depends(get_db)):
     sembrada no existe todavía, responde con el valor por defecto en vez de
     fallar — nunca debe tumbar el formulario público."""
     row = db.get(AppSettings, 1)
-    return AppSettingsOut(show_shirt_size=row.show_shirt_size if row else False)
+    return AppSettingsOut(
+        show_shirt_size=row.show_shirt_size if row else False,
+        precio_mxn=row.precio_mxn if row else 350,
+    )

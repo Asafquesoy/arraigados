@@ -1,0 +1,107 @@
+.pago-title {
+  margin-top: 0.3rem;
+}
+
+.pago-precio {
+  max-width: 62ch;
+  font-size: var(--t-lg);
+  margin-top: 0.6rem;
+}
+
+.pago-bank-card {
+  padding: 1.5rem;
+  margin-top: 1.2rem;
+}
+
+.pago-bank-grid {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+}
+
+.pago-bank-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pago-bank-row dt {
+  color: var(--hueso-tenue);
+  font-size: var(--t-sm);
+}
+
+.pago-bank-row dd {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--hueso);
+  font-size: var(--t-base);
+}
+
+.pago-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radio-s);
+  border: 1px solid var(--tarjeta-borde);
+  background: transparent;
+  color: var(--amarillo-suave);
+  cursor: pointer;
+  transition: border-color var(--dur-rapida) ease, color var(--dur-rapida) ease;
+}
+
+.pago-copy-btn:hover {
+  border-color: var(--amarillo);
+  color: var(--amarillo);
+}
+
+.pago-contacts {
+  margin-top: 1.6rem;
+}
+
+.pago-contacts-list {
+  list-style: none;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.pago-contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radio-m);
+  border: 1px solid var(--tarjeta-borde);
+  background: var(--tarjeta-fondo);
+  color: var(--hueso);
+  text-decoration: none;
+  font-size: var(--t-sm);
+  transition: border-color var(--dur-rapida) ease, color var(--dur-rapida) ease;
+}
+
+.pago-contact-link:hover {
+  border-color: var(--verde-follaje);
+  color: var(--verde-claro);
+}
+
+.pago-cta {
+  margin-top: 2rem;
+}
+
+@media (pointer: coarse) {
+  .pago-copy-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .pago-contact-link {
+    min-height: 44px;
+  }
+}

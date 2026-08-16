@@ -10,10 +10,10 @@ export function Footer() {
           {CAMP_NAME} · {ORGANIZER}
         </p>
         <div className="site-footer-social">
-          <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" aria-label="Instagram de Dunamis">
+          <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noreferrer" aria-label="Instagram de Dúnamis">
             <InstagramIcon size={20} />
           </a>
-          <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noreferrer" aria-label="Facebook de Dunamis">
+          <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noreferrer" aria-label="Facebook de Dúnamis">
             <FacebookIcon size={20} />
           </a>
         </div>
