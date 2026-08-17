@@ -21,6 +21,10 @@ def upgrade() -> None:
     talla_enum = sa.Enum("XS", "S", "M", "L", "XL", "XXL", name="talla_camisa_enum")
     sexo_enum.create(op.get_bind(), checkfirst=True)
     talla_enum.create(op.get_bind(), checkfirst=True)
+    sexo_enum_col = sa.Enum("MASCULINO", "FEMENINO", name="sexo_enum", create_type=False)
+    talla_enum_col = sa.Enum(
+        "XS", "S", "M", "L", "XL", "XXL", name="talla_camisa_enum", create_type=False
+    )
 
     op.create_table(
         "admin_users",
@@ -39,8 +43,8 @@ def upgrade() -> None:
         sa.Column("ciudad", sa.String(length=100), nullable=False),
         sa.Column("iglesia", sa.String(length=150), nullable=False),
         sa.Column("edad", sa.Integer(), nullable=False),
-        sa.Column("sexo", sexo_enum, nullable=False),
-        sa.Column("talla_camisa", talla_enum, nullable=True),
+        sa.Column("sexo", sexo_enum_col, nullable=False),
+        sa.Column("talla_camisa", talla_enum_col, nullable=True),
         sa.Column("ticket_path", sa.String(length=255), nullable=False),
         sa.Column("ticket_mime", sa.String(length=100), nullable=False),
         sa.Column("pago_verificado", sa.Boolean(), nullable=False, server_default=sa.false()),
