@@ -5,6 +5,9 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse, StreamingResponse
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
+from openpyxl.utils import get_column_letter
 from sqlalchemy import case, func, or_
 from sqlalchemy.orm import Session
 
@@ -120,6 +123,54 @@ def ver_ticket(camper_id: int, db: Session = Depends(get_db)):
     return FileResponse(path, media_type=camper.ticket_mime)
 
 
+_EXPORT_HEADERS = [
+    "Folio",
+    "Nombre",
+    "Zona",
+    "Iglesia",
+    "Edad",
+    "Sexo",
+    "Talla",
+    "Otra talla",
+    "Fecha de pago",
+    "Promoción",
+    "Detalle promoción",
+    "Bautizado",
+    "Fecha de bautismo",
+    "Comprobante",
+    "Pago verificado",
+    "Verificado por",
+    "Fecha registro",
+]
+
+
+def _export_row(c: Camper) -> list:
+    return [
+        c.folio,
+        c.nombre,
+        c.zona.value if c.zona else "",
+        c.iglesia,
+        c.edad,
+        c.sexo.value,
+        c.talla_camisa.value if c.talla_camisa else "",
+        c.talla_otra or "",
+        c.fecha_pago.strftime("%Y-%m-%d") if c.fecha_pago else "",
+        "Sí" if c.tiene_promocion else "No",
+        c.promocion_detalle or "",
+        "Sí" if c.bautizado else "No",
+        c.fecha_bautismo or "",
+        "Sí" if c.ticket_path else "No",
+        "Sí" if c.pago_verificado else "No",
+        c.verificado_por or "",
+        c.created_at.strftime("%Y-%m-%d %H:%M"),
+    ]
+
+
+def _export_rows(q: str | None, pago: bool | None, zona: Zona | None, sexo: Sexo | None, db: Session) -> list[Camper]:
+    base = _apply_filters(db.query(Camper), q, pago, zona, sexo)
+    return base.order_by(Camper.created_at.desc()).all()
+
+
 @router.get("/registros.csv")
 def exportar_csv(
     q: str | None = None,
@@ -128,59 +179,63 @@ def exportar_csv(
     sexo: Sexo | None = None,
     db: Session = Depends(get_db),
 ):
-    base = _apply_filters(db.query(Camper), q, pago, zona, sexo)
-    rows = base.order_by(Camper.created_at.desc()).all()
+    rows = _export_rows(q, pago, zona, sexo, db)
 
     buffer = io.StringIO()
+    buffer.write("﻿")  # BOM: para que Excel detecte UTF-8 y no manche los acentos
     writer = csv.writer(buffer)
-    writer.writerow(
-        [
-            "Folio",
-            "Nombre",
-            "Zona",
-            "Iglesia",
-            "Edad",
-            "Sexo",
-            "Talla",
-            "Otra talla",
-            "Fecha de pago",
-            "Promoción",
-            "Detalle promoción",
-            "Bautizado",
-            "Fecha de bautismo",
-            "Comprobante",
-            "Pago verificado",
-            "Verificado por",
-            "Fecha registro",
-        ]
-    )
+    writer.writerow(_EXPORT_HEADERS)
     for c in rows:
-        writer.writerow(
-            [
-                c.folio,
-                c.nombre,
-                c.zona.value if c.zona else "",
-                c.iglesia,
-                c.edad,
-                c.sexo.value,
-                c.talla_camisa.value if c.talla_camisa else "",
-                c.talla_otra or "",
-                c.fecha_pago.strftime("%Y-%m-%d") if c.fecha_pago else "",
-                "Sí" if c.tiene_promocion else "No",
-                c.promocion_detalle or "",
-                "Sí" if c.bautizado else "No",
-                c.fecha_bautismo or "",
-                "Sí" if c.ticket_path else "No",
-                "Sí" if c.pago_verificado else "No",
-                c.verificado_por or "",
-                c.created_at.strftime("%Y-%m-%d %H:%M"),
-            ]
-        )
+        writer.writerow(_export_row(c))
     buffer.seek(0)
     return StreamingResponse(
         iter([buffer.getvalue()]),
-        media_type="text/csv",
+        media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": "attachment; filename=registros_arraigados.csv"},
+    )
+
+
+@router.get("/registros.xlsx")
+def exportar_xlsx(
+    q: str | None = None,
+    pago: bool | None = None,
+    zona: Zona | None = None,
+    sexo: Sexo | None = None,
+    db: Session = Depends(get_db),
+):
+    rows = _export_rows(q, pago, zona, sexo, db)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Registros"
+
+    header_font = Font(bold=True, color="FFF2D479")
+    header_fill = PatternFill(fill_type="solid", fgColor="FF1B2B22")
+    ws.append(_EXPORT_HEADERS)
+    for cell in ws[1]:
+        cell.font = header_font
+        cell.fill = header_fill
+    ws.freeze_panes = "A2"
+
+    widths = [len(h) for h in _EXPORT_HEADERS]
+    for c in rows:
+        row = _export_row(c)
+        ws.append(row)
+        for i, value in enumerate(row):
+            widths[i] = max(widths[i], len(str(value)) if value is not None else 0)
+
+    for i, width in enumerate(widths, start=1):
+        ws.column_dimensions[get_column_letter(i)].width = min(max(12, width + 2), 45)
+
+    ws.auto_filter.ref = ws.dimensions
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=registros_arraigados.xlsx"},
     )
 
 

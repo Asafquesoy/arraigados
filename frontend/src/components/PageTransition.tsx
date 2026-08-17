@@ -17,6 +17,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={location.pathname}
+        className="page-motion"
         initial={reduce ? { opacity: 1 } : { opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         exit={reduce ? { opacity: 1 } : { opacity: 0, y: -10 }}

@@ -31,8 +31,29 @@
 
 @media (min-width: 768px) {
   .admin-filters {
-    grid-template-columns: repeat(4, 1fr) auto;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
+
+/* Los `1fr` no pueden encogerse por debajo del min-content de un <input>
+   (size=20 por defecto), así que sin esto la barra desborda el glass-card
+   en escritorio. */
+.admin-filters .field {
+  min-width: 0;
+}
+
+.admin-filters .field input,
+.admin-filters .field select {
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-export-row {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
 }
 
 /* El sticky solo tiene sentido cuando hay suficiente alto de pantalla libre
@@ -248,5 +269,9 @@
 }
 
 .admin-shirt-stats {
+  margin-top: 1.75rem;
+}
+
+.admin-comprobante-stats {
   margin-top: 1.75rem;
 }

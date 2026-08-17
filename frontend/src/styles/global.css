@@ -49,10 +49,24 @@ button {
 
 .app-shell {
   position: relative;
-  min-height: 100vh;
+  min-height: var(--alto-viewport);
   display: flex;
   flex-direction: column;
   z-index: var(--z-contenido);
+}
+
+/* `main` y el motion.div de PageTransition (ver PageTransition.tsx) forman la
+   cadena de alto real entre navbar y footer: cada uno hereda el espacio
+   disponible vía flex en vez de un `height: 100%` en porcentaje, que se
+   rompe apenas un eslabón intermedio no tiene alto definido. Páginas que
+   necesitan llenar ese hueco (p. ej. AdminLogin) solo necesitan `flex: 1;
+   min-height: 0` para heredarlo correctamente. */
+.app-main,
+.page-motion {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .page-container {

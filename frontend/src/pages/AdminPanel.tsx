@@ -183,14 +183,24 @@ export function AdminPanel() {
             <option value="false">Pendiente</option>
           </select>
         </div>
-        <a
-          className="btn btn-ghost admin-export"
-          href={`/api/admin/registros.csv?${buildQuery()}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <DownloadIcon size={16} /> Exportar CSV
-        </a>
+        <div className="admin-export-row">
+          <a
+            className="btn btn-ghost admin-export"
+            href={`/api/admin/registros.csv?${buildQuery()}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <DownloadIcon size={16} /> Exportar CSV
+          </a>
+          <a
+            className="btn btn-ghost admin-export"
+            href={`/api/admin/registros.xlsx?${buildQuery()}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <DownloadIcon size={16} /> Exportar Excel
+          </a>
+        </div>
       </div>
 
       {activeFilters.length > 0 && (

@@ -21,7 +21,7 @@ function AppRoutes() {
       <CanopyBackground variant={isAdminArea ? "sutil" : "full"} />
       <div className="app-shell">
         <Navbar />
-        <main style={{ flex: 1 }}>
+        <main className="app-main">
           <PageTransition>
             <Routes location={location}>
               <Route path="/" element={<Registro />} />
