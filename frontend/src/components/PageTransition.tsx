@@ -8,13 +8,19 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
  * hasta el fin de la animación de salida se ve elegante en el papel, pero si
  * la condición para avanzar nunca se cumple, la navegación se queda
  * congelada — justo lo que pasaba antes al confirmar el registro.
+ *
+ * `initial` (sin fijar en false) deja que el primer render también anime:
+ * con `initial={false}` el AnimatePresence propaga "sin animación de entrada"
+ * a todos los motion.* anidados en el primer mount de la app (no solo a este
+ * wrapper), lo que apagaba las animaciones del Hero (logo, título, raíces)
+ * en la primera carga de la página — solo se veían después de navegar.
  */
 export function PageTransition({ children }: { children: ReactNode }) {
   const location = useLocation();
   const reduce = useReducedMotion();
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="wait">
       <motion.div
         key={location.pathname}
         className="page-motion"
