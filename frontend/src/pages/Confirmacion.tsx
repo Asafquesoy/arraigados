@@ -57,7 +57,7 @@ export function Confirmacion() {
         <p className="muted">Gracias, {state.nombre}. Tu registro para Arraigados 2026 fue exitoso.</p>
 
         <div className="confirmacion-root">
-          <RootGrow delay={0.4} />
+          <RootGrow seed={19} delay={0.4} />
         </div>
 
         <p className="muted">¿Alguna duda? Escríbenos por nuestras redes sociales:</p>

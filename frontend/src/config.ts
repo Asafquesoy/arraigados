@@ -57,7 +57,12 @@ export interface CampDetail {
   icon: "root" | "church" | "city" | "shirt";
   title: string;
   body: string;
+  href?: string;
 }
+
+export const VENUE_MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+  `${VENUE.name} ${VENUE.address}`
+)}`;
 
 export const CAMP_DETAILS: CampDetail[] = [
   {
@@ -69,15 +74,16 @@ export const CAMP_DETAILS: CampDetail[] = [
     icon: "city",
     title: "Sede",
     body: `${VENUE.name} — ${VENUE.address}.`,
+    href: VENUE_MAPS_URL,
   },
   {
     icon: "church",
     title: "¿Para quién?",
-    body: "Jóvenes de nuestras iglesias asociadas, con acompañamiento de líderes durante todo el campamento.",
+    body: "Jóvenes acreditados con su carta pastoral de nuestras iglesias asociadas.",
   },
   {
     icon: "shirt",
     title: "Qué incluye",
-    body: "Hospedaje, alimentos y playera oficial del campamento. Sube tu comprobante de pago al registrarte.",
+    body: "Hospedaje, alimentos, kit campero y playera oficial del campamento (por tiempo limitado). Sube tu comprobante de pago al registrarte.",
   },
 ];

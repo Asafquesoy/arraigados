@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { AnimatePresence } from "motion/react";
 import { AdminAjustes } from "../components/AdminAjustes";
+import { AdminComprobanteStats } from "../components/AdminComprobanteStats";
 import { AdminShirtStats } from "../components/AdminShirtStats";
 import { ConfirmButton } from "../components/ConfirmButton";
 import { Reveal } from "../components/Reveal";
@@ -11,9 +12,10 @@ import { StatTile } from "../components/StatTile";
 import { TicketModal } from "../components/TicketModal";
 import { Toast } from "../components/Toast";
 import { ToggleSwitch } from "../components/ToggleSwitch";
+import { ZONA_LABEL } from "../components/ZonaField";
 import { DownloadIcon, ReceiptIcon, SearchIcon, ShieldCheckIcon } from "../components/icons";
 import { useAdminAuth } from "../lib/AdminAuthContext";
-import { apiFetch, ApiError, type CamperListResponse, type CamperOut, type Sexo } from "../lib/api";
+import { apiFetch, ApiError, type CamperListResponse, type CamperOut, type Sexo, type Zona } from "../lib/api";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { useSettings } from "../lib/SettingsContext";
 import { useToast } from "../lib/useToast";
@@ -28,7 +30,7 @@ export function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [pago, setPago] = useState<"" | "true" | "false">("");
-  const [ciudad, setCiudad] = useState("");
+  const [zona, setZona] = useState<"" | Zona>("");
   const [sexo, setSexo] = useState<"" | Sexo>("");
   const [page, setPage] = useState(1);
   const [ticketModal, setTicketModal] = useState<{ id: number; nombre: string } | null>(null);
@@ -44,7 +46,7 @@ export function AdminPanel() {
     const params = new URLSearchParams({ page: String(page), page_size: String(PAGE_SIZE), ...extra });
     if (q) params.set("q", q);
     if (pago) params.set("pago", pago);
-    if (ciudad) params.set("ciudad", ciudad);
+    if (zona) params.set("zona", zona);
     if (sexo) params.set("sexo", sexo);
     return params;
   }
@@ -71,7 +73,7 @@ export function AdminPanel() {
     }, 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, pago, ciudad, sexo]);
+  }, [q, pago, zona, sexo]);
 
   if (!authLoading && !username) {
     return <Navigate to="/admin" replace />;
@@ -113,7 +115,7 @@ export function AdminPanel() {
   const pendientes = data ? data.items.length - verificados : 0;
   const activeFilters = [
     q && { key: "q", label: `"${q}"`, clear: () => setQ("") },
-    ciudad && { key: "ciudad", label: ciudad, clear: () => setCiudad("") },
+    zona && { key: "zona", label: ZONA_LABEL[zona], clear: () => setZona("") },
     sexo && { key: "sexo", label: sexo === "M" ? "Masculino" : "Femenino", clear: () => setSexo("") },
     pago && { key: "pago", label: pago === "true" ? "Verificado" : "Pendiente", clear: () => setPago("") },
   ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
@@ -137,7 +139,9 @@ export function AdminPanel() {
 
       <AdminShirtStats canEdit={role === "ADMIN"} />
 
-      <RootDivider />
+      <AdminComprobanteStats canEdit={role === "ADMIN"} />
+
+      <RootDivider seed={43} />
 
       <div className="glass-card admin-filters">
         <div className="field">
@@ -153,8 +157,15 @@ export function AdminPanel() {
           />
         </div>
         <div className="field">
-          <label htmlFor="ciudad-filter">Ciudad</label>
-          <input id="ciudad-filter" type="text" value={ciudad} onChange={(e) => setCiudad(e.target.value)} />
+          <label htmlFor="zona-filter">Zona</label>
+          <select id="zona-filter" value={zona} onChange={(e) => setZona(e.target.value as Zona | "")}>
+            <option value="">Todas</option>
+            {(Object.keys(ZONA_LABEL) as Zona[]).map((z) => (
+              <option key={z} value={z}>
+                {ZONA_LABEL[z]}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="field">
           <label htmlFor="sexo-filter">Sexo</label>
@@ -208,11 +219,14 @@ export function AdminPanel() {
                 <tr>
                   <th>Folio</th>
                   <th>Nombre</th>
-                  <th>Ciudad</th>
+                  <th>Zona</th>
                   <th>Iglesia</th>
                   <th>Edad</th>
                   <th>Sexo</th>
                   {showShirtSize && <th>Talla</th>}
+                  <th>Fecha de pago</th>
+                  <th>Promoción</th>
+                  <th>Bautizado</th>
                   <th>Comprobante</th>
                   <th>Pago</th>
                   {puedeBorrar && <th></th>}
@@ -223,18 +237,27 @@ export function AdminPanel() {
                   <tr key={camper.id}>
                     <td className="mono">{camper.folio}</td>
                     <td className="admin-table-name">{camper.nombre}</td>
-                    <td className="admin-table-city">{camper.ciudad}</td>
+                    <td className="admin-table-city">{camper.zona ? ZONA_LABEL[camper.zona] : "—"}</td>
                     <td className="admin-table-truncate">{camper.iglesia}</td>
                     <td>{camper.edad}</td>
                     <td>{camper.sexo === "M" ? "M" : "F"}</td>
-                    {showShirtSize && <td>{camper.talla_camisa ?? "—"}</td>}
+                    {showShirtSize && (
+                      <td>{camper.talla_camisa === "OTRA" ? camper.talla_otra || "Otra" : camper.talla_camisa ?? "—"}</td>
+                    )}
+                    <td className="mono">{camper.fecha_pago ?? "—"}</td>
+                    <td>{camper.tiene_promocion ? camper.promocion_detalle || "Sí" : "No"}</td>
+                    <td>{camper.bautizado ? "Sí" : "No"}</td>
                     <td>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => setTicketModal({ id: camper.id, nombre: camper.nombre })}
-                      >
-                        <ReceiptIcon size={14} /> Ver
-                      </button>
+                      {camper.tiene_comprobante ? (
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setTicketModal({ id: camper.id, nombre: camper.nombre })}
+                        >
+                          <ReceiptIcon size={14} /> Ver
+                        </button>
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
                     </td>
                     <td>
                       <ToggleSwitch
@@ -268,20 +291,28 @@ export function AdminPanel() {
                 <div>
                   <p className="admin-row-name">{camper.nombre}</p>
                   <p className="muted admin-row-meta mono">
-                    {camper.folio} · {camper.ciudad} · {camper.edad} años ·{" "}
+                    {camper.folio} · {camper.zona ? ZONA_LABEL[camper.zona] : "—"} · {camper.edad} años ·{" "}
                     {camper.sexo === "M" ? "Masculino" : "Femenino"}
-                    {showShirtSize && camper.talla_camisa ? ` · Talla ${camper.talla_camisa}` : ""}
+                    {showShirtSize && camper.talla_camisa
+                      ? ` · Talla ${camper.talla_camisa === "OTRA" ? camper.talla_otra || "Otra" : camper.talla_camisa}`
+                      : ""}
                   </p>
                   <p className="muted admin-row-meta">{camper.iglesia}</p>
+                  <p className="muted admin-row-meta">
+                    Pago: {camper.fecha_pago ?? "—"} · Promoción: {camper.tiene_promocion ? camper.promocion_detalle || "Sí" : "No"} ·
+                    Bautizado: {camper.bautizado ? "Sí" : "No"}
+                  </p>
                 </div>
 
                 <div className="admin-row-actions">
-                  <button
-                    className="btn btn-ghost admin-ticket-btn"
-                    onClick={() => setTicketModal({ id: camper.id, nombre: camper.nombre })}
-                  >
-                    <ReceiptIcon size={16} /> Ver comprobante
-                  </button>
+                  {camper.tiene_comprobante && (
+                    <button
+                      className="btn btn-ghost admin-ticket-btn"
+                      onClick={() => setTicketModal({ id: camper.id, nombre: camper.nombre })}
+                    >
+                      <ReceiptIcon size={16} /> Ver comprobante
+                    </button>
+                  )}
                   {puedeBorrar && (
                     <ConfirmButton
                       label="Borrar registro"

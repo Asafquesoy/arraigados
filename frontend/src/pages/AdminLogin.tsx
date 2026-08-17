@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import { LockIcon } from "../components/icons";
+import { PasswordInput } from "../components/PasswordInput";
 import { CAMP_NAME } from "../config";
 import { useAdminAuth } from "../lib/AdminAuthContext";
 import { ApiError } from "../lib/api";
@@ -71,9 +72,8 @@ export function AdminLogin() {
             </div>
             <div className="field span-2">
               <label htmlFor="password">Contraseña</label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 autoComplete="current-password"

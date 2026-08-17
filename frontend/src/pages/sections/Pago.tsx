@@ -49,7 +49,7 @@ export function Pago() {
         </p>
       </Reveal>
 
-      <RootDivider />
+      <RootDivider seed={29} />
 
       <Reveal delay={0.08}>
         <div className="glass-card pago-bank-card">

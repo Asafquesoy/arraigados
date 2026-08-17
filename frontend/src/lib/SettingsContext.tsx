@@ -4,10 +4,12 @@ import { apiFetch, ApiError, type AppSettings } from "./api";
 interface SettingsState {
   showShirtSize: boolean;
   precioMxn: number;
+  pedirComprobante: boolean;
   loading: boolean;
   /** Optimista: refleja el cambio de inmediato y revierte si el PATCH falla (lanza en ese caso). */
   setShowShirtSize: (value: boolean) => Promise<void>;
   setPrecioMxn: (value: number) => Promise<void>;
+  setPedirComprobante: (value: boolean) => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsState | undefined>(undefined);
@@ -19,6 +21,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // 350 como default: coincide con el precio actual del póster y evita un
   // parpadeo del monto mientras carga la configuración real.
   const [precioMxn, setPrecioMxnState] = useState(350);
+  // true por defecto: es el comportamiento actual (comprobante obligatorio)
+  // mientras carga la configuración real, para no dejar de pedirlo por error.
+  const [pedirComprobante, setPedirComprobanteState] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,6 +31,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       .then((res) => {
         setShowShirtSizeState(res.show_shirt_size);
         setPrecioMxnState(res.precio_mxn);
+        setPedirComprobanteState(res.pedir_comprobante);
       })
       .catch(() => {
         /* se queda en el valor por defecto si falla la carga inicial */
@@ -62,8 +68,22 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     await patch("precio_mxn", value, setPrecioMxnState, precioMxn);
   }
 
+  async function setPedirComprobante(value: boolean) {
+    await patch("pedir_comprobante", value, setPedirComprobanteState, pedirComprobante);
+  }
+
   return (
-    <SettingsContext.Provider value={{ showShirtSize, precioMxn, loading, setShowShirtSize, setPrecioMxn }}>
+    <SettingsContext.Provider
+      value={{
+        showShirtSize,
+        precioMxn,
+        pedirComprobante,
+        loading,
+        setShowShirtSize,
+        setPrecioMxn,
+        setPedirComprobante,
+      }}
+    >
       {children}
     </SettingsContext.Provider>
   );

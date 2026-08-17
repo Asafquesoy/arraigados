@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { ConfirmButton } from "../components/ConfirmButton";
+import { PasswordInput } from "../components/PasswordInput";
 import { Reveal } from "../components/Reveal";
 import { RootDivider } from "../components/RootDivider";
 import { Toast } from "../components/Toast";
@@ -129,7 +130,7 @@ export function AdminUsers() {
         </p>
       </Reveal>
 
-      <RootDivider />
+      <RootDivider seed={57} />
 
       <Reveal delay={0.06}>
         <form className="glass-card admin-users-form" onSubmit={handleCreate}>
@@ -150,9 +151,8 @@ export function AdminUsers() {
             </div>
             <div className="field">
               <label htmlFor="new-password">Contraseña</label>
-              <input
+              <PasswordInput
                 id="new-password"
-                type="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 placeholder="mínimo 8 caracteres"
@@ -217,8 +217,7 @@ export function AdminUsers() {
 
                     {resetTarget === user.id ? (
                       <div className="admin-users-reset">
-                        <input
-                          type="password"
+                        <PasswordInput
                           value={resetPassword}
                           onChange={(e) => setResetPassword(e.target.value)}
                           placeholder="nueva contraseña"

@@ -21,7 +21,7 @@ export function Detalles() {
         <p className="detalles-intro muted">{CAMP_INTRO}</p>
       </Reveal>
 
-      <RootDivider />
+      <RootDivider seed={11} />
 
       <div className="detalles-grid">
         {CAMP_DETAILS.map((detail, i) => {
@@ -33,7 +33,18 @@ export function Detalles() {
                   <Icon size={22} />
                 </span>
                 <h3>{detail.title}</h3>
-                <p className="muted">{detail.body}</p>
+                {detail.href ? (
+                  <a
+                    className="muted detalles-card-link"
+                    href={detail.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {detail.body}
+                  </a>
+                ) : (
+                  <p className="muted">{detail.body}</p>
+                )}
               </div>
             </Reveal>
           );

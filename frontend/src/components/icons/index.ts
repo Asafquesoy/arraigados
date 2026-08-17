@@ -14,3 +14,8 @@ export * from "./InstagramIcon";
 export * from "./FacebookIcon";
 export * from "./CopyIcon";
 export * from "./WhatsAppIcon";
+export * from "./CalendarIcon";
+export * from "./TagIcon";
+export * from "./DropIcon";
+export * from "./EyeIcon";
+export * from "./EyeOffIcon";

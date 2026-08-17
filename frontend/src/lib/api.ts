@@ -37,17 +37,26 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 }
 
 export type Sexo = "M" | "F";
-export type TallaCamisa = "XS" | "S" | "M" | "L" | "XL" | "XXL";
+export type TallaCamisa = "XCH" | "CH" | "M" | "G" | "XG" | "OTRA";
+export type Zona = "VALLES" | "VICTORIA" | "MANTE" | "METRO" | "OTRO";
 
 export interface CamperOut {
   id: number;
   folio: string;
   nombre: string;
-  ciudad: string;
+  ciudad: string | null;
   iglesia: string;
   edad: number;
   sexo: Sexo;
+  zona: Zona | null;
+  fecha_pago: string | null;
+  tiene_promocion: boolean | null;
+  promocion_detalle: string | null;
+  bautizado: boolean | null;
+  fecha_bautismo: string | null;
   talla_camisa: TallaCamisa | null;
+  talla_otra: string | null;
+  tiene_comprobante: boolean;
   pago_verificado: boolean;
   verificado_en: string | null;
   verificado_por: string | null;
@@ -64,6 +73,12 @@ export interface CamperListResponse {
 export interface AppSettings {
   show_shirt_size: boolean;
   precio_mxn: number;
+  pedir_comprobante: boolean;
+}
+
+export interface ComprobanteStats {
+  con_comprobante: number;
+  sin_comprobante: number;
 }
 
 export type AdminRole = "ADMIN" | "VERIFICADOR_PAGO" | "VISUALIZADOR";

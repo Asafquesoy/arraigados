@@ -96,6 +96,11 @@
   gap: 0.5rem;
 }
 
+.admin-users-reset .password-input {
+  width: 160px;
+  max-width: 40vw;
+}
+
 .admin-users-reset input {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--tarjeta-borde);
@@ -103,6 +108,5 @@
   padding: 0.55rem 0.8rem;
   color: var(--hueso);
   font-size: var(--t-input);
-  width: 160px;
-  max-width: 40vw;
+  width: 100%;
 }

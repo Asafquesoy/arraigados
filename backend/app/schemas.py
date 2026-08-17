@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-from .models import AdminRole, Sexo, TallaCamisa
+from .models import AdminRole, Sexo, TallaCamisa, Zona
 
 
 class CamperCreateResponse(BaseModel):
@@ -16,15 +16,28 @@ class CamperOut(BaseModel):
     id: int
     folio: str
     nombre: str
-    ciudad: str
+    ciudad: str | None
     iglesia: str
     edad: int
     sexo: Sexo
+    zona: Zona | None
+    fecha_pago: date | None
+    tiene_promocion: bool | None
+    promocion_detalle: str | None
+    bautizado: bool | None
+    fecha_bautismo: str | None
     talla_camisa: TallaCamisa | None
+    talla_otra: str | None
+    ticket_path: str | None = Field(exclude=True)
     pago_verificado: bool
     verificado_en: datetime | None
     verificado_por: str | None
     created_at: datetime
+
+    @computed_field
+    @property
+    def tiene_comprobante(self) -> bool:
+        return self.ticket_path is not None
 
 
 class CamperListResponse(BaseModel):
@@ -83,12 +96,19 @@ class TallaStatsResponse(BaseModel):
 class AppSettingsOut(BaseModel):
     show_shirt_size: bool
     precio_mxn: int
+    pedir_comprobante: bool
 
 
 class AppSettingsUpdate(BaseModel):
-    """Ambos campos opcionales: el PATCH es parcial — el panel admin tiene dos
-    controles independientes (toggle de camisetas, precio) y cada uno debe
-    poder guardarse sin pisar el otro."""
+    """Todos los campos opcionales: el PATCH es parcial — el panel admin tiene
+    controles independientes (toggle de camisetas, precio, toggle de
+    comprobante) y cada uno debe poder guardarse sin pisar los demás."""
 
     show_shirt_size: bool | None = None
     precio_mxn: int | None = Field(default=None, ge=0, le=100_000)
+    pedir_comprobante: bool | None = None
+
+
+class ComprobanteStatsResponse(BaseModel):
+    con_comprobante: int
+    sin_comprobante: int

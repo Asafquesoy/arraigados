@@ -167,6 +167,7 @@ button {
 .field input[type="text"],
 .field input[type="number"],
 .field input[type="password"],
+.field input[type="date"],
 .field select {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--tarjeta-borde);
@@ -177,6 +178,12 @@ button {
   outline: none;
   transition: border-color var(--dur-rapida) ease, background var(--dur-rapida) ease,
     box-shadow var(--dur-rapida) ease;
+}
+
+/* El selector nativo de fecha de Chromium dibuja su icono en negro por
+   defecto — invisible sobre el fondo oscuro del campo. */
+.field input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
 }
 
 .field input:focus,
@@ -207,6 +214,11 @@ button {
   align-items: center;
   gap: 0.3rem;
   animation: shake-in 260ms var(--ease-suave);
+}
+
+.field-hint {
+  color: var(--hueso-apagado);
+  font-size: var(--t-xs);
 }
 
 .form-grid {

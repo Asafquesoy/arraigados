@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
-from ..models import AdminRole, AdminUser, AppSettings, Camper, Sexo, TallaCamisa
+from ..models import AdminRole, AdminUser, AppSettings, Camper, Sexo, TallaCamisa, Zona
 from ..schemas import (
     AdminUserCreate,
     AdminUserOut,
@@ -19,6 +19,7 @@ from ..schemas import (
     AppSettingsUpdate,
     CamperListResponse,
     CamperOut,
+    ComprobanteStatsResponse,
     PagoUpdate,
     TallaStatsItem,
     TallaStatsResponse,
@@ -28,14 +29,14 @@ from ..security import get_current_admin, hash_password, require_role
 router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(get_current_admin)])
 
 
-def _apply_filters(query, q: str | None, pago: bool | None, ciudad: str | None, sexo: Sexo | None):
+def _apply_filters(query, q: str | None, pago: bool | None, zona: Zona | None, sexo: Sexo | None):
     if q:
         like = f"%{q}%"
         query = query.filter(or_(Camper.nombre.ilike(like), Camper.iglesia.ilike(like), Camper.folio.ilike(like)))
     if pago is not None:
         query = query.filter(Camper.pago_verificado == pago)
-    if ciudad:
-        query = query.filter(Camper.ciudad.ilike(f"%{ciudad}%"))
+    if zona:
+        query = query.filter(Camper.zona == zona)
     if sexo:
         query = query.filter(Camper.sexo == sexo)
     return query
@@ -45,13 +46,13 @@ def _apply_filters(query, q: str | None, pago: bool | None, ciudad: str | None, 
 def listar_registros(
     q: str | None = None,
     pago: bool | None = None,
-    ciudad: str | None = None,
+    zona: Zona | None = None,
     sexo: Sexo | None = None,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=200),
     db: Session = Depends(get_db),
 ):
-    base = _apply_filters(db.query(Camper), q, pago, ciudad, sexo)
+    base = _apply_filters(db.query(Camper), q, pago, zona, sexo)
     total = base.count()
     items = (
         base.order_by(Camper.created_at.desc())
@@ -91,16 +92,17 @@ def borrar_registro(
     if not camper:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Registro no encontrado")
 
-    ticket_path = os.path.join(settings.tickets_dir, camper.ticket_path)
+    ticket_path = os.path.join(settings.tickets_dir, camper.ticket_path) if camper.ticket_path else None
     db.delete(camper)
     db.commit()
 
-    try:
-        os.remove(ticket_path)
-    except OSError:
-        # El registro ya se borró; un comprobante huérfano en disco no es motivo
-        # para fallar la petición (puede que el archivo ya no exista, por ejemplo).
-        pass
+    if ticket_path:
+        try:
+            os.remove(ticket_path)
+        except OSError:
+            # El registro ya se borró; un comprobante huérfano en disco no es motivo
+            # para fallar la petición (puede que el archivo ya no exista, por ejemplo).
+            pass
 
 
 @router.get("/registros/{camper_id}/ticket")
@@ -108,6 +110,8 @@ def ver_ticket(camper_id: int, db: Session = Depends(get_db)):
     camper = db.get(Camper, camper_id)
     if not camper:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Registro no encontrado")
+    if not camper.ticket_path:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Este registro no tiene comprobante")
 
     path = os.path.join(settings.tickets_dir, camper.ticket_path)
     if not os.path.isfile(path):
@@ -120,28 +124,53 @@ def ver_ticket(camper_id: int, db: Session = Depends(get_db)):
 def exportar_csv(
     q: str | None = None,
     pago: bool | None = None,
-    ciudad: str | None = None,
+    zona: Zona | None = None,
     sexo: Sexo | None = None,
     db: Session = Depends(get_db),
 ):
-    base = _apply_filters(db.query(Camper), q, pago, ciudad, sexo)
+    base = _apply_filters(db.query(Camper), q, pago, zona, sexo)
     rows = base.order_by(Camper.created_at.desc()).all()
 
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow(
-        ["Folio", "Nombre", "Ciudad", "Iglesia", "Edad", "Sexo", "Talla", "Pago verificado", "Verificado por", "Fecha registro"]
+        [
+            "Folio",
+            "Nombre",
+            "Zona",
+            "Iglesia",
+            "Edad",
+            "Sexo",
+            "Talla",
+            "Otra talla",
+            "Fecha de pago",
+            "Promoción",
+            "Detalle promoción",
+            "Bautizado",
+            "Fecha de bautismo",
+            "Comprobante",
+            "Pago verificado",
+            "Verificado por",
+            "Fecha registro",
+        ]
     )
     for c in rows:
         writer.writerow(
             [
                 c.folio,
                 c.nombre,
-                c.ciudad,
+                c.zona.value if c.zona else "",
                 c.iglesia,
                 c.edad,
                 c.sexo.value,
                 c.talla_camisa.value if c.talla_camisa else "",
+                c.talla_otra or "",
+                c.fecha_pago.strftime("%Y-%m-%d") if c.fecha_pago else "",
+                "Sí" if c.tiene_promocion else "No",
+                c.promocion_detalle or "",
+                "Sí" if c.bautizado else "No",
+                c.fecha_bautismo or "",
+                "Sí" if c.ticket_path else "No",
                 "Sí" if c.pago_verificado else "No",
                 c.verificado_por or "",
                 c.created_at.strftime("%Y-%m-%d %H:%M"),
@@ -183,6 +212,15 @@ def estadisticas_tallas(db: Session = Depends(get_db)):
     return TallaStatsResponse(items=items, sin_talla=sin_talla, total_campers=total_campers)
 
 
+@router.get("/stats/comprobantes", response_model=ComprobanteStatsResponse)
+def estadisticas_comprobantes(db: Session = Depends(get_db)):
+    """Conteo de registros con/sin comprobante sobre TODOS los registros
+    (no solo la página/filtro actual) — igual criterio que stats/tallas."""
+    con_comprobante = db.query(func.count(Camper.id)).filter(Camper.ticket_path.isnot(None)).scalar() or 0
+    sin_comprobante = db.query(func.count(Camper.id)).filter(Camper.ticket_path.is_(None)).scalar() or 0
+    return ComprobanteStatsResponse(con_comprobante=con_comprobante, sin_comprobante=sin_comprobante)
+
+
 @router.patch("/settings", response_model=AppSettingsOut)
 def actualizar_settings(
     payload: AppSettingsUpdate,
@@ -200,7 +238,11 @@ def actualizar_settings(
         setattr(row, field, value)
     db.commit()
     db.refresh(row)
-    return AppSettingsOut(show_shirt_size=row.show_shirt_size, precio_mxn=row.precio_mxn)
+    return AppSettingsOut(
+        show_shirt_size=row.show_shirt_size,
+        precio_mxn=row.precio_mxn,
+        pedir_comprobante=row.pedir_comprobante,
+    )
 
 
 # ---- Gestión de cuentas de admin (todas exigen rol Admin) ----

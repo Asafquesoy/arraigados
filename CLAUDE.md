@@ -82,8 +82,17 @@ time so it isn't a `config.ts` constant either), following the exact same shape:
 section, same `canEdit` gating), and rendered publicly by `pages/sections/Pago.tsx`.
 `AppSettingsUpdate` (`backend/app/schemas.py`) makes every field optional and the PATCH handler
 (`routers/admin.py::actualizar_settings`) applies only the fields present via
-`model_dump(exclude_unset=True)` — this is what lets the two panel controls save independently
+`model_dump(exclude_unset=True)` — this is what lets the panel controls save independently
 without one clobbering the other.
+
+A third field, `pedir_comprobante` (bool, default `True`), toggles whether the registration form
+requires a payment receipt upload — same shape again: seeded in `seed_settings()`, exposed via the
+same GET/PATCH pair, `useSettings().pedirComprobante` / `setPedirComprobante()`, edited from
+`components/AdminComprobanteStats.tsx` ("Comprobante de pago" panel section, same `canEdit`
+gating), and consumed by `pages/sections/FormularioRegistro.tsx` to hide/show `FileDrop` and skip
+its validation. Because this one gates a required upload rather than just an optional field, the
+backend re-checks it server-side in `routers/public.py::crear_registro` (queries `AppSettings`
+directly — never trusts the client) before rejecting a registration with no `ticket`; `Camper.ticket_path`/`ticket_mime` are nullable to allow registrations saved with the toggle off.
 
 **Use this pattern — DB-backed setting + context, not a `config.ts` constant — for any other
 value the organizing team should be able to change without a redeploy.** `config.ts` remains the
@@ -146,11 +155,8 @@ this shape exists to avoid.
 - Animation uses `motion` (Framer Motion v11) — the only animation dependency in the project.
   Reusable motion primitives already exist; reach for them instead of hand-rolling new
   `AnimatePresence`/`useScroll` logic: `components/Reveal.tsx` (scroll fade-up),
-  `components/RootGrow.tsx` (self-drawing root SVG — the path data is *generated*, not
-  hand-written: a small seeded-PRNG recursive branching algorithm builds ~150+ tapering segments
-  per render so it reads as a dense, fibrous root like the logo's, not a handful of symmetric
-  curves; tune density/look via `childCountFor()` and the `primaryAngles` array, same seed always
-  produces the same layout), `components/PageTransition.tsx` (route
+  `components/root/generateRoots.ts` + `components/root/AnimatedRoots.tsx` (shared root-drawing
+  system — see below), `components/PageTransition.tsx` (route
   transitions), `components/StepProgress.tsx` (multi-step form progress). All must respect
   `useReducedMotion()` — every existing component branches on it, follow that pattern for new ones.
   **Pitfall already hit once:** don't gate an `AnimatePresence` key change behind app state that
@@ -159,6 +165,33 @@ this shape exists to avoid.
   `PageTransition.tsx` did this and silently froze all navigation because the key never changed
   to begin with. Key `AnimatePresence` directly off real state (e.g. `location.pathname` from
   `useLocation()`), not off a derived/delayed copy of it.
+- **Root-drawing system** (`components/root/`) — every decorative root motif on the site
+  (`components/RootGrow.tsx` for the Hero/`Confirmacion.tsx`, `components/RootDivider.tsx` for
+  the horizontal section dividers) is generated, not hand-drawn: `root/generateRoots.ts` runs a
+  seeded-PRNG (`mulberry32`) recursive branching algorithm — trunk → primaries → secondaries →
+  fine sprigs, tapering width/opacity per generation, small mid-branch offshoots for a fibrous
+  texture — and `root/AnimatedRoots.tsx` draws the resulting segments with the shared
+  `pathLength`-via-`whileInView` reveal (respects `useReducedMotion()` like everything else in
+  this list).
+  - Both consumers call `generateRoots()` with different shape parameters, not different code:
+    `primaryAngles`, `primaryLength`, `maxDepth` control the branching; `widthScale` rescales
+    stroke width for a smaller root system (the base width formula is calibrated for the Hero's
+    long primaries — reuse it at a shorter `primaryLength` without `widthScale` and it reads as
+    too thick for its size); `squashY` compresses vertical growth without flattening the curves
+    into unnatural zigzags (a much stronger squash was tried first and made the divider look like
+    flat spikes instead of roots — keep any squash mild, and prefer narrowing the angle spread
+    away from vertical first).
+  - `generateRoots()` returns `{ segments, bounds }` — `bounds` is the *real* bounding box of the
+    generated paths (control points included, not just endpoints). `RootDivider` builds its
+    `viewBox` from `bounds` via `boundsToViewBox()` instead of a guessed fixed size — the shape
+    is random per seed, so a fixed `viewBox` could end up shorter than what a given seed actually
+    draws, and since the SVG needs `overflow: visible` (to not clip fine root tips) that excess
+    would paint outside the space the layout reserved and overlap whatever follows in the DOM.
+  - `RootGrow`'s `seed` prop defaults to `7` (the Hero's original, unchanged look); `RootDivider`
+    requires a `seed` prop with no default — every call site must pick its own, so the divider
+    doesn't silently repeat the same pattern everywhere it's used (`Detalles.tsx`, `Pago.tsx`,
+    `AdminPanel.tsx`, `AdminUsers.tsx` each pass a different one; `Confirmacion.tsx` also passes
+    its own `seed` to `RootGrow` so it differs from the Hero's).
 
 ### Design system
 
@@ -217,7 +250,10 @@ Three tables (`backend/app/models.py`): `campers` (registration + `folio` unique
 (username/bcrypt hash/`role`), and `app_settings` (single row, `id=1` — runtime-editable flags,
 see the Runtime settings pattern above). `Sexo`, `TallaCamisa`, and `AdminRole`
 (`ADMIN`/`VERIFICADOR_PAGO`/`VISUALIZADOR`) are Python/DB enums defined in `models.py` and reused
-in `schemas.py`.
+in `schemas.py`. `campers.ticket_path`/`ticket_mime` are nullable — a registration can exist
+without a receipt when the `pedir_comprobante` toggle is off; `CamperOut.tiene_comprobante`
+(`schemas.py`, a `computed_field`) is what the frontend checks before showing the "Ver
+comprobante" button, since `ticket_path` itself is excluded from the API response.
 
 `folio` is staff-facing only — the backend still generates and returns it from
 `POST /api/registros`, and it's how the admin panel (`AdminPanel.tsx` table) identifies a
