@@ -5,11 +5,13 @@ interface SettingsState {
   showShirtSize: boolean;
   precioMxn: number;
   pedirComprobante: boolean;
+  registroAbierto: boolean;
   loading: boolean;
   /** Optimista: refleja el cambio de inmediato y revierte si el PATCH falla (lanza en ese caso). */
   setShowShirtSize: (value: boolean) => Promise<void>;
   setPrecioMxn: (value: number) => Promise<void>;
   setPedirComprobante: (value: boolean) => Promise<void>;
+  setRegistroAbierto: (value: boolean) => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsState | undefined>(undefined);
@@ -24,6 +26,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // true por defecto: es el comportamiento actual (comprobante obligatorio)
   // mientras carga la configuración real, para no dejar de pedirlo por error.
   const [pedirComprobante, setPedirComprobanteState] = useState(true);
+  // true por defecto: el registro debe verse abierto mientras carga la
+  // configuración real, para no ocultar el formulario por error.
+  const [registroAbierto, setRegistroAbiertoState] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +37,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setShowShirtSizeState(res.show_shirt_size);
         setPrecioMxnState(res.precio_mxn);
         setPedirComprobanteState(res.pedir_comprobante);
+        setRegistroAbiertoState(res.registro_abierto);
       })
       .catch(() => {
         /* se queda en el valor por defecto si falla la carga inicial */
@@ -72,16 +78,22 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     await patch("pedir_comprobante", value, setPedirComprobanteState, pedirComprobante);
   }
 
+  async function setRegistroAbierto(value: boolean) {
+    await patch("registro_abierto", value, setRegistroAbiertoState, registroAbierto);
+  }
+
   return (
     <SettingsContext.Provider
       value={{
         showShirtSize,
         precioMxn,
         pedirComprobante,
+        registroAbierto,
         loading,
         setShowShirtSize,
         setPrecioMxn,
         setPedirComprobante,
+        setRegistroAbierto,
       }}
     >
       {children}

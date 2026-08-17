@@ -1,14 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
+import { ToggleSwitch } from "./ToggleSwitch";
 import "./TicketModal.css";
 
 interface TicketModalProps {
   camperId: number;
   nombre: string;
   onClose: () => void;
+  /** Estado y control del pago verificado del mismo camper, para poder
+   * verificarlo sin cerrar el modal mientras se revisa el comprobante — el
+   * caller (`AdminPanel.tsx`) sigue siendo dueño del estado/optimistic
+   * update, este componente solo refleja `verificado` y dispara `onToggle`. */
+  verificado: boolean;
+  puedeVerificar: boolean;
+  onToggleVerificado: (checked: boolean) => void;
 }
 
-export function TicketModal({ camperId, nombre, onClose }: TicketModalProps) {
+export function TicketModal({
+  camperId,
+  nombre,
+  onClose,
+  verificado,
+  puedeVerificar,
+  onToggleVerificado,
+}: TicketModalProps) {
   const [src, setSrc] = useState<string | null>(null);
   const [isPdf, setIsPdf] = useState(false);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -96,6 +111,15 @@ export function TicketModal({ camperId, nombre, onClose }: TicketModalProps) {
           {!src && <span className="spinner spinner-light" />}
           {src && isPdf && <iframe title="Comprobante PDF" src={src} className="ticket-modal-pdf" />}
           {src && !isPdf && <img src={src} alt={`Comprobante de ${nombre}`} />}
+        </div>
+
+        <div className="ticket-modal-footer">
+          <ToggleSwitch
+            checked={verificado}
+            disabled={!puedeVerificar}
+            onChange={onToggleVerificado}
+            label={verificado ? "Pagado / Verificado" : "Pendiente"}
+          />
         </div>
       </motion.div>
     </motion.div>

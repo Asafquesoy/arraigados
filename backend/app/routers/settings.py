@@ -19,4 +19,5 @@ def obtener_settings(db: Session = Depends(get_db)):
         show_shirt_size=row.show_shirt_size if row else False,
         precio_mxn=row.precio_mxn if row else 350,
         pedir_comprobante=row.pedir_comprobante if row else True,
+        registro_abierto=row.registro_abierto if row else True,
     )

@@ -16,14 +16,21 @@ import "./AdminShirtStats.css";
  */
 export function AdminShirtStats({ canEdit }: { canEdit: boolean }) {
   const [stats, setStats] = useState<TallaStatsResponse | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { showShirtSize, loading: settingsLoading, setShowShirtSize } = useSettings();
   const [toggling, setToggling] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch<TallaStatsResponse>("/admin/stats/tallas")
-      .then(setStats)
-      .catch(() => setStats(null));
+      .then((res) => {
+        setStats(res);
+        setLoadError(null);
+      })
+      .catch((err) => {
+        setStats(null);
+        setLoadError(err instanceof ApiError ? err.message : "No se pudo cargar. Revisa tu conexión o el servidor.");
+      });
   }, []);
 
   async function handleToggle(next: boolean) {
@@ -38,7 +45,20 @@ export function AdminShirtStats({ canEdit }: { canEdit: boolean }) {
     }
   }
 
-  if (!stats) return null;
+  if (!stats) {
+    if (!loadError) return null;
+    return (
+      <Reveal delay={0.1} className="admin-shirt-stats">
+        <div className="glass-card admin-shirt-stats-card">
+          <div className="admin-shirt-stats-header">
+            <ShirtIcon size={18} />
+            <h2>Camisetas</h2>
+          </div>
+          <p className="field-error">No se pudieron cargar las camisetas: {loadError}</p>
+        </div>
+      </Reveal>
+    );
+  }
 
   const totalConTalla = stats.items.reduce((acc, item) => acc + item.total, 0);
 

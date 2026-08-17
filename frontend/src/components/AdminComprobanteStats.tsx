@@ -17,14 +17,21 @@ import "./AdminComprobanteStats.css";
  */
 export function AdminComprobanteStats({ canEdit }: { canEdit: boolean }) {
   const [stats, setStats] = useState<ComprobanteStats | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { pedirComprobante, loading: settingsLoading, setPedirComprobante } = useSettings();
   const [toggling, setToggling] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch<ComprobanteStats>("/admin/stats/comprobantes")
-      .then(setStats)
-      .catch(() => setStats(null));
+      .then((res) => {
+        setStats(res);
+        setLoadError(null);
+      })
+      .catch((err) => {
+        setStats(null);
+        setLoadError(err instanceof ApiError ? err.message : "No se pudo cargar. Revisa tu conexión o el servidor.");
+      });
   }, []);
 
   async function handleToggle(next: boolean) {
@@ -39,7 +46,20 @@ export function AdminComprobanteStats({ canEdit }: { canEdit: boolean }) {
     }
   }
 
-  if (!stats) return null;
+  if (!stats) {
+    if (!loadError) return null;
+    return (
+      <Reveal delay={0.1} className="admin-comprobante-stats">
+        <div className="glass-card admin-comprobante-stats-card">
+          <div className="admin-comprobante-stats-header">
+            <ReceiptIcon size={18} />
+            <h2>Comprobante de pago</h2>
+          </div>
+          <p className="field-error">No se pudo cargar: {loadError}</p>
+        </div>
+      </Reveal>
+    );
+  }
 
   const total = stats.con_comprobante + stats.sin_comprobante;
 

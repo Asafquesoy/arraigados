@@ -3,7 +3,6 @@ import { Navigate } from "react-router-dom";
 import { ConfirmButton } from "../components/ConfirmButton";
 import { PasswordInput } from "../components/PasswordInput";
 import { Reveal } from "../components/Reveal";
-import { RootDivider } from "../components/RootDivider";
 import { Toast } from "../components/Toast";
 import { UserIcon } from "../components/icons";
 import { useAdminAuth } from "../lib/AdminAuthContext";
@@ -129,8 +128,6 @@ export function AdminUsers() {
           Administra quién puede entrar al panel y qué puede hacer cada cuenta.
         </p>
       </Reveal>
-
-      <RootDivider seed={57} />
 
       <Reveal delay={0.06}>
         <form className="glass-card admin-users-form" onSubmit={handleCreate}>

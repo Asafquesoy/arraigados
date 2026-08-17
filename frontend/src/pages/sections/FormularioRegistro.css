@@ -19,6 +19,11 @@
   margin-top: 1rem;
 }
 
+.form-closed-card {
+  text-align: center;
+  color: var(--hueso-tenue);
+}
+
 .form-actions {
   display: flex;
   flex-direction: column;

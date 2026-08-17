@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { RootGrow } from "../../components/RootGrow";
 import { useMediaQuery } from "../../lib/useMediaQuery";
+import { useSettings } from "../../lib/SettingsContext";
 import { CAMP_DATE, CAMP_NAME, ORGANIZER } from "../../config";
 import "./Hero.css";
 
@@ -11,6 +12,7 @@ export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
   const reduce = useReducedMotion();
   const isCoarse = useMediaQuery("(pointer: coarse)");
   const heroRef = useRef<HTMLElement>(null);
+  const { registroAbierto } = useSettings();
 
   // Parallax escrito directo al DOM por motion (sin pasar por setState/render de
   // React en cada scroll) y acotado al alto del propio hero, no de toda la página.
@@ -71,13 +73,14 @@ export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
           type="button"
           className="btn btn-primary hero-cta"
           onClick={onScrollToForm}
+          disabled={!registroAbierto}
           initial={reduce ? { opacity: 1 } : { opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.15, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          whileHover={reduce ? undefined : { y: -2, scale: 1.02 }}
-          whileTap={reduce ? undefined : { scale: 0.98 }}
+          whileHover={reduce || !registroAbierto ? undefined : { y: -2, scale: 1.02 }}
+          whileTap={reduce || !registroAbierto ? undefined : { scale: 0.98 }}
         >
-          Comenzar mi registro
+          {registroAbierto ? "Comenzar mi registro" : "Registro cerrado"}
         </motion.button>
       </div>
 

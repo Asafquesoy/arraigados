@@ -1,0 +1,37 @@
+.admin-resumen {
+  margin-top: 1.75rem;
+}
+
+.admin-resumen-card {
+  padding: 1.5rem;
+}
+
+.admin-resumen-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  color: var(--amarillo);
+}
+
+.admin-resumen-header h2 {
+  margin: 0;
+  font-size: var(--t-lg);
+  color: var(--hueso);
+}
+
+.admin-resumen-preview {
+  white-space: pre-wrap;
+  overflow-x: auto;
+  margin: 1rem 0;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--tarjeta-borde);
+  font-size: var(--t-sm);
+  color: var(--hueso-tenue);
+}
+
+.admin-resumen-card .btn {
+  gap: 0.5rem;
+}

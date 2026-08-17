@@ -94,6 +94,16 @@ its validation. Because this one gates a required upload rather than just an opt
 backend re-checks it server-side in `routers/public.py::crear_registro` (queries `AppSettings`
 directly — never trusts the client) before rejecting a registration with no `ticket`; `Camper.ticket_path`/`ticket_mime` are nullable to allow registrations saved with the toggle off.
 
+A fourth field, `registro_abierto` (bool, default `True`), is the master switch for whether the
+public registration form accepts new campers at all — same shape again: seeded in
+`seed_settings()`, exposed via the same GET/PATCH pair, `useSettings().registroAbierto` /
+`setRegistroAbierto()`, edited from `components/AdminRegistroToggle.tsx` ("Registro de camperos"
+panel section, first card in `AdminPanel.tsx`, same `canEdit` gating). When off,
+`pages/sections/FormularioRegistro.tsx` replaces the form with a "registro cerrado" notice (same
+`#registro-form` anchor id) and `pages/sections/Hero.tsx` disables its CTA and swaps its label.
+Like `pedir_comprobante`, this is re-checked server-side in `routers/public.py::crear_registro`
+(rejects with 403 before any field validation) — the frontend gating is UX only, not the real gate.
+
 **Use this pattern — DB-backed setting + context, not a `config.ts` constant — for any other
 value the organizing team should be able to change without a redeploy.** `config.ts` remains the
 right place only for values that genuinely need a code change to alter (copy strings, social
@@ -152,6 +162,10 @@ this shape exists to avoid.
 - `ToggleSwitch` (`components/ToggleSwitch.tsx`) is the custom animated switch used both for the
   admin payment-verified control and anywhere else a boolean toggle is needed — reuse it rather
   than a plain checkbox.
+- `components/AdminResumen.tsx` builds a plain-text summary (total registrations, shirts total +
+  breakdown by size) from `GET /admin/stats/tallas` — the same endpoint `AdminShirtStats.tsx`
+  already calls — and copies it to the clipboard via `navigator.clipboard.writeText`, for when the
+  organizing team needs to share the numbers outside the panel. No backend changes; read-only.
 - Animation uses `motion` (Framer Motion v11) — the only animation dependency in the project.
   Reusable motion primitives already exist; reach for them instead of hand-rolling new
   `AnimatePresence`/`useScroll` logic: `components/Reveal.tsx` (scroll fade-up),

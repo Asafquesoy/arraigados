@@ -87,3 +87,12 @@
   border: none;
   border-radius: var(--radio-s);
 }
+
+.ticket-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--tarjeta-borde);
+  flex-shrink: 0;
+}

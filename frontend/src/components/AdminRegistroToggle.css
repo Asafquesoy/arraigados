@@ -1,0 +1,52 @@
+.admin-registro-toggle {
+  margin-top: 1.75rem;
+}
+
+.admin-registro-toggle-card {
+  padding: 1.5rem;
+}
+
+.admin-registro-toggle-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  color: var(--amarillo);
+}
+
+.admin-registro-toggle-header h2 {
+  margin: 0;
+  font-size: var(--t-lg);
+  color: var(--hueso);
+}
+
+.admin-registro-toggle-status {
+  margin-left: auto;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radio-s);
+  border: 1px solid var(--tarjeta-borde);
+}
+
+.admin-registro-toggle-status.is-open {
+  color: var(--verde-claro);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-registro-toggle-status.is-closed {
+  color: var(--coral-error);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-registro-toggle-control {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
+  margin-top: 1rem;
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--tarjeta-borde);
+}

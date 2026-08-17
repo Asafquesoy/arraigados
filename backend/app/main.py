@@ -44,7 +44,11 @@ def seed_settings() -> None:
     db = SessionLocal()
     try:
         if not db.get(AppSettings, 1):
-            db.add(AppSettings(id=1, show_shirt_size=False, precio_mxn=350, pedir_comprobante=True))
+            db.add(
+                AppSettings(
+                    id=1, show_shirt_size=False, precio_mxn=350, pedir_comprobante=True, registro_abierto=True
+                )
+            )
             db.commit()
     except (ProgrammingError, OperationalError):
         db.rollback()

@@ -304,6 +304,7 @@ def actualizar_settings(
         show_shirt_size=row.show_shirt_size,
         precio_mxn=row.precio_mxn,
         pedir_comprobante=row.pedir_comprobante,
+        registro_abierto=row.registro_abierto,
     )
 
 

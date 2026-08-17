@@ -34,6 +34,15 @@ async def crear_registro(
     ticket: UploadFile | None = File(default=None),
     db: Session = Depends(get_db),
 ):
+    # No confiar en el cliente para decidir si el registro sigue abierto o si
+    # el comprobante es obligatorio — se consulta app_settings aquí (el
+    # toggle admin puede haber cambiado entre que el navegador cargó el
+    # formulario y este POST).
+    settings_row = db.get(AppSettings, 1)
+    registro_abierto = settings_row.registro_abierto if settings_row else True
+    if not registro_abierto:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "El registro está cerrado por ahora.")
+
     if bautizado and not (fecha_bautismo or "").strip():
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Indica la fecha de tu bautismo.")
     if tiene_promocion and not (promocion_detalle or "").strip():
@@ -41,10 +50,6 @@ async def crear_registro(
     if talla_camisa == TallaCamisa.OTRA and not (talla_otra or "").strip():
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Menciona qué talla necesitas.")
 
-    # No confiar en el cliente para decidir si el comprobante es obligatorio —
-    # se vuelve a consultar app_settings aquí (el toggle admin puede haber
-    # cambiado entre que el navegador cargó el formulario y este POST).
-    settings_row = db.get(AppSettings, 1)
     pedir_comprobante = settings_row.pedir_comprobante if settings_row else True
     if pedir_comprobante and ticket is None:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Sube tu comprobante de pago.")

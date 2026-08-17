@@ -106,7 +106,7 @@ const STEP_FIELDS: FieldKey[][] = [
 export function FormularioRegistro() {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
-  const { showShirtSize, pedirComprobante } = useSettings();
+  const { showShirtSize, pedirComprobante, registroAbierto } = useSettings();
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   // Arranca en false a propósito: si el primer campo tuviera autoFocus desde
@@ -226,6 +226,24 @@ export function FormularioRegistro() {
     center: { opacity: 1, x: 0 },
     exit: (dir: number) => (reduce ? { opacity: 0 } : { opacity: 0, x: dir * -40 }),
   };
+
+  if (!registroAbierto) {
+    return (
+      <section className="section-container form-section" id="registro-form">
+        <Reveal>
+          <p className="eyebrow">Formulario</p>
+          <h2 className="display-title form-title">Registro cerrado</h2>
+          <p className="muted">El registro no está disponible por el momento. Vuelve a intentarlo más tarde.</p>
+        </Reveal>
+
+        <Reveal delay={0.1}>
+          <div className="glass-card form-card form-closed-card">
+            <p>El equipo organizador cerró temporalmente el registro de nuevos camperos.</p>
+          </div>
+        </Reveal>
+      </section>
+    );
+  }
 
   return (
     <section className="section-container form-section" id="registro-form">

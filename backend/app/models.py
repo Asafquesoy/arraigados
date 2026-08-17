@@ -84,9 +84,9 @@ class AdminUser(Base):
 
 class AppSettings(Base):
     """Fila única (id=1) de interruptores editables desde el panel admin sin
-    tocar código ni redeploy — `show_shirt_size`, `precio_mxn` y
-    `pedir_comprobante`. sembrada en el arranque por seed_settings() en
-    main.py, igual que seed_admin()."""
+    tocar código ni redeploy — `show_shirt_size`, `precio_mxn`,
+    `pedir_comprobante` y `registro_abierto`. sembrada en el arranque por
+    seed_settings() en main.py, igual que seed_admin()."""
 
     __tablename__ = "app_settings"
 
@@ -94,3 +94,4 @@ class AppSettings(Base):
     show_shirt_size: Mapped[bool] = mapped_column(Boolean, default=False)
     precio_mxn: Mapped[int] = mapped_column(Integer, default=350)
     pedir_comprobante: Mapped[bool] = mapped_column(Boolean, default=True)
+    registro_abierto: Mapped[bool] = mapped_column(Boolean, default=True)

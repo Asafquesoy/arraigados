@@ -97,16 +97,19 @@ class AppSettingsOut(BaseModel):
     show_shirt_size: bool
     precio_mxn: int
     pedir_comprobante: bool
+    registro_abierto: bool
 
 
 class AppSettingsUpdate(BaseModel):
     """Todos los campos opcionales: el PATCH es parcial — el panel admin tiene
     controles independientes (toggle de camisetas, precio, toggle de
-    comprobante) y cada uno debe poder guardarse sin pisar los demás."""
+    comprobante, toggle de registro abierto) y cada uno debe poder guardarse
+    sin pisar los demás."""
 
     show_shirt_size: bool | None = None
     precio_mxn: int | None = Field(default=None, ge=0, le=100_000)
     pedir_comprobante: bool | None = None
+    registro_abierto: bool | None = None
 
 
 class ComprobanteStatsResponse(BaseModel):

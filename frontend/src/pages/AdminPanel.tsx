@@ -3,10 +3,11 @@ import { Navigate } from "react-router-dom";
 import { AnimatePresence } from "motion/react";
 import { AdminAjustes } from "../components/AdminAjustes";
 import { AdminComprobanteStats } from "../components/AdminComprobanteStats";
+import { AdminRegistroToggle } from "../components/AdminRegistroToggle";
+import { AdminResumen } from "../components/AdminResumen";
 import { AdminShirtStats } from "../components/AdminShirtStats";
 import { ConfirmButton } from "../components/ConfirmButton";
 import { Reveal } from "../components/Reveal";
-import { RootDivider } from "../components/RootDivider";
 import { SkeletonRow } from "../components/Skeleton";
 import { StatTile } from "../components/StatTile";
 import { TicketModal } from "../components/TicketModal";
@@ -135,13 +136,15 @@ export function AdminPanel() {
         </div>
       </Reveal>
 
+      <AdminRegistroToggle canEdit={role === "ADMIN"} />
+
       <AdminAjustes canEdit={role === "ADMIN"} />
 
       <AdminShirtStats canEdit={role === "ADMIN"} />
 
       <AdminComprobanteStats canEdit={role === "ADMIN"} />
 
-      <RootDivider seed={43} />
+      <AdminResumen />
 
       <div className="glass-card admin-filters">
         <div className="field">
@@ -361,9 +364,20 @@ export function AdminPanel() {
       )}
 
       <AnimatePresence>
-        {ticketModal && (
-          <TicketModal camperId={ticketModal.id} nombre={ticketModal.nombre} onClose={() => setTicketModal(null)} />
-        )}
+        {ticketModal &&
+          (() => {
+            const camper = data?.items.find((c) => c.id === ticketModal.id);
+            return (
+              <TicketModal
+                camperId={ticketModal.id}
+                nombre={ticketModal.nombre}
+                onClose={() => setTicketModal(null)}
+                verificado={camper?.pago_verificado ?? false}
+                puedeVerificar={puedeVerificarPago}
+                onToggleVerificado={(checked) => camper && togglePago(camper, checked)}
+              />
+            );
+          })()}
       </AnimatePresence>
 
       <Toast message={toast} />

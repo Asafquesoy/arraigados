@@ -74,6 +74,7 @@ export interface AppSettings {
   show_shirt_size: boolean;
   precio_mxn: number;
   pedir_comprobante: boolean;
+  registro_abierto: boolean;
 }
 
 export interface ComprobanteStats {
