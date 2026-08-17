@@ -38,16 +38,17 @@ def upgrade() -> None:
 
     # Backfill zona a partir de ciudad con una heurística simple — no hay mejor
     # fuente para los registros ya capturados con el formulario anterior.
+    zona_cast = "::zona_enum" if is_pg else ""
     op.execute(
-        """
-        UPDATE campers SET zona = CASE
+        f"""
+        UPDATE campers SET zona = (CASE
             WHEN LOWER(ciudad) LIKE '%tampico%' OR LOWER(ciudad) LIKE '%madero%'
                  OR LOWER(ciudad) LIKE '%altamira%' THEN 'METRO'
             WHEN LOWER(ciudad) LIKE '%victoria%' THEN 'VICTORIA'
             WHEN LOWER(ciudad) LIKE '%mante%' THEN 'MANTE'
             WHEN LOWER(ciudad) LIKE '%valles%' THEN 'VALLES'
             ELSE 'OTRO'
-        END
+        END){zona_cast}
         """
     )
 
