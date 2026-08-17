@@ -5,3 +5,5 @@ __pycache__/
 *.pyc
 .venv/
 data/
+backend/dev.db
+*.tsbuildinfo
