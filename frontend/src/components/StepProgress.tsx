@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import "./StepProgress.css";
 
 interface StepProgressProps {
@@ -7,6 +7,8 @@ interface StepProgressProps {
 }
 
 export function StepProgress({ steps, current }: StepProgressProps) {
+  const reduce = useReducedMotion();
+
   return (
     <div>
       {/* En móvil los nombres de cada paso se ocultan por espacio (ver CSS);
@@ -25,8 +27,12 @@ export function StepProgress({ steps, current }: StepProgressProps) {
                 ) : (
                   <motion.span
                     className="step-progress-dot-inner"
-                    animate={state === "active" ? { scale: [1, 1.25, 1] } : { scale: 1 }}
-                    transition={{ duration: 1.6, repeat: state === "active" ? Infinity : 0, ease: "easeInOut" }}
+                    animate={state === "active" && !reduce ? { scale: [1, 1.25, 1] } : { scale: 1 }}
+                    transition={{
+                      duration: 1.6,
+                      repeat: state === "active" && !reduce ? Infinity : 0,
+                      ease: "easeInOut",
+                    }}
                   />
                 )}
               </span>

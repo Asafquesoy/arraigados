@@ -23,7 +23,14 @@ export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
   return (
     <section className="hero" ref={heroRef}>
       <motion.div className="hero-poster" style={{ y: posterY }}>
-        <img src="/poster.jpg" alt="" aria-hidden="true" />
+        <img
+          src="/poster.jpg"
+          srcSet="/poster-800.jpg 800w, /poster-1600.jpg 1600w, /poster-2200.jpg 2200w"
+          sizes="100vw"
+          alt=""
+          aria-hidden="true"
+          fetchPriority="high"
+        />
       </motion.div>
       <div className="hero-scrim" />
 
@@ -32,8 +39,14 @@ export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
           src="/logo.png"
           alt={CAMP_NAME}
           className="hero-logo"
-          initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 0.8, filter: "blur(10px)" }}
-          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          fetchPriority="high"
+          // Antes animaba también `filter: blur(10px) -> blur(0px)`: es la
+          // única animación no-compositable del proyecto (Lighthouse la
+          // marca por nombre), y el elemento ya lleva un drop-shadow fijo en
+          // Hero.css. opacity+scale solos dan la misma sensación de entrada
+          // sin forzar un repintado por frame.
+          initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
         />
 

@@ -39,7 +39,12 @@ export function AdminLogin() {
   return (
     <div className="admin-login">
       <div className="admin-login-art" aria-hidden="true">
-        <img src="/poster.jpg" alt="" />
+        <img
+          src="/poster.jpg"
+          srcSet="/poster-800.jpg 800w, /poster-1600.jpg 1600w, /poster-2200.jpg 2200w"
+          sizes="50vw"
+          alt=""
+        />
         <div className="admin-login-art-scrim" />
         <p className="admin-login-quote">"Arraigados y edificados, firmes en la fe."</p>
       </div>

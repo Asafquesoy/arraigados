@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { useLocation } from "react-router-dom";
 import { Route, Routes } from "react-router-dom";
 import { CanopyBackground } from "./components/CanopyBackground";
@@ -6,11 +7,15 @@ import { Navbar } from "./components/Navbar";
 import { PageTransition } from "./components/PageTransition";
 import { AdminAuthProvider } from "./lib/AdminAuthContext";
 import { SettingsProvider } from "./lib/SettingsContext";
-import { AdminLogin } from "./pages/AdminLogin";
-import { AdminPanel } from "./pages/AdminPanel";
-import { AdminUsers } from "./pages/AdminUsers";
 import { Confirmacion } from "./pages/Confirmacion";
 import { Registro } from "./pages/Registro";
+
+// El área admin va en su propio chunk: nadie del público pasa por estas
+// rutas, así que no tiene sentido que su código viaje en el bundle inicial
+// que descarga cada campero solo para llenar el formulario.
+const AdminLogin = lazy(() => import("./pages/AdminLogin").then((m) => ({ default: m.AdminLogin })));
+const AdminPanel = lazy(() => import("./pages/AdminPanel").then((m) => ({ default: m.AdminPanel })));
+const AdminUsers = lazy(() => import("./pages/AdminUsers").then((m) => ({ default: m.AdminUsers })));
 
 function AppRoutes() {
   const location = useLocation();
@@ -23,13 +28,15 @@ function AppRoutes() {
         <Navbar />
         <main className="app-main">
           <PageTransition>
-            <Routes location={location}>
-              <Route path="/" element={<Registro />} />
-              <Route path="/registro-exitoso" element={<Confirmacion />} />
-              <Route path="/admin" element={<AdminLogin />} />
-              <Route path="/admin/panel" element={<AdminPanel />} />
-              <Route path="/admin/usuarios" element={<AdminUsers />} />
-            </Routes>
+            <Suspense fallback={null}>
+              <Routes location={location}>
+                <Route path="/" element={<Registro />} />
+                <Route path="/registro-exitoso" element={<Confirmacion />} />
+                <Route path="/admin" element={<AdminLogin />} />
+                <Route path="/admin/panel" element={<AdminPanel />} />
+                <Route path="/admin/usuarios" element={<AdminUsers />} />
+              </Routes>
+            </Suspense>
           </PageTransition>
         </main>
         <Footer />

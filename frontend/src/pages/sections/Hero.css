@@ -13,7 +13,16 @@
   position: absolute;
   inset: -8% -8%;
   z-index: -2;
-  will-change: transform;
+}
+
+/* `will-change` promueve la capa a la GPU durante toda la sesión — solo
+   vale la pena en el parallax de escritorio; en pantallas táctiles
+   (`Hero.tsx` ya desactiva el parallax ahí vía `isCoarse`) es una imagen a
+   pantalla completa +16% pagando por una capa que no se mueve. */
+@media (pointer: fine) {
+  .hero-poster {
+    will-change: transform;
+  }
 }
 
 .hero-poster img {

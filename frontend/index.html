@@ -18,12 +18,25 @@
     />
     <meta property="og:image" content="/poster.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="preload" as="image" href="/poster.jpg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;600&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      as="image"
+      href="/poster.jpg"
+      imagesrcset="/poster-800.jpg 800w, /poster-1600.jpg 1600w, /poster-2200.jpg 2200w"
+      imagesizes="100vw"
+      fetchpriority="high"
+    />
+    <!-- Fuentes auto-hospedadas (ver src/styles/fonts.css) — ya no hay
+         origen externo al que preconectar. Solo se precargan las dos que
+         aparecen arriba del pliegue en el Hero (título + texto); IBM Plex
+         Mono no se usa ahí, así que carga por demanda cuando hace falta. -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/bagel-fat-one-latin-400.woff2" crossorigin />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/bricolage-grotesque-latin-variable.woff2"
+      crossorigin
     />
   </head>
   <body>

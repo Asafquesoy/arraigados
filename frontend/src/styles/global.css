@@ -110,6 +110,20 @@ button {
   box-shadow: var(--sombra-suave);
 }
 
+/* `.glass-card` se repite ~46 veces en el sitio (Pago, Detalles, formulario,
+   panel admin...) — en escritorio unas pocas están a la vista a la vez, pero
+   en móvil la página completa puede tener 10+ apiladas verticalmente, todas
+   compositando su propio blur. `backdrop-filter` es de lo más caro para una
+   GPU de gama media, así que en pantallas chicas se apaga y se compensa con
+   un fondo más opaco (--tarjeta-fondo-alta, ya existente en tokens.css) en
+   vez del blur — visualmente muy cercano, sin el costo por frame. */
+@media (max-width: 640px) {
+  .glass-card {
+    background: var(--tarjeta-fondo-alta);
+    backdrop-filter: none;
+  }
+}
+
 .btn {
   display: inline-flex;
   align-items: center;

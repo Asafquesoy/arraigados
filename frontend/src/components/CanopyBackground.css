@@ -50,17 +50,30 @@
   animation-duration: 14s;
 }
 
-/* Los rayos son la capa más cara del fondo (blur grande + animación en bucle).
-   En móvil se recortan: menos blur y más lento en vez de apagarlos del todo,
-   para conservar algo de atmósfera sin castigar la GPU. */
+/* Los rayos son la capa más cara del fondo (blur grande + animación en bucle,
+   siempre activa en TODAS las rutas porque `CanopyBackground` vive fuera de
+   `<Routes>`). En móvil se recortan: menos blur y más lento en vez de
+   apagarlos del todo, para conservar algo de atmósfera sin castigar la GPU. */
 @media (max-width: 640px) {
   .canopy-rayo {
     width: 90vw;
     filter: blur(14px);
     animation-duration: 16s;
   }
+
+  /* Con un solo rayo se conserva la luz "rompiendo" desde un lado — la
+     segunda capa (más chica y ya con menos opacidad) es la que menos se
+     nota que falta y la que más capas de composición ahorra. */
   .canopy-rayo--b {
-    width: 70vw;
+    display: none;
+  }
+
+  /* El grano usa `mix-blend-mode: overlay` a pantalla completa — un blend
+     mode fuerza a re-componer toda la capa de fondo contra lo que hay
+     debajo en cada frame en el que algo encima se mueve (los rayos, las
+     hojas). En móvil no vale ese costo por un grano al 3.5% de opacidad. */
+  .canopy-grano {
+    display: none;
   }
 }
 
