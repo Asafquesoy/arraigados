@@ -144,21 +144,28 @@ _EXPORT_HEADERS = [
 ]
 
 
+def _sanitizar_celda(valor: str) -> str:
+    # evita que Excel/LibreOffice interprete valores de registrantes como fórmulas (CWE-1236)
+    if valor and valor[0] in ("=", "+", "-", "@"):
+        return "'" + valor
+    return valor
+
+
 def _export_row(c: Camper) -> list:
     return [
         c.folio,
-        c.nombre,
+        _sanitizar_celda(c.nombre),
         c.zona.value if c.zona else "",
-        c.iglesia,
+        _sanitizar_celda(c.iglesia),
         c.edad,
         c.sexo.value,
         c.talla_camisa.value if c.talla_camisa else "",
-        c.talla_otra or "",
+        _sanitizar_celda(c.talla_otra or ""),
         c.fecha_pago.strftime("%Y-%m-%d") if c.fecha_pago else "",
         "Sí" if c.tiene_promocion else "No",
-        c.promocion_detalle or "",
+        _sanitizar_celda(c.promocion_detalle or ""),
         "Sí" if c.bautizado else "No",
-        c.fecha_bautismo or "",
+        _sanitizar_celda(c.fecha_bautismo or ""),
         "Sí" if c.ticket_path else "No",
         "Sí" if c.pago_verificado else "No",
         c.verificado_por or "",
