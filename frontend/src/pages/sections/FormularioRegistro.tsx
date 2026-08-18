@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { BautismoFechaField, MES_LABEL } from "../../components/BautismoFechaField";
 import { FileDrop } from "../../components/FileDrop";
 import { Reveal } from "../../components/Reveal";
 import { ShirtSizeField } from "../../components/ShirtSizeField";
@@ -18,7 +19,8 @@ interface FormState {
   edad: string;
   sexo: Sexo | "";
   bautizado: boolean | "";
-  fecha_bautismo: string;
+  bautismo_mes: number | "";
+  bautismo_anio: number | "";
   iglesia: string;
   zona: Zona | "";
   talla_camisa: TallaCamisa | "";
@@ -36,7 +38,8 @@ const INITIAL_STATE: FormState = {
   edad: "",
   sexo: "",
   bautizado: "",
-  fecha_bautismo: "",
+  bautismo_mes: "",
+  bautismo_anio: "",
   iglesia: "",
   zona: "",
   talla_camisa: "",
@@ -76,10 +79,21 @@ function fieldError(
       return !form.sexo ? "Selecciona una opción." : null;
     case "bautizado":
       return form.bautizado === "" ? "Selecciona una opción." : null;
-    case "fecha_bautismo":
-      return form.bautizado === true && form.fecha_bautismo.trim().length < 1
-        ? "Indica la fecha de tu bautismo."
-        : null;
+    case "bautismo_mes":
+      return form.bautizado === true && form.bautismo_mes === "" ? "Indica el mes de tu bautismo." : null;
+    case "bautismo_anio": {
+      if (form.bautizado !== true) return null;
+      if (form.bautismo_anio === "") return "Indica el año de tu bautismo.";
+      const hoy = new Date();
+      if (
+        form.bautismo_mes !== "" &&
+        (form.bautismo_anio > hoy.getFullYear() ||
+          (form.bautismo_anio === hoy.getFullYear() && form.bautismo_mes > hoy.getMonth() + 1))
+      ) {
+        return "La fecha de tu bautismo no puede ser futura.";
+      }
+      return null;
+    }
     case "iglesia":
       return form.iglesia.trim().length < 2 ? "Indica la iglesia de procedencia." : null;
     case "zona":
@@ -111,7 +125,7 @@ function fieldError(
 }
 
 const STEP_FIELDS: FieldKey[][] = [
-  ["nombre", "edad", "sexo", "bautizado", "fecha_bautismo"],
+  ["nombre", "edad", "sexo", "bautizado", "bautismo_mes", "bautismo_anio"],
   ["iglesia", "zona", "talla_camisa", "talla_otra"],
   ["fecha_pago", "tiene_promocion", "promocion_tipo", "promocion_otra", "ticket"],
 ];
@@ -192,8 +206,9 @@ export function FormularioRegistro() {
       body.append("edad", form.edad);
       body.append("sexo", form.sexo);
       body.append("bautizado", String(form.bautizado === true));
-      if (form.bautizado && form.fecha_bautismo.trim()) {
-        body.append("fecha_bautismo", form.fecha_bautismo.trim());
+      if (form.bautizado && form.bautismo_mes !== "" && form.bautismo_anio !== "") {
+        body.append("bautismo_mes", String(form.bautismo_mes));
+        body.append("bautismo_anio", String(form.bautismo_anio));
       }
       body.append("iglesia", form.iglesia.trim());
       body.append("zona", form.zona);
@@ -343,27 +358,30 @@ export function FormularioRegistro() {
                     label="¿Estás bautizado?"
                     icon={DropIcon}
                     value={form.bautizado}
-                    onChange={(v) => setForm({ ...form, bautizado: v, fecha_bautismo: v ? form.fecha_bautismo : "" })}
+                    onChange={(v) =>
+                      setForm({
+                        ...form,
+                        bautizado: v,
+                        bautismo_mes: v ? form.bautismo_mes : "",
+                        bautismo_anio: v ? form.bautismo_anio : "",
+                      })
+                    }
                     onBlur={() => validateField("bautizado")}
                     error={errors.bautizado}
                   />
 
                   {form.bautizado === true && (
-                    <div className={`field span-2 ${errors.fecha_bautismo ? "has-error" : ""}`}>
-                      <label htmlFor="fecha_bautismo">Fecha de tu bautismo</label>
-                      <input
-                        id="fecha_bautismo"
-                        type="text"
-                        value={form.fecha_bautismo}
-                        onChange={(e) => setForm({ ...form, fecha_bautismo: e.target.value })}
-                        onBlur={() => validateField("fecha_bautismo")}
-                        placeholder="Ej. 10/03/2015, Hace 7 meses, Hace 2 años"
-                      />
-                      <span className="field-hint">
-                        Te dejamos algunos ejemplos de cómo puedes responder: 10/03/2015 · Hace 7 meses · Hace 2 años
-                      </span>
-                      {errors.fecha_bautismo && <span className="field-error">{errors.fecha_bautismo}</span>}
-                    </div>
+                    <BautismoFechaField
+                      mes={form.bautismo_mes}
+                      anio={form.bautismo_anio}
+                      onChange={(mes, anio) => setForm({ ...form, bautismo_mes: mes, bautismo_anio: anio })}
+                      onBlur={() => {
+                        validateField("bautismo_mes");
+                        validateField("bautismo_anio");
+                      }}
+                      errorMes={errors.bautismo_mes}
+                      errorAnio={errors.bautismo_anio}
+                    />
                   )}
                 </div>
               )}
@@ -502,7 +520,15 @@ export function FormularioRegistro() {
                       </div>
                       <div>
                         <dt>Bautizado</dt>
-                        <dd>{form.bautizado === "" ? "—" : form.bautizado ? "Sí" : "No"}</dd>
+                        <dd>
+                          {form.bautizado === ""
+                            ? "—"
+                            : form.bautizado
+                              ? form.bautismo_mes && form.bautismo_anio
+                                ? `Sí (${MES_LABEL[form.bautismo_mes]} ${form.bautismo_anio})`
+                                : "Sí"
+                              : "No"}
+                        </dd>
                       </div>
                       <div>
                         <dt>Iglesia</dt>

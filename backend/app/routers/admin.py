@@ -123,6 +123,11 @@ def ver_ticket(camper_id: int, db: Session = Depends(get_db)):
     return FileResponse(path, media_type=camper.ticket_mime)
 
 
+_MESES = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+]
+
 _EXPORT_HEADERS = [
     "Folio",
     "Nombre",
@@ -165,7 +170,7 @@ def _export_row(c: Camper) -> list:
         "Sí" if c.tiene_promocion else "No",
         _sanitizar_celda(c.promocion_detalle or ""),
         "Sí" if c.bautizado else "No",
-        _sanitizar_celda(c.fecha_bautismo or ""),
+        f"{_MESES[c.bautismo_mes - 1]} {c.bautismo_anio}" if c.bautismo_mes and c.bautismo_anio else "",
         "Sí" if c.ticket_path else "No",
         "Sí" if c.pago_verificado else "No",
         c.verificado_por or "",

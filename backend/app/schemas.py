@@ -25,7 +25,8 @@ class CamperOut(BaseModel):
     tiene_promocion: bool | None
     promocion_detalle: str | None
     bautizado: bool | None
-    fecha_bautismo: str | None
+    bautismo_mes: int | None
+    bautismo_anio: int | None
     talla_camisa: TallaCamisa | None
     talla_otra: str | None
     ticket_path: str | None = Field(exclude=True)

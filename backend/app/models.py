@@ -59,7 +59,8 @@ class Camper(Base):
     tiene_promocion: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     promocion_detalle: Mapped[str | None] = mapped_column(String(200), nullable=True)
     bautizado: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
-    fecha_bautismo: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    bautismo_mes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    bautismo_anio: Mapped[int | None] = mapped_column(Integer, nullable=True)
     talla_camisa: Mapped[TallaCamisa | None] = mapped_column(
         Enum(TallaCamisa, name="talla_camisa_enum"), nullable=True
     )

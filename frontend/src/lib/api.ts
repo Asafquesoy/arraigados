@@ -53,7 +53,8 @@ export interface CamperOut {
   tiene_promocion: boolean | null;
   promocion_detalle: string | null;
   bautizado: boolean | null;
-  fecha_bautismo: string | null;
+  bautismo_mes: number | null;
+  bautismo_anio: number | null;
   talla_camisa: TallaCamisa | null;
   talla_otra: string | null;
   tiene_comprobante: boolean;

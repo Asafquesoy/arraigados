@@ -25,7 +25,8 @@ async def crear_registro(
     sexo: Sexo = Form(...),
     zona: Zona = Form(...),
     bautizado: bool = Form(...),
-    fecha_bautismo: str | None = Form(default=None, max_length=100),
+    bautismo_mes: int | None = Form(default=None, ge=1, le=12),
+    bautismo_anio: int | None = Form(default=None, ge=1960),
     fecha_pago: date = Form(...),
     tiene_promocion: bool = Form(...),
     promocion_detalle: str | None = Form(default=None, max_length=200),
@@ -43,8 +44,12 @@ async def crear_registro(
     if not registro_abierto:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "El registro está cerrado por ahora.")
 
-    if bautizado and not (fecha_bautismo or "").strip():
+    if bautizado and (bautismo_mes is None or bautismo_anio is None):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Indica la fecha de tu bautismo.")
+    if bautizado and bautismo_mes is not None and bautismo_anio is not None:
+        hoy = date.today()
+        if (bautismo_anio, bautismo_mes) > (hoy.year, hoy.month):
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "La fecha de tu bautismo no puede ser futura.")
     if tiene_promocion and not (promocion_detalle or "").strip():
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Menciona qué promoción obtuviste.")
     if talla_camisa == TallaCamisa.OTRA and not (talla_otra or "").strip():
@@ -63,7 +68,8 @@ async def crear_registro(
         sexo=sexo,
         zona=zona,
         bautizado=bautizado,
-        fecha_bautismo=fecha_bautismo.strip() if bautizado and fecha_bautismo else None,
+        bautismo_mes=bautismo_mes if bautizado else None,
+        bautismo_anio=bautismo_anio if bautizado else None,
         fecha_pago=fecha_pago,
         tiene_promocion=tiene_promocion,
         promocion_detalle=promocion_detalle.strip() if tiene_promocion and promocion_detalle else None,
