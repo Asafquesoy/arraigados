@@ -167,6 +167,16 @@ this shape exists to avoid.
   already calls — and copies it to the clipboard via `navigator.clipboard.writeText`, for when the
   organizing team needs to share the numbers outside the panel. No backend changes; read-only.
 - Animation uses `motion` (Framer Motion v11) — the only animation dependency in the project.
+  Loaded via `LazyMotion` (`App.tsx`, `features={domAnimation}`, `strict`) instead of the full
+  `motion` import — this is what lets the animation engine be tree-shaken out of the initial
+  bundle. **Consequence: every component uses `m.div`/`m.img`/etc. (imported as `{ m }` from
+  `"motion/react"`), never `motion.div`** — `strict` on the provider throws at runtime if a raw
+  `motion.*` component renders, specifically to catch this. `domAnimation` covers everything the
+  project actually uses (animate/exit/variants/whileHover/whileTap/whileInView) but not
+  drag/layout animations (`domMax`) — if a future feature needs those, swap the features import,
+  don't reach for `domMax` by default. `AnimatePresence`, `useReducedMotion`, `useScroll`,
+  `useTransform` etc. stay named imports from `"motion/react"` as before — only the `motion.*`
+  component namespace is affected by lazy-loading.
   Reusable motion primitives already exist; reach for them instead of hand-rolling new
   `AnimatePresence`/`useScroll` logic: `components/Reveal.tsx` (scroll fade-up),
   `components/root/generateRoots.ts` + `components/root/AnimatedRoots.tsx` (shared root-drawing
@@ -232,6 +242,19 @@ inside this direction rather than introducing an unrelated palette or mood.
   background gradient); neutrals `--hueso`/`--hueso-tenue`/`--hueso-apagado` (body text on dark);
   `--coral-error` for validation/error states. `--gradiente-raiz` (yellow→amber→orange) is the
   primary-button fill; `--gradiente-dosel` is the base page background.
+- **Images:** `poster.jpg`/`poster-{800,1600,2200}.jpg` and `logo.png` each have a WebP sibling
+  (`.webp`, same base name, generated with `sharp-cli`) — every place that renders one wraps it in
+  `<picture><source type="image/webp" srcSet="..."/><img src="....jpg|png" .../></picture>`
+  (`Hero.tsx`, `AdminLogin.tsx`, `Navbar.tsx`) so browsers without WebP support still get the
+  original file; regenerate the `.webp` if the source image ever changes (`npx sharp-cli -i
+  poster-800.jpg -o poster-800.webp -f webp -q 62 --effort 6 --smartSubsample` for photos, `-q
+  lossless` for the flat-color logo). `index.html`'s hero-poster `<link rel=preload>` and the
+  favicon `<link rel=icon>` both point at the `.webp` variant directly (no fallback needed there —
+  `type="image/webp"` makes unsupporting browsers skip the preload harmlessly, and virtually every
+  browser still receiving updates supports WebP) — **keep the favicon on the same file the
+  Navbar/Hero `<picture>` already loads** (currently `logo.webp`); pointing it at a different file
+  than the visible logo defeats the cache reuse and doubles the bytes downloaded for what's
+  visually the same image.
 - **Type — three fonts, loaded via Google Fonts `<link>` in `index.html`, never add a fourth
   without updating this doc:**
   - `--fuente-display`: **Bagel Fat One** — hero title, page titles (`.display-title`). Chosen to

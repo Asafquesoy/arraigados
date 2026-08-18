@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import "./ConfirmButton.css";
 
 interface ConfirmButtonProps {
@@ -44,7 +44,7 @@ export function ConfirmButton({
   }
 
   return (
-    <motion.button
+    <m.button
       type="button"
       className={`btn btn-ghost confirm-btn ${armed ? "is-armed" : ""} ${className ?? ""}`}
       onClick={handleClick}
@@ -53,6 +53,6 @@ export function ConfirmButton({
       transition={{ duration: 0.25 }}
     >
       {armed ? confirmLabel : label}
-    </motion.button>
+    </m.button>
   );
 }

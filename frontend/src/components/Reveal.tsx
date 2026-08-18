@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 
 interface RevealProps {
   children: ReactNode;
@@ -15,7 +15,7 @@ interface RevealProps {
  */
 export function Reveal({ children, delay = 0, className, y = 24, as = "div" }: RevealProps) {
   const reduce = useReducedMotion();
-  const Component = motion[as];
+  const Component = m[as];
 
   return (
     <Component

@@ -1,5 +1,5 @@
 import { useRef, useState, type DragEvent } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { m, AnimatePresence, useReducedMotion } from "motion/react";
 import { ReceiptIcon, UploadIcon } from "./icons";
 import "./FileDrop.css";
 
@@ -82,7 +82,7 @@ export function FileDrop({ file, onChange, error }: FileDropProps) {
         />
         <AnimatePresence mode="wait">
           {preview ? (
-            <motion.div
+            <m.div
               key="preview"
               className="file-drop-preview-wrap"
               initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 0.96 }}
@@ -91,22 +91,22 @@ export function FileDrop({ file, onChange, error }: FileDropProps) {
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             >
               <img src={preview} alt="Vista previa del comprobante" className="file-drop-preview" />
-            </motion.div>
+            </m.div>
           ) : file ? (
-            <motion.p
+            <m.p
               key="filename"
               initial={reduce ? { opacity: 1 } : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               className="file-drop-filename"
             >
               📄 {file.name}
-            </motion.p>
+            </m.p>
           ) : (
-            <motion.div key="empty" initial={false}>
+            <m.div key="empty" initial={false}>
               <UploadIcon size={26} />
               <p>Arrastra tu comprobante aquí o haz clic para elegirlo</p>
               <span className="muted">JPG, PNG, WEBP o PDF · máx. 8MB</span>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
         {file && (

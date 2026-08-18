@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { motion, useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import { LockIcon } from "../components/icons";
 import { PasswordInput } from "../components/PasswordInput";
 import { CAMP_NAME } from "../config";
@@ -39,18 +39,25 @@ export function AdminLogin() {
   return (
     <div className="admin-login">
       <div className="admin-login-art" aria-hidden="true">
-        <img
-          src="/poster.jpg"
-          srcSet="/poster-800.jpg 800w, /poster-1600.jpg 1600w, /poster-2200.jpg 2200w"
-          sizes="50vw"
-          alt=""
-        />
+        <picture>
+          <source
+            type="image/webp"
+            srcSet="/poster-800.webp 800w, /poster-1600.webp 1600w, /poster-2200.webp 2200w"
+            sizes="50vw"
+          />
+          <img
+            src="/poster.jpg"
+            srcSet="/poster-800.jpg 800w, /poster-1600.jpg 1600w, /poster-2200.jpg 2200w"
+            sizes="50vw"
+            alt=""
+          />
+        </picture>
         <div className="admin-login-art-scrim" />
         <p className="admin-login-quote">"Arraigados y edificados, firmes en la fe."</p>
       </div>
 
       <div className="admin-login-panel">
-        <motion.form
+        <m.form
           className="glass-card admin-login-card"
           onSubmit={handleSubmit}
           animate={shake ? { x: reduce ? 0 : [0, -10, 8, -6, 4, 0] } : {}}
@@ -96,7 +103,7 @@ export function AdminLogin() {
             {submitting && <span className="spinner" />}
             {submitting ? "Ingresando..." : "Ingresar"}
           </button>
-        </motion.form>
+        </m.form>
       </div>
     </div>
   );

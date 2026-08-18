@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import "./StepProgress.css";
 
 interface StepProgressProps {
@@ -25,7 +25,7 @@ export function StepProgress({ steps, current }: StepProgressProps) {
                 {state === "done" ? (
                   "✓"
                 ) : (
-                  <motion.span
+                  <m.span
                     className="step-progress-dot-inner"
                     animate={state === "active" && !reduce ? { scale: [1, 1.25, 1] } : { scale: 1 }}
                     transition={{
@@ -39,7 +39,7 @@ export function StepProgress({ steps, current }: StepProgressProps) {
               <span className="step-progress-label">{label}</span>
               {i < steps.length - 1 && (
                 <span className="step-progress-line">
-                  <motion.span
+                  <m.span
                     className="step-progress-line-fill"
                     initial={false}
                     animate={{ scaleX: i < current ? 1 : 0 }}

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 
 interface FieldRevealProps {
   children: ReactNode;
@@ -31,7 +31,7 @@ export function FieldReveal({ children, className }: FieldRevealProps) {
 
   if (reduce) {
     return (
-      <motion.div
+      <m.div
         className={className}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -39,7 +39,7 @@ export function FieldReveal({ children, className }: FieldRevealProps) {
         transition={{ duration: 0.15 }}
       >
         {children}
-      </motion.div>
+      </m.div>
     );
   }
 
@@ -47,7 +47,7 @@ export function FieldReveal({ children, className }: FieldRevealProps) {
   const collapsed = { opacity: 0, height: 0, y: -6, marginBottom: -GAP_PX };
 
   return (
-    <motion.div
+    <m.div
       className={className}
       style={{ overflow: animating ? "hidden" : "visible" }}
       initial={collapsed}
@@ -61,6 +61,6 @@ export function FieldReveal({ children, className }: FieldRevealProps) {
       onAnimationComplete={() => setAnimating(false)}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

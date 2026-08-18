@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { useLocation } from "react-router-dom";
 import { Route, Routes } from "react-router-dom";
+import { LazyMotion, domAnimation } from "motion/react";
 import { CanopyBackground } from "./components/CanopyBackground";
 import { Footer } from "./components/Footer";
 import { Navbar } from "./components/Navbar";
@@ -47,10 +48,18 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AdminAuthProvider>
-      <SettingsProvider>
-        <AppRoutes />
-      </SettingsProvider>
-    </AdminAuthProvider>
+    // domAnimation cubre animate/exit/whileHover/whileTap/whileInView — todo
+    // lo que usa este proyecto — sin el código de drag/layout de domMax, que
+    // no se usa en ningún lado. Junto con `m.*` (en vez de `motion.*`) en
+    // cada componente, esto es lo que permite el tree-shaking real de
+    // `motion`; usar `motion.*` en cualquier parte reintroduce el bundle
+    // completo pese a este wrapper.
+    <LazyMotion features={domAnimation} strict>
+      <AdminAuthProvider>
+        <SettingsProvider>
+          <AppRoutes />
+        </SettingsProvider>
+      </AdminAuthProvider>
+    </LazyMotion>
   );
 }

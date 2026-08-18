@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import { ToggleSwitch } from "./ToggleSwitch";
 import "./TicketModal.css";
 
@@ -80,7 +80,7 @@ export function TicketModal({
   }, [onClose]);
 
   return (
-    <motion.div
+    <m.div
       className="ticket-modal-backdrop"
       onClick={onClose}
       initial={{ opacity: 0 }}
@@ -89,7 +89,7 @@ export function TicketModal({
       transition={{ duration: 0.2 }}
       role="presentation"
     >
-      <motion.div
+      <m.div
         className="ticket-modal"
         onClick={(e) => e.stopPropagation()}
         ref={modalRef}
@@ -121,7 +121,7 @@ export function TicketModal({
             label={verificado ? "Pagado / Verificado" : "Pendiente"}
           />
         </div>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }

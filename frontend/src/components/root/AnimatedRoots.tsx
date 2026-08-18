@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import type { RootSegment } from "./generateRoots";
 
 interface AnimatedRootsProps {
@@ -41,7 +41,7 @@ export function AnimatedRoots({ segments, viewBox, className, delay = 0 }: Anima
   const reduce = useReducedMotion();
 
   return (
-    <motion.svg
+    <m.svg
       className={className}
       viewBox={viewBox}
       fill="none"
@@ -59,7 +59,7 @@ export function AnimatedRoots({ segments, viewBox, className, delay = 0 }: Anima
         </linearGradient>
       </defs>
       {segments.map((seg, i) => (
-        <motion.path
+        <m.path
           key={seg.d}
           d={seg.d}
           stroke={`url(#${gradientId})`}
@@ -71,6 +71,6 @@ export function AnimatedRoots({ segments, viewBox, className, delay = 0 }: Anima
           custom={reduce ? undefined : { opacity: seg.opacity, duration: seg.duration, pathDelay: delay + i * 0.011 }}
         />
       ))}
-    </motion.svg>
+    </m.svg>
   );
 }

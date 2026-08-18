@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 
 /**
  * Envuelve <Routes> y anima la transición entre páginas, siempre en la
@@ -21,7 +21,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
 
   return (
     <AnimatePresence mode="wait">
-      <motion.div
+      <m.div
         key={location.pathname}
         className="page-motion"
         initial={reduce ? { opacity: 1 } : { opacity: 0, y: 14 }}
@@ -30,7 +30,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
         transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
       >
         {children}
-      </motion.div>
+      </m.div>
     </AnimatePresence>
   );
 }

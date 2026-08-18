@@ -1,11 +1,11 @@
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import "./Toast.css";
 
 export function Toast({ message }: { message: string | null }) {
   return (
     <AnimatePresence>
       {message && (
-        <motion.div
+        <m.div
           className="toast"
           role="alert"
           initial={{ opacity: 0, y: 16 }}
@@ -13,7 +13,7 @@ export function Toast({ message }: { message: string | null }) {
           exit={{ opacity: 0, y: 16 }}
         >
           {message}
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { m, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { RootGrow } from "../../components/RootGrow";
 import { useMediaQuery } from "../../lib/useMediaQuery";
 import { useSettings } from "../../lib/SettingsContext";
@@ -22,50 +22,60 @@ export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
 
   return (
     <section className="hero" ref={heroRef}>
-      <motion.div className="hero-poster" style={{ y: posterY }}>
-        <img
-          src="/poster.jpg"
-          srcSet="/poster-800.jpg 800w, /poster-1600.jpg 1600w, /poster-2200.jpg 2200w"
-          sizes="100vw"
-          alt=""
-          aria-hidden="true"
-          // React 18's typings/runtime only know the camelCase `fetchPriority`
-          // prop, which it silently drops instead of forwarding to the DOM
-          // (support for actually setting the attribute lands in React 19) —
-          // spreading the real lowercase HTML attribute name bypasses that.
-          {...({ fetchpriority: "high" } as Record<string, string>)}
-        />
-      </motion.div>
+      <m.div className="hero-poster" style={{ y: posterY }}>
+        <picture>
+          <source
+            type="image/webp"
+            srcSet="/poster-800.webp 800w, /poster-1600.webp 1600w, /poster-2200.webp 2200w"
+            sizes="100vw"
+          />
+          <img
+            src="/poster.jpg"
+            srcSet="/poster-800.jpg 800w, /poster-1600.jpg 1600w, /poster-2200.jpg 2200w"
+            sizes="100vw"
+            alt=""
+            aria-hidden="true"
+            // React 18's typings/runtime only know the camelCase `fetchPriority`
+            // prop, which it silently drops instead of forwarding to the DOM
+            // (support for actually setting the attribute lands in React 19) —
+            // spreading the real lowercase HTML attribute name bypasses that.
+            {...({ fetchpriority: "high" } as Record<string, string>)}
+          />
+        </picture>
+      </m.div>
       <div className="hero-scrim" />
 
       <div className="hero-content">
-        <motion.img
-          src="/logo.png"
-          alt={CAMP_NAME}
-          className="hero-logo"
-          {...({ fetchpriority: "high" } as Record<string, string>)}
-          // Antes animaba también `filter: blur(10px) -> blur(0px)`: es la
-          // única animación no-compositable del proyecto (Lighthouse la
-          // marca por nombre), y el elemento ya lleva un drop-shadow fijo en
-          // Hero.css. opacity+scale solos dan la misma sensación de entrada
-          // sin forzar un repintado por frame.
-          initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-        />
+        <picture>
+          <source type="image/webp" srcSet="/logo.webp" />
+          <m.img
+            src="/logo.png"
+            alt={CAMP_NAME}
+            className="hero-logo"
+            {...({ fetchpriority: "high" } as Record<string, string>)}
+            // Antes animaba también `filter: blur(10px) -> blur(0px)`: es la
+            // única animación no-compositable del proyecto (Lighthouse la
+            // marca por nombre), y el elemento ya lleva un drop-shadow fijo en
+            // Hero.css. opacity+scale solos dan la misma sensación de entrada
+            // sin forzar un repintado por frame.
+            initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          />
+        </picture>
 
-        <motion.p
+        <m.p
           className="badge hero-badge"
           initial={reduce ? { opacity: 1 } : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35, duration: 0.5 }}
         >
           {CAMP_DATE} · {ORGANIZER}
-        </motion.p>
+        </m.p>
 
         <h1 className="hero-title display-title">
           {TITLE_WORDS.map((word, i) => (
-            <motion.span
+            <m.span
               key={word}
               className="hero-title-word"
               initial={reduce ? { opacity: 1 } : { opacity: 0, y: "0.6em" }}
@@ -73,20 +83,20 @@ export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
               transition={{ delay: 0.5 + i * 0.12, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             >
               {word}&nbsp;
-            </motion.span>
+            </m.span>
           ))}
         </h1>
 
-        <motion.div
+        <m.div
           className="hero-root"
           initial={reduce ? { opacity: 1 } : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.9 }}
         >
           <RootGrow delay={0.9} />
-        </motion.div>
+        </m.div>
 
-        <motion.button
+        <m.button
           type="button"
           className="btn btn-primary hero-cta"
           onClick={onScrollToForm}
@@ -98,10 +108,10 @@ export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
           whileTap={reduce || !registroAbierto ? undefined : { scale: 0.98 }}
         >
           {registroAbierto ? "Comenzar mi registro" : "Registro cerrado"}
-        </motion.button>
+        </m.button>
       </div>
 
-      <motion.div
+      <m.div
         className="hero-scroll-hint"
         initial={reduce ? { opacity: 0.6 } : { opacity: 0 }}
         animate={reduce ? { opacity: 0.6 } : { opacity: 0.6, y: [0, 8, 0] }}
@@ -109,7 +119,7 @@ export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
         aria-hidden="true"
       >
         ↓
-      </motion.div>
+      </m.div>
     </section>
   );
 }

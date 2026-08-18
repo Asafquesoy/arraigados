@@ -24,7 +24,10 @@ export function Navbar() {
     <header className={`navbar ${scrolled ? "is-scrolled" : ""}`}>
       <div className="navbar-inner">
         <Link to="/" className="navbar-brand">
-          <img src="/logo.png" alt={CAMP_NAME} className="navbar-logo" />
+          <picture>
+            <source type="image/webp" srcSet="/logo.webp" />
+            <img src="/logo.png" alt={CAMP_NAME} className="navbar-logo" />
+          </picture>
         </Link>
 
         <nav className="navbar-links">

@@ -1,5 +1,5 @@
 import { Link, Navigate, useLocation } from "react-router-dom";
-import { motion, useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import { RootGrow } from "../components/RootGrow";
 import { FacebookIcon, InstagramIcon, ShieldCheckIcon } from "../components/icons";
 import { SOCIAL_LINKS } from "../config";
@@ -22,7 +22,7 @@ export function Confirmacion() {
     <div className="page-container confirmacion">
       <div className="confirmacion-leaves" aria-hidden="true">
         {Array.from({ length: 14 }).map((_, i) => (
-          <motion.span
+          <m.span
             key={i}
             className="confirmacion-leaf"
             style={{ left: `${(i * 7.3) % 100}%` }}
@@ -38,20 +38,20 @@ export function Confirmacion() {
         ))}
       </div>
 
-      <motion.div
+      <m.div
         className="glass-card confirmacion-card"
         initial={reduce ? { opacity: 1 } : { opacity: 0, y: 24, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       >
-        <motion.div
+        <m.div
           className="confirmacion-badge"
           initial={reduce ? { scale: 1 } : { scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
         >
           <ShieldCheckIcon size={36} />
-        </motion.div>
+        </m.div>
 
         <h1 className="display-title confirmacion-title">¡Registro exitoso!</h1>
         <p className="muted">Gracias, {state.nombre}. Tu registro para Arraigados 2026 fue exitoso.</p>
@@ -73,7 +73,7 @@ export function Confirmacion() {
         <Link to="/" className="muted confirmacion-back">
           ← Volver al inicio
         </Link>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

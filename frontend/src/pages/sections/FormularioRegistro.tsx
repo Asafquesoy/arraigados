@@ -1,6 +1,6 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { BautismoFechaField, MES_LABEL } from "../../components/BautismoFechaField";
 import { FieldReveal } from "../../components/FieldReveal";
 import { FileDrop } from "../../components/FileDrop";
@@ -316,7 +316,7 @@ export function FormularioRegistro() {
           <StepProgress steps={STEPS} current={step} />
 
           <AnimatePresence mode="wait" custom={direction} initial={false}>
-            <motion.div
+            <m.div
               key={step}
               custom={direction}
               variants={variants}
@@ -689,7 +689,7 @@ export function FormularioRegistro() {
                   )}
                 </div>
               )}
-            </motion.div>
+            </m.div>
           </AnimatePresence>
 
           {serverError && <p className="field-error form-server-error">{serverError}</p>}
