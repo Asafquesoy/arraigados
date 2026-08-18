@@ -104,6 +104,23 @@
   font-size: var(--t-sm);
 }
 
+.form-promo-aviso {
+  padding: var(--e-3);
+  border-radius: var(--radio-m);
+  border: 1px solid color-mix(in srgb, var(--ambar) 35%, transparent);
+  background: color-mix(in srgb, var(--ambar) 10%, transparent);
+  font-size: var(--t-sm);
+  color: var(--hueso-tenue);
+}
+
+.form-promo-aviso p {
+  margin: 0;
+}
+
+.form-promo-aviso strong {
+  color: var(--amarillo-suave);
+}
+
 .form-summary-edit {
   margin-top: 1rem;
   background: none;

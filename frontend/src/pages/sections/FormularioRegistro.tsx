@@ -25,7 +25,8 @@ interface FormState {
   talla_otra: string;
   fecha_pago: string;
   tiene_promocion: boolean | "";
-  promocion_detalle: string;
+  promocion_tipo: string;
+  promocion_otra: string;
 }
 
 type FieldKey = keyof FormState | "ticket";
@@ -42,12 +43,20 @@ const INITIAL_STATE: FormState = {
   talla_otra: "",
   fecha_pago: "",
   tiene_promocion: "",
-  promocion_detalle: "",
+  promocion_tipo: "",
+  promocion_otra: "",
 };
 
 const STEPS = ["Quién eres", "De dónde vienes", "Tu pago"];
 
 const HOY = new Date().toISOString().slice(0, 10);
+
+const PROMOCIONES = [
+  { value: "CAMPAMENTO_GRATIS", label: "Campamento gratis" },
+  { value: "DESCUENTO_50", label: "50% de descuento" },
+  { value: "DESCUENTO_25", label: "25% de descuento" },
+  { value: "OTRO", label: "Otro" },
+] as const;
 
 function fieldError(
   key: FieldKey,
@@ -86,8 +95,12 @@ function fieldError(
       return form.fecha_pago > HOY ? "La fecha de pago no puede ser futura." : null;
     case "tiene_promocion":
       return form.tiene_promocion === "" ? "Selecciona una opción." : null;
-    case "promocion_detalle":
-      return form.tiene_promocion === true && form.promocion_detalle.trim().length < 1
+    case "promocion_tipo":
+      return form.tiene_promocion === true && !form.promocion_tipo ? "Elige qué promoción obtuviste." : null;
+    case "promocion_otra":
+      return form.tiene_promocion === true &&
+        form.promocion_tipo === "OTRO" &&
+        form.promocion_otra.trim().length < 1
         ? "Menciona qué promoción obtuviste."
         : null;
     case "ticket":
@@ -100,7 +113,7 @@ function fieldError(
 const STEP_FIELDS: FieldKey[][] = [
   ["nombre", "edad", "sexo", "bautizado", "fecha_bautismo"],
   ["iglesia", "zona", "talla_camisa", "talla_otra"],
-  ["fecha_pago", "tiene_promocion", "promocion_detalle", "ticket"],
+  ["fecha_pago", "tiene_promocion", "promocion_tipo", "promocion_otra", "ticket"],
 ];
 
 export function FormularioRegistro() {
@@ -192,8 +205,14 @@ export function FormularioRegistro() {
       }
       body.append("fecha_pago", form.fecha_pago);
       body.append("tiene_promocion", String(form.tiene_promocion === true));
-      if (form.tiene_promocion && form.promocion_detalle.trim()) {
-        body.append("promocion_detalle", form.promocion_detalle.trim());
+      if (form.tiene_promocion) {
+        const detalle =
+          form.promocion_tipo === "OTRO"
+            ? form.promocion_otra.trim()
+            : PROMOCIONES.find((p) => p.value === form.promocion_tipo)?.label ?? "";
+        if (detalle) {
+          body.append("promocion_detalle", detalle);
+        }
       }
       if (ticket) {
         body.append("ticket", ticket);
@@ -412,24 +431,57 @@ export function FormularioRegistro() {
                     icon={TagIcon}
                     value={form.tiene_promocion}
                     onChange={(v) =>
-                      setForm({ ...form, tiene_promocion: v, promocion_detalle: v ? form.promocion_detalle : "" })
+                      setForm({
+                        ...form,
+                        tiene_promocion: v,
+                        promocion_tipo: v ? form.promocion_tipo : "",
+                        promocion_otra: v ? form.promocion_otra : "",
+                      })
                     }
                     onBlur={() => validateField("tiene_promocion")}
                     error={errors.tiene_promocion}
                   />
 
                   {form.tiene_promocion === true && (
-                    <div className={`field span-2 ${errors.promocion_detalle ? "has-error" : ""}`}>
-                      <label htmlFor="promocion_detalle">Menciona qué promoción obtuviste</label>
+                    <div className={`field span-2 ${errors.promocion_tipo ? "has-error" : ""}`}>
+                      <label htmlFor="promocion_tipo">¿Qué promoción obtuviste?</label>
+                      <select
+                        id="promocion_tipo"
+                        value={form.promocion_tipo}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            promocion_tipo: e.target.value,
+                            promocion_otra: e.target.value === "OTRO" ? form.promocion_otra : "",
+                          })
+                        }
+                        onBlur={() => validateField("promocion_tipo")}
+                      >
+                        <option value="" disabled>
+                          Selecciona una opción
+                        </option>
+                        {PROMOCIONES.map((p) => (
+                          <option key={p.value} value={p.value}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.promocion_tipo && <span className="field-error">{errors.promocion_tipo}</span>}
+                    </div>
+                  )}
+
+                  {form.tiene_promocion === true && form.promocion_tipo === "OTRO" && (
+                    <div className={`field span-2 ${errors.promocion_otra ? "has-error" : ""}`}>
+                      <label htmlFor="promocion_otra">Menciona qué promoción obtuviste</label>
                       <input
-                        id="promocion_detalle"
+                        id="promocion_otra"
                         type="text"
-                        value={form.promocion_detalle}
-                        onChange={(e) => setForm({ ...form, promocion_detalle: e.target.value })}
-                        onBlur={() => validateField("promocion_detalle")}
+                        value={form.promocion_otra}
+                        onChange={(e) => setForm({ ...form, promocion_otra: e.target.value })}
+                        onBlur={() => validateField("promocion_otra")}
                         placeholder="Promoción"
                       />
-                      {errors.promocion_detalle && <span className="field-error">{errors.promocion_detalle}</span>}
+                      {errors.promocion_otra && <span className="field-error">{errors.promocion_otra}</span>}
                     </div>
                   )}
 
@@ -468,7 +520,15 @@ export function FormularioRegistro() {
                       )}
                       <div>
                         <dt>Promoción</dt>
-                        <dd>{form.tiene_promocion === "" ? "—" : form.tiene_promocion ? form.promocion_detalle || "Sí" : "No"}</dd>
+                        <dd>
+                          {form.tiene_promocion === ""
+                            ? "—"
+                            : form.tiene_promocion
+                              ? (form.promocion_tipo === "OTRO"
+                                  ? form.promocion_otra
+                                  : PROMOCIONES.find((p) => p.value === form.promocion_tipo)?.label) || "Sí"
+                              : "No"}
+                        </dd>
                       </div>
                     </dl>
                     <button type="button" className="form-summary-edit" onClick={() => setStep(0)}>
@@ -481,6 +541,16 @@ export function FormularioRegistro() {
                       <p className="muted span-2 form-pago-hint">
                         ¿No tienes tu comprobante a la mano? <a href="#pago">Consulta los datos de pago aquí.</a>
                       </p>
+
+                      {form.tiene_promocion === true && form.promocion_tipo === "CAMPAMENTO_GRATIS" && (
+                        <div className="span-2 form-promo-aviso">
+                          <p>
+                            <strong>Tu campamento es gratis.</strong> En lugar del comprobante de pago, sube la foto
+                            de tu boleto donde dice «campa gratis», y en <em>fecha de pago</em> pon el día de hoy
+                            (el día en que te estás registrando).
+                          </p>
+                        </div>
+                      )}
 
                       <FileDrop file={ticket} onChange={setTicket} error={errors.ticket} />
                     </>
