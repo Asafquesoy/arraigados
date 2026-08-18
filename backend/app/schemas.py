@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-from .models import AdminRole, Sexo, TallaCamisa, Zona
+from .models import AdminRole, Sexo, TallaCamisa, TipoParticipante, Zona
 
 
 class CamperCreateResponse(BaseModel):
@@ -21,6 +21,8 @@ class CamperOut(BaseModel):
     edad: int
     sexo: Sexo
     zona: Zona | None
+    tipo: TipoParticipante | None
+    telefono: str | None
     fecha_pago: date | None
     tiene_promocion: bool | None
     promocion_detalle: str | None

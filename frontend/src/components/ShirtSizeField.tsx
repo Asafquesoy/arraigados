@@ -1,4 +1,6 @@
+import { AnimatePresence } from "motion/react";
 import type { TallaCamisa } from "../lib/api";
+import { FieldReveal } from "./FieldReveal";
 import { ShirtIcon } from "./icons";
 
 const TALLAS: TallaCamisa[] = ["XCH", "CH", "M", "G", "XG", "OTRA"];
@@ -51,20 +53,24 @@ export function ShirtSizeField({
         {error && <span className="field-error">{error}</span>}
       </div>
 
-      {value === "OTRA" && (
-        <div className={`field ${otraError ? "has-error" : ""}`}>
-          <label htmlFor="talla_otra">Menciona cuál</label>
-          <input
-            id="talla_otra"
-            type="text"
-            value={otra}
-            onChange={(e) => onOtraChange(e.target.value)}
-            onBlur={onOtraBlur}
-            placeholder="Talla"
-          />
-          {otraError && <span className="field-error">{otraError}</span>}
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {value === "OTRA" && (
+          <FieldReveal key="talla_otra">
+            <div className={`field ${otraError ? "has-error" : ""}`}>
+              <label htmlFor="talla_otra">Menciona cuál</label>
+              <input
+                id="talla_otra"
+                type="text"
+                value={otra}
+                onChange={(e) => onOtraChange(e.target.value)}
+                onBlur={onOtraBlur}
+                placeholder="Talla"
+              />
+              {otraError && <span className="field-error">{otraError}</span>}
+            </div>
+          </FieldReveal>
+        )}
+      </AnimatePresence>
     </>
   );
 }

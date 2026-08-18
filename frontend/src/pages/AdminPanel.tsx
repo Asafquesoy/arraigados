@@ -13,10 +13,19 @@ import { StatTile } from "../components/StatTile";
 import { TicketModal } from "../components/TicketModal";
 import { Toast } from "../components/Toast";
 import { ToggleSwitch } from "../components/ToggleSwitch";
+import { TIPO_LABEL } from "../components/TipoParticipanteField";
 import { ZONA_LABEL } from "../components/ZonaField";
 import { DownloadIcon, ReceiptIcon, SearchIcon, ShieldCheckIcon } from "../components/icons";
 import { useAdminAuth } from "../lib/AdminAuthContext";
-import { apiFetch, ApiError, type CamperListResponse, type CamperOut, type Sexo, type Zona } from "../lib/api";
+import {
+  apiFetch,
+  ApiError,
+  type CamperListResponse,
+  type CamperOut,
+  type Sexo,
+  type TipoParticipante,
+  type Zona,
+} from "../lib/api";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { useSettings } from "../lib/SettingsContext";
 import { useToast } from "../lib/useToast";
@@ -33,6 +42,7 @@ export function AdminPanel() {
   const [pago, setPago] = useState<"" | "true" | "false">("");
   const [zona, setZona] = useState<"" | Zona>("");
   const [sexo, setSexo] = useState<"" | Sexo>("");
+  const [tipo, setTipo] = useState<"" | TipoParticipante>("");
   const [page, setPage] = useState(1);
   const [ticketModal, setTicketModal] = useState<{ id: number; nombre: string } | null>(null);
   const [toast, setToast] = useToast();
@@ -49,6 +59,7 @@ export function AdminPanel() {
     if (pago) params.set("pago", pago);
     if (zona) params.set("zona", zona);
     if (sexo) params.set("sexo", sexo);
+    if (tipo) params.set("tipo", tipo);
     return params;
   }
 
@@ -74,7 +85,7 @@ export function AdminPanel() {
     }, 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, pago, zona, sexo]);
+  }, [q, pago, zona, sexo, tipo]);
 
   if (!authLoading && !username) {
     return <Navigate to="/admin" replace />;
@@ -118,6 +129,7 @@ export function AdminPanel() {
     q && { key: "q", label: `"${q}"`, clear: () => setQ("") },
     zona && { key: "zona", label: ZONA_LABEL[zona], clear: () => setZona("") },
     sexo && { key: "sexo", label: sexo === "M" ? "Masculino" : "Femenino", clear: () => setSexo("") },
+    tipo && { key: "tipo", label: TIPO_LABEL[tipo], clear: () => setTipo("") },
     pago && { key: "pago", label: pago === "true" ? "Verificado" : "Pendiente", clear: () => setPago("") },
   ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
 
@@ -166,6 +178,17 @@ export function AdminPanel() {
             {(Object.keys(ZONA_LABEL) as Zona[]).map((z) => (
               <option key={z} value={z}>
                 {ZONA_LABEL[z]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="tipo-filter">Tipo</label>
+          <select id="tipo-filter" value={tipo} onChange={(e) => setTipo(e.target.value as TipoParticipante | "")}>
+            <option value="">Todos</option>
+            {(Object.keys(TIPO_LABEL) as TipoParticipante[]).map((t) => (
+              <option key={t} value={t}>
+                {TIPO_LABEL[t]}
               </option>
             ))}
           </select>
@@ -232,6 +255,7 @@ export function AdminPanel() {
                 <tr>
                   <th>Folio</th>
                   <th>Nombre</th>
+                  <th>Tipo</th>
                   <th>Zona</th>
                   <th>Iglesia</th>
                   <th>Edad</th>
@@ -250,6 +274,15 @@ export function AdminPanel() {
                   <tr key={camper.id}>
                     <td className="mono">{camper.folio}</td>
                     <td className="admin-table-name">{camper.nombre}</td>
+                    <td>
+                      {camper.tipo ? TIPO_LABEL[camper.tipo] : "—"}
+                      {camper.telefono && (
+                        <>
+                          <br />
+                          <span className="muted mono">{camper.telefono}</span>
+                        </>
+                      )}
+                    </td>
                     <td className="admin-table-city">{camper.zona ? ZONA_LABEL[camper.zona] : "—"}</td>
                     <td className="admin-table-truncate">{camper.iglesia}</td>
                     <td>{camper.edad}</td>
@@ -304,7 +337,8 @@ export function AdminPanel() {
                 <div>
                   <p className="admin-row-name">{camper.nombre}</p>
                   <p className="muted admin-row-meta mono">
-                    {camper.folio} · {camper.zona ? ZONA_LABEL[camper.zona] : "—"} · {camper.edad} años ·{" "}
+                    {camper.folio} · {camper.tipo ? TIPO_LABEL[camper.tipo] : "—"} ·{" "}
+                    {camper.zona ? ZONA_LABEL[camper.zona] : "—"} · {camper.edad} años ·{" "}
                     {camper.sexo === "M" ? "Masculino" : "Femenino"}
                     {showShirtSize && camper.talla_camisa
                       ? ` · Talla ${camper.talla_camisa === "OTRA" ? camper.talla_otra || "Otra" : camper.talla_camisa}`
@@ -312,8 +346,10 @@ export function AdminPanel() {
                   </p>
                   <p className="muted admin-row-meta">{camper.iglesia}</p>
                   <p className="muted admin-row-meta">
-                    Pago: {camper.fecha_pago ?? "—"} · Promoción: {camper.tiene_promocion ? camper.promocion_detalle || "Sí" : "No"} ·
-                    Bautizado: {camper.bautizado ? "Sí" : "No"}
+                    Pago: {camper.fecha_pago ?? "—"} · Promoción: {camper.tiene_promocion ? camper.promocion_detalle || "Sí" : "No"} ·{" "}
+                    {camper.tipo === "CONSEJERO"
+                      ? `Teléfono: ${camper.telefono || "—"}`
+                      : `Bautizado: ${camper.bautizado ? "Sí" : "No"}`}
                   </p>
                 </div>
 

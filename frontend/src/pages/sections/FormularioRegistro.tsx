@@ -2,22 +2,26 @@ import { useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { BautismoFechaField, MES_LABEL } from "../../components/BautismoFechaField";
+import { FieldReveal } from "../../components/FieldReveal";
 import { FileDrop } from "../../components/FileDrop";
 import { Reveal } from "../../components/Reveal";
 import { ShirtSizeField } from "../../components/ShirtSizeField";
 import { StepProgress } from "../../components/StepProgress";
+import { TIPO_LABEL, TipoParticipanteField } from "../../components/TipoParticipanteField";
 import { YesNoField } from "../../components/YesNoField";
 import { ZONA_LABEL, ZonaField } from "../../components/ZonaField";
-import { CalendarIcon, ChurchIcon, DropIcon, TagIcon, UserIcon } from "../../components/icons";
+import { CalendarIcon, ChurchIcon, DropIcon, PhoneIcon, TagIcon, UserIcon } from "../../components/icons";
 import { ApiError } from "../../lib/api";
-import type { Sexo, TallaCamisa, Zona } from "../../lib/api";
+import type { Sexo, TallaCamisa, TipoParticipante, Zona } from "../../lib/api";
 import { useSettings } from "../../lib/SettingsContext";
 import "./FormularioRegistro.css";
 
 interface FormState {
+  tipo: TipoParticipante | "";
   nombre: string;
   edad: string;
   sexo: Sexo | "";
+  telefono: string;
   bautizado: boolean | "";
   bautismo_mes: number | "";
   bautismo_anio: number | "";
@@ -34,9 +38,11 @@ interface FormState {
 type FieldKey = keyof FormState | "ticket";
 
 const INITIAL_STATE: FormState = {
+  tipo: "",
   nombre: "",
   edad: "",
   sexo: "",
+  telefono: "",
   bautizado: "",
   bautismo_mes: "",
   bautismo_anio: "",
@@ -69,20 +75,29 @@ function fieldError(
   pedirComprobante: boolean
 ): string | null {
   switch (key) {
+    case "tipo":
+      return !form.tipo ? "Selecciona una opción." : null;
     case "nombre":
-      return form.nombre.trim().length < 2 ? "Escribe el nombre completo del campero." : null;
+      return form.nombre.trim().length < 2 ? "Escribe tu nombre completo." : null;
     case "edad": {
       const n = Number(form.edad);
       return !form.edad || Number.isNaN(n) || n < 5 || n > 99 ? "Ingresa una edad válida (5-99)." : null;
     }
     case "sexo":
       return !form.sexo ? "Selecciona una opción." : null;
+    case "telefono": {
+      if (form.tipo !== "CONSEJERO") return null;
+      const digits = form.telefono.replace(/[\s-]/g, "");
+      return !/^\d{10}$/.test(digits) ? "Ingresa un teléfono de 10 dígitos." : null;
+    }
     case "bautizado":
-      return form.bautizado === "" ? "Selecciona una opción." : null;
+      return form.tipo === "CAMPERO" && form.bautizado === "" ? "Selecciona una opción." : null;
     case "bautismo_mes":
-      return form.bautizado === true && form.bautismo_mes === "" ? "Indica el mes de tu bautismo." : null;
+      return form.tipo === "CAMPERO" && form.bautizado === true && form.bautismo_mes === ""
+        ? "Indica el mes de tu bautismo."
+        : null;
     case "bautismo_anio": {
-      if (form.bautizado !== true) return null;
+      if (form.tipo !== "CAMPERO" || form.bautizado !== true) return null;
       if (form.bautismo_anio === "") return "Indica el año de tu bautismo.";
       const hoy = new Date();
       if (
@@ -125,7 +140,7 @@ function fieldError(
 }
 
 const STEP_FIELDS: FieldKey[][] = [
-  ["nombre", "edad", "sexo", "bautizado", "bautismo_mes", "bautismo_anio"],
+  ["tipo", "nombre", "edad", "sexo", "telefono", "bautizado", "bautismo_mes", "bautismo_anio"],
   ["iglesia", "zona", "talla_camisa", "talla_otra"],
   ["fecha_pago", "tiene_promocion", "promocion_tipo", "promocion_otra", "ticket"],
 ];
@@ -202,13 +217,19 @@ export function FormularioRegistro() {
     setSubmitting(true);
     try {
       const body = new FormData();
+      body.append("tipo", form.tipo);
       body.append("nombre", form.nombre.trim());
       body.append("edad", form.edad);
       body.append("sexo", form.sexo);
-      body.append("bautizado", String(form.bautizado === true));
-      if (form.bautizado && form.bautismo_mes !== "" && form.bautismo_anio !== "") {
-        body.append("bautismo_mes", String(form.bautismo_mes));
-        body.append("bautismo_anio", String(form.bautismo_anio));
+      if (form.tipo === "CONSEJERO" && form.telefono.trim()) {
+        body.append("telefono", form.telefono.trim());
+      }
+      if (form.tipo === "CAMPERO") {
+        body.append("bautizado", String(form.bautizado === true));
+        if (form.bautizado && form.bautismo_mes !== "" && form.bautismo_anio !== "") {
+          body.append("bautismo_mes", String(form.bautismo_mes));
+          body.append("bautismo_anio", String(form.bautismo_anio));
+        }
       }
       body.append("iglesia", form.iglesia.trim());
       body.append("zona", form.zona);
@@ -306,6 +327,34 @@ export function FormularioRegistro() {
             >
               {step === 0 && (
                 <div className="form-grid">
+                  <TipoParticipanteField
+                    value={form.tipo}
+                    onChange={(v) => {
+                      setForm({
+                        ...form,
+                        tipo: v,
+                        bautizado: v === "CAMPERO" ? form.bautizado : "",
+                        bautismo_mes: v === "CAMPERO" ? form.bautismo_mes : "",
+                        bautismo_anio: v === "CAMPERO" ? form.bautismo_anio : "",
+                        telefono: v === "CONSEJERO" ? form.telefono : "",
+                      });
+                      setErrors((prev) => {
+                        const next = { ...prev };
+                        if (v === "CAMPERO") {
+                          delete next.telefono;
+                        } else {
+                          delete next.bautizado;
+                          delete next.bautismo_mes;
+                          delete next.bautismo_anio;
+                        }
+                        delete next.tipo;
+                        return next;
+                      });
+                    }}
+                    onBlur={() => validateField("tipo")}
+                    error={errors.tipo}
+                  />
+
                   <div className={`field ${errors.nombre ? "has-error" : ""}`}>
                     <label htmlFor="nombre">
                       <UserIcon size={14} /> Nombre completo
@@ -353,36 +402,69 @@ export function FormularioRegistro() {
                     {errors.edad && <span className="field-error">{errors.edad}</span>}
                   </div>
 
-                  <YesNoField
-                    id="bautizado"
-                    label="¿Estás bautizado?"
-                    icon={DropIcon}
-                    value={form.bautizado}
-                    onChange={(v) =>
-                      setForm({
-                        ...form,
-                        bautizado: v,
-                        bautismo_mes: v ? form.bautismo_mes : "",
-                        bautismo_anio: v ? form.bautismo_anio : "",
-                      })
-                    }
-                    onBlur={() => validateField("bautizado")}
-                    error={errors.bautizado}
-                  />
+                  {/* Teléfono (consejero) y bautizado (campero) comparten la misma celda del
+                      grid — mode="wait" evita que coexistan un instante en el DOM al cambiar de
+                      tipo, que es lo que hacía que el grid los repartiera en columnas distintas
+                      y el que entraba "saltara" de la derecha a la izquierda al terminar. */}
+                  <AnimatePresence mode="wait" initial={false}>
+                    {form.tipo === "CONSEJERO" && (
+                      <FieldReveal key="telefono">
+                        <div className={`field ${errors.telefono ? "has-error" : ""}`}>
+                          <label htmlFor="telefono">
+                            <PhoneIcon size={14} /> Número de teléfono
+                          </label>
+                          <input
+                            id="telefono"
+                            type="tel"
+                            inputMode="numeric"
+                            value={form.telefono}
+                            onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+                            onBlur={() => validateField("telefono")}
+                            placeholder="10 dígitos"
+                          />
+                          {errors.telefono && <span className="field-error">{errors.telefono}</span>}
+                        </div>
+                      </FieldReveal>
+                    )}
+                    {form.tipo === "CAMPERO" && (
+                      <FieldReveal key="bautizado">
+                        <YesNoField
+                          id="bautizado"
+                          label="¿Estás bautizado?"
+                          icon={DropIcon}
+                          value={form.bautizado}
+                          onChange={(v) =>
+                            setForm({
+                              ...form,
+                              bautizado: v,
+                              bautismo_mes: v ? form.bautismo_mes : "",
+                              bautismo_anio: v ? form.bautismo_anio : "",
+                            })
+                          }
+                          onBlur={() => validateField("bautizado")}
+                          error={errors.bautizado}
+                        />
+                      </FieldReveal>
+                    )}
+                  </AnimatePresence>
 
-                  {form.bautizado === true && (
-                    <BautismoFechaField
-                      mes={form.bautismo_mes}
-                      anio={form.bautismo_anio}
-                      onChange={(mes, anio) => setForm({ ...form, bautismo_mes: mes, bautismo_anio: anio })}
-                      onBlur={() => {
-                        validateField("bautismo_mes");
-                        validateField("bautismo_anio");
-                      }}
-                      errorMes={errors.bautismo_mes}
-                      errorAnio={errors.bautismo_anio}
-                    />
-                  )}
+                  <AnimatePresence initial={false}>
+                    {form.tipo === "CAMPERO" && form.bautizado === true && (
+                      <FieldReveal key="bautismo_fecha" className="span-2">
+                        <BautismoFechaField
+                          mes={form.bautismo_mes}
+                          anio={form.bautismo_anio}
+                          onChange={(mes, anio) => setForm({ ...form, bautismo_mes: mes, bautismo_anio: anio })}
+                          onBlur={() => {
+                            validateField("bautismo_mes");
+                            validateField("bautismo_anio");
+                          }}
+                          errorMes={errors.bautismo_mes}
+                          errorAnio={errors.bautismo_anio}
+                        />
+                      </FieldReveal>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
 
@@ -460,52 +542,64 @@ export function FormularioRegistro() {
                     error={errors.tiene_promocion}
                   />
 
-                  {form.tiene_promocion === true && (
-                    <div className={`field span-2 ${errors.promocion_tipo ? "has-error" : ""}`}>
-                      <label htmlFor="promocion_tipo">¿Qué promoción obtuviste?</label>
-                      <select
-                        id="promocion_tipo"
-                        value={form.promocion_tipo}
-                        onChange={(e) =>
-                          setForm({
-                            ...form,
-                            promocion_tipo: e.target.value,
-                            promocion_otra: e.target.value === "OTRO" ? form.promocion_otra : "",
-                          })
-                        }
-                        onBlur={() => validateField("promocion_tipo")}
-                      >
-                        <option value="" disabled>
-                          Selecciona una opción
-                        </option>
-                        {PROMOCIONES.map((p) => (
-                          <option key={p.value} value={p.value}>
-                            {p.label}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.promocion_tipo && <span className="field-error">{errors.promocion_tipo}</span>}
-                    </div>
-                  )}
+                  <AnimatePresence initial={false}>
+                    {form.tiene_promocion === true && (
+                      <FieldReveal key="promocion_tipo" className="span-2">
+                        <div className={`field ${errors.promocion_tipo ? "has-error" : ""}`}>
+                          <label htmlFor="promocion_tipo">¿Qué promoción obtuviste?</label>
+                          <select
+                            id="promocion_tipo"
+                            value={form.promocion_tipo}
+                            onChange={(e) =>
+                              setForm({
+                                ...form,
+                                promocion_tipo: e.target.value,
+                                promocion_otra: e.target.value === "OTRO" ? form.promocion_otra : "",
+                              })
+                            }
+                            onBlur={() => validateField("promocion_tipo")}
+                          >
+                            <option value="" disabled>
+                              Selecciona una opción
+                            </option>
+                            {PROMOCIONES.map((p) => (
+                              <option key={p.value} value={p.value}>
+                                {p.label}
+                              </option>
+                            ))}
+                          </select>
+                          {errors.promocion_tipo && <span className="field-error">{errors.promocion_tipo}</span>}
+                        </div>
+                      </FieldReveal>
+                    )}
+                  </AnimatePresence>
 
-                  {form.tiene_promocion === true && form.promocion_tipo === "OTRO" && (
-                    <div className={`field span-2 ${errors.promocion_otra ? "has-error" : ""}`}>
-                      <label htmlFor="promocion_otra">Menciona qué promoción obtuviste</label>
-                      <input
-                        id="promocion_otra"
-                        type="text"
-                        value={form.promocion_otra}
-                        onChange={(e) => setForm({ ...form, promocion_otra: e.target.value })}
-                        onBlur={() => validateField("promocion_otra")}
-                        placeholder="Promoción"
-                      />
-                      {errors.promocion_otra && <span className="field-error">{errors.promocion_otra}</span>}
-                    </div>
-                  )}
+                  <AnimatePresence initial={false}>
+                    {form.tiene_promocion === true && form.promocion_tipo === "OTRO" && (
+                      <FieldReveal key="promocion_otra" className="span-2">
+                        <div className={`field ${errors.promocion_otra ? "has-error" : ""}`}>
+                          <label htmlFor="promocion_otra">Menciona qué promoción obtuviste</label>
+                          <input
+                            id="promocion_otra"
+                            type="text"
+                            value={form.promocion_otra}
+                            onChange={(e) => setForm({ ...form, promocion_otra: e.target.value })}
+                            onBlur={() => validateField("promocion_otra")}
+                            placeholder="Promoción"
+                          />
+                          {errors.promocion_otra && <span className="field-error">{errors.promocion_otra}</span>}
+                        </div>
+                      </FieldReveal>
+                    )}
+                  </AnimatePresence>
 
                   <div className="span-2 form-summary">
                     <p className="form-summary-title">Revisa tus datos</p>
                     <dl>
+                      <div>
+                        <dt>Tipo</dt>
+                        <dd>{form.tipo ? TIPO_LABEL[form.tipo] : "—"}</dd>
+                      </div>
                       <div>
                         <dt>Nombre</dt>
                         <dd>{form.nombre || "—"}</dd>
@@ -518,18 +612,26 @@ export function FormularioRegistro() {
                         <dt>Edad</dt>
                         <dd>{form.edad || "—"}</dd>
                       </div>
-                      <div>
-                        <dt>Bautizado</dt>
-                        <dd>
-                          {form.bautizado === ""
-                            ? "—"
-                            : form.bautizado
-                              ? form.bautismo_mes && form.bautismo_anio
-                                ? `Sí (${MES_LABEL[form.bautismo_mes]} ${form.bautismo_anio})`
-                                : "Sí"
-                              : "No"}
-                        </dd>
-                      </div>
+                      {form.tipo === "CONSEJERO" && (
+                        <div>
+                          <dt>Teléfono</dt>
+                          <dd>{form.telefono || "—"}</dd>
+                        </div>
+                      )}
+                      {form.tipo === "CAMPERO" && (
+                        <div>
+                          <dt>Bautizado</dt>
+                          <dd>
+                            {form.bautizado === ""
+                              ? "—"
+                              : form.bautizado
+                                ? form.bautismo_mes && form.bautismo_anio
+                                  ? `Sí (${MES_LABEL[form.bautismo_mes]} ${form.bautismo_anio})`
+                                  : "Sí"
+                                : "No"}
+                          </dd>
+                        </div>
+                      )}
                       <div>
                         <dt>Iglesia</dt>
                         <dd>{form.iglesia || "—"}</dd>
@@ -568,15 +670,19 @@ export function FormularioRegistro() {
                         ¿No tienes tu comprobante a la mano? <a href="#pago">Consulta los datos de pago aquí.</a>
                       </p>
 
-                      {form.tiene_promocion === true && form.promocion_tipo === "CAMPAMENTO_GRATIS" && (
-                        <div className="span-2 form-promo-aviso">
-                          <p>
-                            <strong>Tu campamento es gratis.</strong> En lugar del comprobante de pago, sube la foto
-                            de tu boleto donde dice «campa gratis», y en <em>fecha de pago</em> pon el día de hoy
-                            (el día en que te estás registrando).
-                          </p>
-                        </div>
-                      )}
+                      <AnimatePresence initial={false}>
+                        {form.tiene_promocion === true && form.promocion_tipo === "CAMPAMENTO_GRATIS" && (
+                          <FieldReveal key="promo-aviso" className="span-2">
+                            <div className="form-promo-aviso">
+                              <p>
+                                <strong>Tu campamento es gratis.</strong> En lugar del comprobante de pago, sube la
+                                foto de tu boleto donde dice «campa gratis», y en <em>fecha de pago</em> pon el día de
+                                hoy (el día en que te estás registrando).
+                              </p>
+                            </div>
+                          </FieldReveal>
+                        )}
+                      </AnimatePresence>
 
                       <FileDrop file={ticket} onChange={setTicket} error={errors.ticket} />
                     </>

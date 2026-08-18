@@ -39,6 +39,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 export type Sexo = "M" | "F";
 export type TallaCamisa = "XCH" | "CH" | "M" | "G" | "XG" | "OTRA";
 export type Zona = "VALLES" | "VICTORIA" | "MANTE" | "METRO" | "OTRO";
+export type TipoParticipante = "CAMPERO" | "CONSEJERO";
 
 export interface CamperOut {
   id: number;
@@ -49,6 +50,8 @@ export interface CamperOut {
   edad: number;
   sexo: Sexo;
   zona: Zona | null;
+  tipo: TipoParticipante | null;
+  telefono: string | null;
   fecha_pago: string | null;
   tiene_promocion: boolean | null;
   promocion_detalle: string | null;

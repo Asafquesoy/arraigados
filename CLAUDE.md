@@ -171,7 +171,12 @@ this shape exists to avoid.
   `AnimatePresence`/`useScroll` logic: `components/Reveal.tsx` (scroll fade-up),
   `components/root/generateRoots.ts` + `components/root/AnimatedRoots.tsx` (shared root-drawing
   system — see below), `components/PageTransition.tsx` (route
-  transitions), `components/StepProgress.tsx` (multi-step form progress). All must respect
+  transitions), `components/StepProgress.tsx` (multi-step form progress),
+  `components/FieldReveal.tsx` (height+fade collapse/expand for a single grid item, used to animate
+  a conditional form field appearing/disappearing based on a previous answer — e.g.
+  `FormularioRegistro.tsx`'s teléfono/bautismo/promoción fields, `ShirtSizeField.tsx`'s `talla_otra`
+  — wrap it in `<AnimatePresence initial={false}>` with a stable `key`; don't hand-roll another
+  height-collapse animation). All must respect
   `useReducedMotion()` — every existing component branches on it, follow that pattern for new ones.
   **Pitfall already hit once:** don't gate an `AnimatePresence` key change behind app state that
   only advances once the animation completes (e.g. "wait for exit, then swap the route") unless

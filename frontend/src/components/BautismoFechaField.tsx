@@ -41,7 +41,7 @@ export function BautismoFechaField({ mes, anio, onChange, onBlur, errorMes, erro
   }, []);
 
   return (
-    <div className="span-2 form-grid">
+    <div className="form-grid">
       <div className={`field ${errorMes ? "has-error" : ""}`}>
         <label htmlFor="bautismo_mes">
           <DropIcon size={14} /> Mes de tu bautismo

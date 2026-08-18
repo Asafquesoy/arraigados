@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import AppSettings, Camper, Sexo, TallaCamisa, Zona
+from ..models import AppSettings, Camper, Sexo, TallaCamisa, TipoParticipante, Zona
 from ..ratelimit import rate_limit
 from ..schemas import CamperCreateResponse
 from ..storage import save_ticket
@@ -24,7 +24,9 @@ async def crear_registro(
     edad: int = Form(..., ge=5, le=99),
     sexo: Sexo = Form(...),
     zona: Zona = Form(...),
-    bautizado: bool = Form(...),
+    tipo: TipoParticipante = Form(...),
+    telefono: str | None = Form(default=None, max_length=30),
+    bautizado: bool | None = Form(default=None),
     bautismo_mes: int | None = Form(default=None, ge=1, le=12),
     bautismo_anio: int | None = Form(default=None, ge=1960),
     fecha_pago: date = Form(...),
@@ -44,9 +46,13 @@ async def crear_registro(
     if not registro_abierto:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "El registro está cerrado por ahora.")
 
-    if bautizado and (bautismo_mes is None or bautismo_anio is None):
+    if tipo == TipoParticipante.CAMPERO and bautizado is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Indica si estás bautizado.")
+    if tipo == TipoParticipante.CONSEJERO and not (telefono or "").strip():
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Indica tu número de teléfono.")
+    if tipo == TipoParticipante.CAMPERO and bautizado and (bautismo_mes is None or bautismo_anio is None):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Indica la fecha de tu bautismo.")
-    if bautizado and bautismo_mes is not None and bautismo_anio is not None:
+    if tipo == TipoParticipante.CAMPERO and bautizado and bautismo_mes is not None and bautismo_anio is not None:
         hoy = date.today()
         if (bautismo_anio, bautismo_mes) > (hoy.year, hoy.month):
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "La fecha de tu bautismo no puede ser futura.")
@@ -67,9 +73,11 @@ async def crear_registro(
         edad=edad,
         sexo=sexo,
         zona=zona,
-        bautizado=bautizado,
-        bautismo_mes=bautismo_mes if bautizado else None,
-        bautismo_anio=bautismo_anio if bautizado else None,
+        tipo=tipo,
+        telefono=telefono.strip() if tipo == TipoParticipante.CONSEJERO and telefono else None,
+        bautizado=bautizado if tipo == TipoParticipante.CAMPERO else None,
+        bautismo_mes=bautismo_mes if tipo == TipoParticipante.CAMPERO and bautizado else None,
+        bautismo_anio=bautismo_anio if tipo == TipoParticipante.CAMPERO and bautizado else None,
         fecha_pago=fecha_pago,
         tiene_promocion=tiene_promocion,
         promocion_detalle=promocion_detalle.strip() if tiene_promocion and promocion_detalle else None,

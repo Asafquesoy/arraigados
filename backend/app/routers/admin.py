@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
-from ..models import AdminRole, AdminUser, AppSettings, Camper, Sexo, TallaCamisa, Zona
+from ..models import AdminRole, AdminUser, AppSettings, Camper, Sexo, TallaCamisa, TipoParticipante, Zona
 from ..schemas import (
     AdminUserCreate,
     AdminUserOut,
@@ -32,7 +32,9 @@ from ..security import get_current_admin, hash_password, require_role
 router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(get_current_admin)])
 
 
-def _apply_filters(query, q: str | None, pago: bool | None, zona: Zona | None, sexo: Sexo | None):
+def _apply_filters(
+    query, q: str | None, pago: bool | None, zona: Zona | None, sexo: Sexo | None, tipo: TipoParticipante | None
+):
     if q:
         like = f"%{q}%"
         query = query.filter(or_(Camper.nombre.ilike(like), Camper.iglesia.ilike(like), Camper.folio.ilike(like)))
@@ -42,6 +44,8 @@ def _apply_filters(query, q: str | None, pago: bool | None, zona: Zona | None, s
         query = query.filter(Camper.zona == zona)
     if sexo:
         query = query.filter(Camper.sexo == sexo)
+    if tipo:
+        query = query.filter(Camper.tipo == tipo)
     return query
 
 
@@ -51,11 +55,12 @@ def listar_registros(
     pago: bool | None = None,
     zona: Zona | None = None,
     sexo: Sexo | None = None,
+    tipo: TipoParticipante | None = None,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=200),
     db: Session = Depends(get_db),
 ):
-    base = _apply_filters(db.query(Camper), q, pago, zona, sexo)
+    base = _apply_filters(db.query(Camper), q, pago, zona, sexo, tipo)
     total = base.count()
     items = (
         base.order_by(Camper.created_at.desc())
@@ -131,6 +136,8 @@ _MESES = [
 _EXPORT_HEADERS = [
     "Folio",
     "Nombre",
+    "Tipo",
+    "Teléfono",
     "Zona",
     "Iglesia",
     "Edad",
@@ -160,6 +167,8 @@ def _export_row(c: Camper) -> list:
     return [
         c.folio,
         _sanitizar_celda(c.nombre),
+        "Consejero" if c.tipo == TipoParticipante.CONSEJERO else "Campero",
+        _sanitizar_celda(c.telefono or ""),
         c.zona.value if c.zona else "",
         _sanitizar_celda(c.iglesia),
         c.edad,
@@ -178,8 +187,15 @@ def _export_row(c: Camper) -> list:
     ]
 
 
-def _export_rows(q: str | None, pago: bool | None, zona: Zona | None, sexo: Sexo | None, db: Session) -> list[Camper]:
-    base = _apply_filters(db.query(Camper), q, pago, zona, sexo)
+def _export_rows(
+    q: str | None,
+    pago: bool | None,
+    zona: Zona | None,
+    sexo: Sexo | None,
+    tipo: TipoParticipante | None,
+    db: Session,
+) -> list[Camper]:
+    base = _apply_filters(db.query(Camper), q, pago, zona, sexo, tipo)
     return base.order_by(Camper.created_at.desc()).all()
 
 
@@ -189,9 +205,10 @@ def exportar_csv(
     pago: bool | None = None,
     zona: Zona | None = None,
     sexo: Sexo | None = None,
+    tipo: TipoParticipante | None = None,
     db: Session = Depends(get_db),
 ):
-    rows = _export_rows(q, pago, zona, sexo, db)
+    rows = _export_rows(q, pago, zona, sexo, tipo, db)
 
     buffer = io.StringIO()
     buffer.write("﻿")  # BOM: para que Excel detecte UTF-8 y no manche los acentos
@@ -213,9 +230,10 @@ def exportar_xlsx(
     pago: bool | None = None,
     zona: Zona | None = None,
     sexo: Sexo | None = None,
+    tipo: TipoParticipante | None = None,
     db: Session = Depends(get_db),
 ):
-    rows = _export_rows(q, pago, zona, sexo, db)
+    rows = _export_rows(q, pago, zona, sexo, tipo, db)
 
     wb = Workbook()
     ws = wb.active

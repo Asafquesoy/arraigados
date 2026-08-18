@@ -38,6 +38,11 @@ class Zona(str, enum.Enum):
     OTRO = "OTRO"
 
 
+class TipoParticipante(str, enum.Enum):
+    CAMPERO = "CAMPERO"
+    CONSEJERO = "CONSEJERO"
+
+
 class AdminRole(str, enum.Enum):
     ADMIN = "ADMIN"
     VERIFICADOR_PAGO = "VERIFICADOR_PAGO"
@@ -55,6 +60,10 @@ class Camper(Base):
     edad: Mapped[int] = mapped_column(Integer)
     sexo: Mapped[Sexo] = mapped_column(Enum(Sexo, name="sexo_enum"))
     zona: Mapped[Zona | None] = mapped_column(Enum(Zona, name="zona_enum"), nullable=True)
+    tipo: Mapped[TipoParticipante | None] = mapped_column(
+        Enum(TipoParticipante, name="tipo_participante_enum"), nullable=True
+    )
+    telefono: Mapped[str | None] = mapped_column(String(30), nullable=True)
     fecha_pago: Mapped[date | None] = mapped_column(Date, nullable=True)
     tiene_promocion: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     promocion_detalle: Mapped[str | None] = mapped_column(String(200), nullable=True)

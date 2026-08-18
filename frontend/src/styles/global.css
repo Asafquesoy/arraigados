@@ -196,6 +196,7 @@ button {
 .field input[type="number"],
 .field input[type="password"],
 .field input[type="date"],
+.field input[type="tel"],
 .field select {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--tarjeta-borde);
