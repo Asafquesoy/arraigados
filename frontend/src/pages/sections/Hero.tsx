@@ -29,7 +29,11 @@ export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
           sizes="100vw"
           alt=""
           aria-hidden="true"
-          fetchPriority="high"
+          // React 18's typings/runtime only know the camelCase `fetchPriority`
+          // prop, which it silently drops instead of forwarding to the DOM
+          // (support for actually setting the attribute lands in React 19) —
+          // spreading the real lowercase HTML attribute name bypasses that.
+          {...({ fetchpriority: "high" } as Record<string, string>)}
         />
       </motion.div>
       <div className="hero-scrim" />
@@ -39,7 +43,7 @@ export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
           src="/logo.png"
           alt={CAMP_NAME}
           className="hero-logo"
-          fetchPriority="high"
+          {...({ fetchpriority: "high" } as Record<string, string>)}
           // Antes animaba también `filter: blur(10px) -> blur(0px)`: es la
           // única animación no-compositable del proyecto (Lighthouse la
           // marca por nombre), y el elemento ya lleva un drop-shadow fijo en

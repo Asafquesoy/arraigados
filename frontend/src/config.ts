@@ -79,7 +79,7 @@ export const CAMP_DETAILS: CampDetail[] = [
   {
     icon: "church",
     title: "¿Para quién?",
-    body: "Jóvenes acreditados con su carta pastoral de nuestras iglesias asociadas.",
+    body: "Jóvenes acreditados con su carta pastoral de nuestras iglesias asociadas, afines y simpatizantes.",
   },
   {
     icon: "shirt",
