@@ -9,11 +9,11 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 from sqlalchemy import case, func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from ..config import settings
 from ..database import get_db
-from ..models import AdminRole, AdminUser, AppSettings, Camper, Sexo, TallaCamisa, TipoParticipante, Zona
+from ..models import AdminRole, AdminUser, AppSettings, Camper, Equipo, Sexo, TallaCamisa, TipoParticipante, Zona
 from ..schemas import (
     AdminUserCreate,
     AdminUserOut,
@@ -25,6 +25,7 @@ from ..schemas import (
     CamperListResponse,
     CamperOut,
     ComprobanteStatsResponse,
+    EquipoAsignacion,
     PagoUpdate,
     TallaStatsItem,
     TallaStatsResponse,
@@ -42,6 +43,7 @@ def _apply_filters(
     sexo: Sexo | None,
     tipo: TipoParticipante | None,
     asistio: bool | None = None,
+    equipo_id: int | None = None,
 ):
     if q:
         like = f"%{q}%"
@@ -64,6 +66,10 @@ def _apply_filters(
         query = query.filter(Camper.tipo == tipo)
     if asistio is not None:
         query = query.filter(Camper.asistio == asistio)
+    if equipo_id is not None:
+        # 0 es el valor centinela que usa el filtro del panel para "Sin equipo"
+        # — no hay equipo con id 0 (autoincrement empieza en 1).
+        query = query.filter(Camper.equipo_id.is_(None) if equipo_id == 0 else Camper.equipo_id == equipo_id)
     return query
 
 
@@ -75,14 +81,16 @@ def listar_registros(
     sexo: Sexo | None = None,
     tipo: TipoParticipante | None = None,
     asistio: bool | None = None,
+    equipo_id: int | None = None,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=200),
     db: Session = Depends(get_db),
 ):
-    base = _apply_filters(db.query(Camper), q, pago, zona, sexo, tipo, asistio)
+    base = _apply_filters(db.query(Camper), q, pago, zona, sexo, tipo, asistio, equipo_id)
     total = base.count()
     items = (
-        base.order_by(Camper.created_at.desc())
+        base.options(joinedload(Camper.equipo))
+        .order_by(Camper.created_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()
@@ -123,6 +131,30 @@ def marcar_asistencia(
     camper.asistio = payload.asistio
     camper.asistio_en = datetime.now(timezone.utc) if payload.asistio else None
     camper.asistio_por = admin.username if payload.asistio else None
+    db.commit()
+    db.refresh(camper)
+    return camper
+
+
+@router.patch("/registros/{camper_id}/equipo", response_model=CamperOut)
+def mover_de_equipo(
+    camper_id: int,
+    payload: EquipoAsignacion,
+    _admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Mueve a alguien a mano desde /admin/equipos (o lo saca de su equipo con
+    equipo_id=None). Marca equipo_fijado=True al asignar — es lo que hace que
+    "Repartir a todos" respete este movimiento salvo que se pida lo contrario."""
+    camper = db.get(Camper, camper_id)
+    if not camper:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Registro no encontrado")
+
+    if payload.equipo_id is not None and not db.get(Equipo, payload.equipo_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Equipo no encontrado")
+
+    camper.equipo_id = payload.equipo_id
+    camper.equipo_fijado = payload.equipo_id is not None
     db.commit()
     db.refresh(camper)
     return camper
@@ -193,6 +225,7 @@ _EXPORT_HEADERS = [
     "Asistió",
     "Asistió en",
     "Fecha registro",
+    "Equipo",
 ]
 
 
@@ -226,6 +259,7 @@ def _export_row(c: Camper) -> list:
         "Sí" if c.asistio else "No",
         c.asistio_en.strftime("%Y-%m-%d %H:%M") if c.asistio_en else "",
         c.created_at.strftime("%Y-%m-%d %H:%M"),
+        _sanitizar_celda(c.equipo.nombre) if c.equipo else "Sin equipo",
     ]
 
 
@@ -237,9 +271,10 @@ def _export_rows(
     tipo: TipoParticipante | None,
     db: Session,
     asistio: bool | None = None,
+    equipo_id: int | None = None,
 ) -> list[Camper]:
-    base = _apply_filters(db.query(Camper), q, pago, zona, sexo, tipo, asistio)
-    return base.order_by(Camper.created_at.desc()).all()
+    base = _apply_filters(db.query(Camper), q, pago, zona, sexo, tipo, asistio, equipo_id)
+    return base.options(joinedload(Camper.equipo)).order_by(Camper.created_at.desc()).all()
 
 
 @router.get("/registros.csv")
@@ -250,9 +285,10 @@ def exportar_csv(
     sexo: Sexo | None = None,
     tipo: TipoParticipante | None = None,
     asistio: bool | None = None,
+    equipo_id: int | None = None,
     db: Session = Depends(get_db),
 ):
-    rows = _export_rows(q, pago, zona, sexo, tipo, db, asistio)
+    rows = _export_rows(q, pago, zona, sexo, tipo, db, asistio, equipo_id)
 
     buffer = io.StringIO()
     buffer.write("﻿")  # BOM: para que Excel detecte UTF-8 y no manche los acentos
@@ -276,9 +312,10 @@ def exportar_xlsx(
     sexo: Sexo | None = None,
     tipo: TipoParticipante | None = None,
     asistio: bool | None = None,
+    equipo_id: int | None = None,
     db: Session = Depends(get_db),
 ):
-    rows = _export_rows(q, pago, zona, sexo, tipo, db, asistio)
+    rows = _export_rows(q, pago, zona, sexo, tipo, db, asistio, equipo_id)
 
     wb = Workbook()
     ws = wb.active

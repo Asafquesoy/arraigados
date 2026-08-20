@@ -206,6 +206,11 @@ export function Recepcion() {
                         Talla {camper.talla_camisa === "OTRA" ? camper.talla_otra || "Otra" : camper.talla_camisa}
                       </span>
                     )}
+                    {camper.equipo && (
+                      <span className="recepcion-chip" style={{ borderColor: camper.equipo.color }}>
+                        {camper.equipo.nombre}
+                      </span>
+                    )}
                     <span className={`recepcion-chip ${camper.pago_verificado ? "recepcion-chip--verde" : "recepcion-chip--ambar"}`}>
                       <ShieldCheckIcon size={13} /> {camper.pago_verificado ? "Pago verificado" : "Pago pendiente"}
                     </span>

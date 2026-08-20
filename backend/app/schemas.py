@@ -10,6 +10,17 @@ class CamperCreateResponse(BaseModel):
     nombre: str
 
 
+class EquipoBrief(BaseModel):
+    """Versión mínima del equipo embebida en CamperOut — solo lo que la
+    tabla/tarjetas del panel necesitan para pintar el chip de equipo."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    color: str
+
+
 class CamperOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -39,6 +50,8 @@ class CamperOut(BaseModel):
     asistio_en: datetime | None
     asistio_por: str | None
     created_at: datetime
+    equipo: EquipoBrief | None
+    equipo_fijado: bool
 
     @computed_field
     @property
@@ -131,3 +144,91 @@ class AsistenciaStatsResponse(BaseModel):
     total: int
     asistieron: int
     faltan: int
+
+
+# ---- Equipos ----
+
+_HEX_COLOR = r"^#[0-9a-fA-F]{6}$"
+
+
+class EquipoCreate(BaseModel):
+    nombre: str = Field(min_length=1, max_length=80)
+    color: str = Field(pattern=_HEX_COLOR)
+
+
+class EquipoUpdate(BaseModel):
+    nombre: str | None = Field(default=None, min_length=1, max_length=80)
+    color: str | None = Field(default=None, pattern=_HEX_COLOR)
+    orden: int | None = None
+
+
+class EquipoStats(BaseModel):
+    total: int
+    edad_promedio: float | None
+    bautizados: int
+    bautismo_meses_promedio: float | None
+    hombres: int
+    mujeres: int
+    consejeros: int
+    iglesias_distintas: int
+
+
+class MiembroOut(BaseModel):
+    """Subconjunto ligero de CamperOut para la pantalla de equipos — evita
+    mandar los campos de pago/comprobante que esa pantalla no usa."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    edad: int
+    sexo: Sexo
+    tipo: TipoParticipante | None
+    iglesia: str
+    zona: Zona | None
+    bautizado: bool | None
+    bautismo_mes: int | None
+    bautismo_anio: int | None
+    equipo_fijado: bool
+
+
+class EquipoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    color: str
+    orden: int
+    stats: EquipoStats
+    miembros: list[MiembroOut]
+
+
+class DistribucionOut(BaseModel):
+    equipos: list[EquipoOut]
+    sin_equipo: list[MiembroOut]
+
+
+class EquiposConfig(BaseModel):
+    equipos_auto: bool
+    eq_balance_edad: bool
+    eq_balance_bautismo: bool
+    eq_balance_procedencia: bool
+    eq_balance_sexo: bool
+    eq_balance_tamano: bool
+
+
+class EquiposConfigUpdate(BaseModel):
+    equipos_auto: bool | None = None
+    eq_balance_edad: bool | None = None
+    eq_balance_bautismo: bool | None = None
+    eq_balance_procedencia: bool | None = None
+    eq_balance_sexo: bool | None = None
+    eq_balance_tamano: bool | None = None
+
+
+class EquipoAsignacion(BaseModel):
+    equipo_id: int | None = None
+
+
+class RepartirRequest(BaseModel):
+    incluir_fijados: bool = False

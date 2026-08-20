@@ -1,13 +1,18 @@
+import logging
 from datetime import date
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import AppSettings, Camper, Sexo, TallaCamisa, TipoParticipante, Zona
+from ..equipos_balance import Criterios, construir_contexto, elegir_equipo
+from ..models import AppSettings, Camper, Equipo, Sexo, TallaCamisa, TipoParticipante, Zona
 from ..ratelimit import rate_limit
 from ..schemas import CamperCreateResponse
 from ..storage import save_ticket
+from .equipos import criterios_desde_settings
+
+logger = logging.getLogger("arraigados")
 
 router = APIRouter(prefix="/api/registros", tags=["registro"])
 
@@ -89,5 +94,28 @@ async def crear_registro(
     db.add(camper)
     db.commit()
     db.refresh(camper)
+
+    # Reparto automático a un equipo — nunca debe tumbar el registro en sí
+    # (que ya se guardó): un fallo aquí solo deja a la persona en "Sin
+    # equipo", recogible después con el botón "Repartir a todos". Los
+    # consejeros quedan siempre fuera de esto: solo entran a un equipo si un
+    # admin los mueve a mano (mismo criterio que equipos_balance.repartir()).
+    try:
+        if tipo == TipoParticipante.CAMPERO and (settings_row.equipos_auto if settings_row else True):
+            equipos = db.query(Equipo).order_by(Equipo.orden.asc(), Equipo.id.asc()).all()
+            if equipos:
+                criterios = criterios_desde_settings(settings_row) if settings_row else Criterios()
+                participantes = db.query(Camper).all()
+                equipos_miembros: dict[int, list[Camper]] = {e.id: [] for e in equipos}
+                for c in participantes:
+                    if c.equipo_id in equipos_miembros:
+                        equipos_miembros[c.equipo_id].append(c)
+                contexto = construir_contexto(participantes, date.today())
+                elegido = elegir_equipo(camper, equipos, equipos_miembros, contexto, criterios)
+                camper.equipo_id = elegido.id
+                db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("No se pudo asignar equipo automáticamente al folio %s", camper.folio)
 
     return CamperCreateResponse(folio=camper.folio, nombre=camper.nombre)

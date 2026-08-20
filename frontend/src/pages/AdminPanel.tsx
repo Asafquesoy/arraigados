@@ -22,6 +22,8 @@ import {
   ApiError,
   type CamperListResponse,
   type CamperOut,
+  type DistribucionOut,
+  type EquipoOut,
   type Sexo,
   type TipoParticipante,
   type Zona,
@@ -44,6 +46,9 @@ export function AdminPanel() {
   const [sexo, setSexo] = useState<"" | Sexo>("");
   const [tipo, setTipo] = useState<"" | TipoParticipante>("");
   const [asistio, setAsistio] = useState<"" | "true" | "false">("");
+  // "" = todos, "0" = sin equipo (centinela que también usa el backend), o el id del equipo.
+  const [equipoFiltro, setEquipoFiltro] = useState("");
+  const [equiposList, setEquiposList] = useState<EquipoOut[]>([]);
   const [page, setPage] = useState(1);
   const [ticketModal, setTicketModal] = useState<{ id: number; nombre: string } | null>(null);
   const [toast, setToast] = useToast();
@@ -62,6 +67,7 @@ export function AdminPanel() {
     if (sexo) params.set("sexo", sexo);
     if (tipo) params.set("tipo", tipo);
     if (asistio) params.set("asistio", asistio);
+    if (equipoFiltro) params.set("equipo_id", equipoFiltro);
     return params;
   }
 
@@ -87,7 +93,17 @@ export function AdminPanel() {
     }, 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, pago, zona, sexo, tipo, asistio]);
+  }, [q, pago, zona, sexo, tipo, asistio, equipoFiltro]);
+
+  useEffect(() => {
+    if (!authLoading && username) {
+      apiFetch<DistribucionOut>("/admin/equipos/distribucion")
+        .then((res) => setEquiposList(res.equipos))
+        .catch(() => {
+          /* el filtro de equipo simplemente no se llena si esto falla — no es bloqueante */
+        });
+    }
+  }, [authLoading, username]);
 
   if (!authLoading && !username) {
     return <Navigate to="/admin" replace />;
@@ -137,6 +153,11 @@ export function AdminPanel() {
     tipo && { key: "tipo", label: TIPO_LABEL[tipo], clear: () => setTipo("") },
     pago && { key: "pago", label: pago === "true" ? "Verificado" : "Pendiente", clear: () => setPago("") },
     asistio && { key: "asistio", label: asistio === "true" ? "Llegó" : "No ha llegado", clear: () => setAsistio("") },
+    equipoFiltro && {
+      key: "equipo",
+      label: equipoFiltro === "0" ? "Sin equipo" : equiposList.find((e) => String(e.id) === equipoFiltro)?.nombre ?? "Equipo",
+      clear: () => setEquipoFiltro(""),
+    },
   ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
 
   return (
@@ -223,6 +244,18 @@ export function AdminPanel() {
             <option value="false">No ha llegado</option>
           </select>
         </div>
+        <div className="field">
+          <label htmlFor="equipo-filter">Equipo</label>
+          <select id="equipo-filter" value={equipoFiltro} onChange={(e) => setEquipoFiltro(e.target.value)}>
+            <option value="">Todos</option>
+            <option value="0">Sin equipo</option>
+            {equiposList.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="admin-export-row">
           <a
             className="btn btn-ghost admin-export"
@@ -281,6 +314,7 @@ export function AdminPanel() {
                   <th>Comprobante</th>
                   <th>Pago</th>
                   <th>Llegó</th>
+                  <th>Equipo</th>
                   {puedeBorrar && <th></th>}
                 </tr>
               </thead>
@@ -334,6 +368,16 @@ export function AdminPanel() {
                         <span className="muted">—</span>
                       )}
                     </td>
+                    <td>
+                      {camper.equipo ? (
+                        <span className="admin-equipo-chip">
+                          <span className="admin-equipo-dot" style={{ background: camper.equipo.color }} />
+                          {camper.equipo.nombre}
+                        </span>
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
                     {puedeBorrar && (
                       <td>
                         <ConfirmButton
@@ -375,6 +419,16 @@ export function AdminPanel() {
                   </p>
                   <p className="muted admin-row-meta">
                     {camper.asistio ? <span className="admin-asistio-si">✓ Llegó</span> : "Aún no llega"}
+                  </p>
+                  <p className="muted admin-row-meta">
+                    {camper.equipo ? (
+                      <span className="admin-equipo-chip">
+                        <span className="admin-equipo-dot" style={{ background: camper.equipo.color }} />
+                        {camper.equipo.nombre}
+                      </span>
+                    ) : (
+                      "Sin equipo"
+                    )}
                   </p>
                 </div>
 

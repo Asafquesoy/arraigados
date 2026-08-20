@@ -49,6 +49,11 @@ export function Navbar() {
                   Panel
                 </Link>
               )}
+              {location.pathname !== "/admin/equipos" && (
+                <Link to="/admin/equipos" className="navbar-link">
+                  Equipos
+                </Link>
+              )}
               {role === "ADMIN" && (
                 <Link to="/admin/usuarios" className="navbar-link">
                   Usuarios

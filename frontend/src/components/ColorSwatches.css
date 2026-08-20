@@ -1,0 +1,57 @@
+.color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.color-swatch {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dur-rapida) var(--ease-suave), border-color var(--dur-rapida) var(--ease-suave);
+}
+
+.color-swatch:hover {
+  transform: scale(1.08);
+}
+
+.color-swatch.is-selected {
+  border-color: var(--hueso);
+  box-shadow: 0 0 0 2px var(--corteza), 0 0 0 4px var(--amarillo);
+}
+
+.color-swatch:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.color-swatch--custom {
+  background: repeating-conic-gradient(rgba(255, 255, 255, 0.18) 0% 25%, transparent 0% 50%) 50% / 10px 10px;
+  color: var(--hueso);
+  font-size: var(--t-lg);
+  font-weight: 700;
+}
+
+.color-swatch--custom input[type="color"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+/* En pantallas táctiles el objetivo mínimo recomendado es 44px */
+@media (pointer: coarse) {
+  .color-swatch {
+    width: 44px;
+    height: 44px;
+  }
+}

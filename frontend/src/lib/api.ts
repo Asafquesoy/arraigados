@@ -41,6 +41,12 @@ export type TallaCamisa = "XCH" | "CH" | "M" | "G" | "XG" | "OTRA";
 export type Zona = "VALLES" | "VICTORIA" | "MANTE" | "METRO" | "OTRO";
 export type TipoParticipante = "CAMPERO" | "CONSEJERO";
 
+export interface EquipoBrief {
+  id: number;
+  nombre: string;
+  color: string;
+}
+
 export interface CamperOut {
   id: number;
   folio: string;
@@ -68,6 +74,8 @@ export interface CamperOut {
   asistio_en: string | null;
   asistio_por: string | null;
   created_at: string;
+  equipo: EquipoBrief | null;
+  equipo_fijado: boolean;
 }
 
 export interface CamperListResponse {
@@ -125,4 +133,54 @@ export interface AsistenciaStats {
   total: number;
   asistieron: number;
   faltan: number;
+}
+
+// ---- Equipos ----
+
+export interface EquipoStats {
+  total: number;
+  edad_promedio: number | null;
+  bautizados: number;
+  bautismo_meses_promedio: number | null;
+  hombres: number;
+  mujeres: number;
+  consejeros: number;
+  iglesias_distintas: number;
+}
+
+export interface MiembroOut {
+  id: number;
+  nombre: string;
+  edad: number;
+  sexo: Sexo;
+  tipo: TipoParticipante | null;
+  iglesia: string;
+  zona: Zona | null;
+  bautizado: boolean | null;
+  bautismo_mes: number | null;
+  bautismo_anio: number | null;
+  equipo_fijado: boolean;
+}
+
+export interface EquipoOut {
+  id: number;
+  nombre: string;
+  color: string;
+  orden: number;
+  stats: EquipoStats;
+  miembros: MiembroOut[];
+}
+
+export interface DistribucionOut {
+  equipos: EquipoOut[];
+  sin_equipo: MiembroOut[];
+}
+
+export interface EquiposConfig {
+  equipos_auto: boolean;
+  eq_balance_edad: boolean;
+  eq_balance_bautismo: boolean;
+  eq_balance_procedencia: boolean;
+  eq_balance_sexo: boolean;
+  eq_balance_tamano: boolean;
 }

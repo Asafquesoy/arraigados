@@ -2,8 +2,8 @@ import enum
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
 
@@ -84,6 +84,31 @@ class Camper(Base):
     asistio_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     asistio_por: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    equipo_id: Mapped[int | None] = mapped_column(
+        ForeignKey("equipos.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # True cuando un admin movió a esta persona a mano desde /admin/equipos —
+    # "Repartir a todos" respeta a los fijados por defecto para no deshacer
+    # silenciosamente un ajuste manual (ver equipos_balance.repartir()).
+    equipo_fijado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    equipo: Mapped["Equipo | None"] = relationship(back_populates="miembros")
+
+
+class Equipo(Base):
+    """Equipo de campamento — creado desde /admin/equipos. El reparto
+    balanceado entre equipos vive en equipos_balance.py, no aquí; este
+    modelo es solo el contenedor (nombre, color, orden de despliegue)."""
+
+    __tablename__ = "equipos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nombre: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    color: Mapped[str] = mapped_column(String(7))
+    orden: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    miembros: Mapped[list["Camper"]] = relationship(back_populates="equipo", passive_deletes=True)
 
 
 class AdminUser(Base):
@@ -100,7 +125,15 @@ class AppSettings(Base):
     """Fila única (id=1) de interruptores editables desde el panel admin sin
     tocar código ni redeploy — `show_shirt_size`, `precio_mxn`,
     `pedir_comprobante` y `registro_abierto`. sembrada en el arranque por
-    seed_settings() en main.py, igual que seed_admin()."""
+    seed_settings() en main.py, igual que seed_admin().
+
+    Los seis campos `equipos_*`/`eq_balance_*` siguen el mismo patrón de
+    almacenamiento pero son una excepción deliberada al resto de esta clase:
+    no se exponen en `AppSettingsOut`/`GET /api/settings` (público) porque el
+    formulario de registro no los necesita — se leen/escriben solo desde
+    `GET/PATCH /api/admin/equipos/config`. No hay `eq_balance_consejeros`:
+    los consejeros nunca se auto-asignan a un equipo (ver equipos_balance.py),
+    así que no hay nada de "consejeros repartidos" que apagar/prender."""
 
     __tablename__ = "app_settings"
 
@@ -109,3 +142,9 @@ class AppSettings(Base):
     precio_mxn: Mapped[int] = mapped_column(Integer, default=350)
     pedir_comprobante: Mapped[bool] = mapped_column(Boolean, default=True)
     registro_abierto: Mapped[bool] = mapped_column(Boolean, default=True)
+    equipos_auto: Mapped[bool] = mapped_column(Boolean, default=True)
+    eq_balance_edad: Mapped[bool] = mapped_column(Boolean, default=True)
+    eq_balance_bautismo: Mapped[bool] = mapped_column(Boolean, default=True)
+    eq_balance_procedencia: Mapped[bool] = mapped_column(Boolean, default=True)
+    eq_balance_sexo: Mapped[bool] = mapped_column(Boolean, default=True)
+    eq_balance_tamano: Mapped[bool] = mapped_column(Boolean, default=True)

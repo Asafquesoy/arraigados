@@ -8,7 +8,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 from .config import settings
 from .database import SessionLocal
 from .models import AdminRole, AdminUser, AppSettings
-from .routers import admin, auth, public, settings as settings_router
+from .routers import admin, auth, equipos, public, settings as settings_router
 from .security import hash_password
 
 logger = logging.getLogger("arraigados")
@@ -46,7 +46,17 @@ def seed_settings() -> None:
         if not db.get(AppSettings, 1):
             db.add(
                 AppSettings(
-                    id=1, show_shirt_size=False, precio_mxn=350, pedir_comprobante=True, registro_abierto=True
+                    id=1,
+                    show_shirt_size=False,
+                    precio_mxn=350,
+                    pedir_comprobante=True,
+                    registro_abierto=True,
+                    equipos_auto=True,
+                    eq_balance_edad=True,
+                    eq_balance_bautismo=True,
+                    eq_balance_procedencia=True,
+                    eq_balance_sexo=True,
+                    eq_balance_tamano=True,
                 )
             )
             db.commit()
@@ -78,6 +88,7 @@ app.include_router(public.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(admin.usuarios_router)
+app.include_router(equipos.router)
 app.include_router(settings_router.router)
 
 

@@ -287,11 +287,12 @@ inside this direction rather than introducing an unrelated palette or mood.
 
 ### Data model
 
-Three tables (`backend/app/models.py`): `campers` (registration + `folio` unique short code +
+Four tables (`backend/app/models.py`): `campers` (registration + `folio` unique short code +
 `pago_verificado`/`verificado_en`/`verificado_por` audit fields, plus the matching
-`asistio`/`asistio_en`/`asistio_por` trio for camp-day check-in), `admin_users`
-(username/bcrypt hash/`role`), and `app_settings` (single row, `id=1` — runtime-editable flags,
-see the Runtime settings pattern above). `Sexo`, `TallaCamisa`, and `AdminRole`
+`asistio`/`asistio_en`/`asistio_por` trio for camp-day check-in, plus `equipo_id`/`equipo_fijado`
+— see Equipos below), `admin_users` (username/bcrypt hash/`role`), `equipos` (id/nombre/color/
+orden — see below), and `app_settings` (single row, `id=1` — runtime-editable flags, see the
+Runtime settings pattern above). `Sexo`, `TallaCamisa`, and `AdminRole`
 (`ADMIN`/`VERIFICADOR_PAGO`/`VISUALIZADOR`/`RECEPCION`) are Python/DB enums defined in `models.py`
 and reused in `schemas.py`. `campers.ticket_path`/`ticket_mime` are nullable — a registration can
 exist without a receipt when the `pedir_comprobante` toggle is off; `CamperOut.tiene_comprobante`
@@ -333,6 +334,65 @@ button (`ConfirmButton` for the undo) — no table view, unlike `AdminPanel.tsx`
 `AdminPanel.tsx` guards `RECEPCION` accounts straight back to `/admin/recepcion` and, for every
 other role, surfaces attendance read-only (a "Llegó" column/chip and an asistencia filter) since
 marking arrivals is recepción's job, not the organizing panel's.
+
+### Equipos (balanced team assignment)
+
+`/admin/equipos` (`pages/Equipos.tsx`) lets Admin create teams (name + color from
+`components/ColorSwatches.tsx`, an 8-swatch palette pulled from `tokens.css` plus a native
+`<input type="color">` escape hatch) and either let people fall into a team automatically or move
+them by hand — no drag-and-drop, deliberately, for a non-technical staff audience: `MoverMiembro.tsx`
+expands a row of one big button per team instead. Every other role sees the same screen read-only
+(`canEdit = role === "ADMIN"`, same prop convention as `AdminRegistroToggle`/`AdminAjustes`).
+
+The balancing algorithm lives in `backend/app/equipos_balance.py` — a pure module (no FastAPI, no
+DB session), deterministic (never uses `random`). One cost function
+(`costo_agregar(candidato, miembros_equipo, ...)`) backs both individual assignment
+(`elegir_equipo`, called from `routers/public.py::crear_registro` right after a camper is saved)
+and the bulk reshuffle (`repartir`, called from `routers/equipos.py::repartir_equipos`) — the same
+"which team least unbalances if I add this person" question, asked once per registration or once
+per person during a full reshuffle. Five independently-toggleable criteria (`Criterios` dataclass):
+team size, average age, average time-since-baptism (people with no baptism data don't count toward
+that average but are still spread evenly across teams via a "missing data" cost term), church
+diversity (since the public form no longer collects `ciudad`, "spread out people who know each
+other" is implemented on `iglesia`, weighted 0.7, with `zona` as a 0.3-weighted tiebreaker — see
+Data model above), and sex ratio. `repartir()` also runs a bounded local-search refinement pass
+(`_refinar`, up to 3 sweeps, stops at the first sweep with no improving move) that tries moving
+each movable person to a cheaper team — this is what keeps averages close instead of just
+"reasonable" from the greedy pass alone.
+
+**`TipoParticipante.CONSEJERO` never enters `elegir_equipo`/`repartir()`'s automatic placement at
+all** — counselors only get a team if an Admin moves them by hand from `Equipos.tsx`
+(`PATCH /api/admin/registros/{id}/equipo`, which sets `equipo_fijado=True`); this holds even when
+`POST /api/admin/equipos/repartir` is called with `incluir_fijados=True` (a full reshuffle that
+*does* override manually-placed campers, but never touches a manually-placed counselor — see the
+`consejeros_fijados`/`consejeros_sueltos`/`no_consejeros` split at the top of `repartir()`). A
+counselor's registration (`routers/public.py::crear_registro`) skips the auto-assignment block
+entirely regardless of `equipos_auto`. Because of this there is no `eq_balance_consejeros`
+criterion — since counselors are never candidates in `elegir_equipo`, there's nothing about them
+left to balance.
+
+`campers.equipo_fijado` is the key to combining automatic and manual assignment without one
+undoing the other: `PATCH /api/admin/registros/{id}/equipo` (`routers/admin.py::mover_de_equipo`,
+Admin-only) sets it to `True` whenever a human moves someone by hand, and `repartir()` skips
+fijados by default — `POST /api/admin/equipos/repartir` takes an `incluir_fijados` flag (surfaced
+as a checkbox in `Equipos.tsx`) for the rare case of wanting a truly clean reshuffle, which also
+clears the flag on every camper it touches since it just overrode their manual placement (not on
+counselors, whose placement it never touches).
+
+The six `equipos_auto`/`eq_balance_*` booleans live in `app_settings` (same
+seed/PATCH-with-`exclude_unset` shape as `show_shirt_size` etc. — see Runtime settings pattern
+above) but are a **deliberate exception** to that pattern: they're read/written only through
+`GET`/`PATCH /api/admin/equipos/config`, never added to `AppSettingsOut` or the public
+`GET /api/settings` (the registration form has no use for them, and they're not consumed via
+`useSettings()`/`SettingsContext.tsx` — `Equipos.tsx` fetches and patches them directly). Deleting
+a team (`DELETE /api/admin/equipos/{id}`) sets its members' `equipo_id` to `NULL` explicitly in
+the same request — SQLite doesn't enforce the `ON DELETE SET NULL` foreign key that Postgres gets
+(see `alembic/versions/0011_equipos.py`, which only creates that FK when `bind.dialect.name ==
+"postgresql"`, same conditional pattern as prior migrations), so the explicit `UPDATE` is what
+keeps dev/SQLite and prod/Postgres behaving the same way. Auto-assignment on registration is
+wrapped in `try/except Exception` that only logs — a balancing failure must never fail the
+registration itself, which already committed; anyone left unassigned this way just shows up under
+"Sin equipo" in `Equipos.tsx`, recoverable with "Repartir a todos".
 
 ## Deployment
 

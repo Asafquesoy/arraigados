@@ -21,3 +21,5 @@ export * from "./EyeIcon";
 export * from "./EyeOffIcon";
 export * from "./PhoneIcon";
 export * from "./CheckIcon";
+export * from "./EquiposIcon";
+export * from "./PinIcon";

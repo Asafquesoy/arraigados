@@ -3,6 +3,19 @@
   margin: 0.3rem 0 1.25rem;
 }
 
+.admin-equipo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.admin-equipo-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 .admin-stats {
   display: grid;
   grid-template-columns: 1fr;

@@ -1,0 +1,90 @@
+.equipo-card-wrap {
+  min-width: 0;
+}
+
+.equipo-card {
+  padding: 1.25rem 1.5rem;
+  border-left: 5px solid var(--color-equipo, var(--amarillo));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-equipo, var(--amarillo)) 10%, transparent), transparent 40%),
+    var(--tarjeta-fondo);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.equipo-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.equipo-card-dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  background: var(--color-equipo, var(--amarillo));
+  flex-shrink: 0;
+}
+
+.equipo-card-nombre {
+  margin: 0;
+  font-size: var(--t-lg);
+  color: var(--hueso);
+  font-family: var(--fuente-texto);
+  font-weight: 700;
+}
+
+.equipo-card-total {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--t-sm);
+}
+
+.equipo-card-header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.equipo-card-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.equipo-card-edit-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.equipo-card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.equipo-card-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--tarjeta-borde);
+  font-size: var(--t-xs);
+  color: var(--hueso-tenue);
+}
+
+.equipo-card-miembros {
+  margin-top: 1rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--tarjeta-borde);
+  flex: 1;
+}
+
+.equipo-card-empty {
+  padding-block: 0.75rem;
+}
