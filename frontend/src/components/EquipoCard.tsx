@@ -20,6 +20,15 @@ interface EquipoCardProps {
   onMover: (miembro: MiembroOut, equipoActualId: number | null, destinoId: number | null) => void;
   onRename: (nombre: string, color: string) => Promise<void>;
   onDelete: () => void;
+  /** "resumen": tarjeta compacta y clicable, sin lista de miembros — para la
+   *  pestaña Resumen. "detalle" (default): lo de siempre, con la lista
+   *  completa — para cuando ese equipo está seleccionado en las pestañas. */
+  variant?: "resumen" | "detalle";
+  onSelect?: () => void;
+  /** Proporción 0–1 del tamaño de este equipo respecto al más grande —
+   *  pinta la barra de tamaño en la variante "resumen" para que el
+   *  desbalance salte a la vista sin leer números. */
+  tamanoRelativo?: number;
 }
 
 function coincide(m: MiembroOut, q: string): boolean {
@@ -40,6 +49,9 @@ export function EquipoCard({
   onMover,
   onRename,
   onDelete,
+  variant = "detalle",
+  onSelect,
+  tamanoRelativo,
 }: EquipoCardProps) {
   const [editing, setEditing] = useState(false);
   const [draftNombre, setDraftNombre] = useState(equipo.nombre);
@@ -67,6 +79,51 @@ export function EquipoCard({
 
   const miembrosFiltrados = equipo.miembros.filter((m) => coincide(m, q));
   const { stats } = equipo;
+
+  if (variant === "resumen") {
+    return (
+      <Reveal delay={delay} className="equipo-card-wrap">
+        <m.button
+          type="button"
+          className="glass-card equipo-card equipo-card--resumen"
+          style={{ "--color-equipo": equipo.color } as CSSProperties}
+          onClick={onSelect}
+        >
+          <div className="equipo-card-header">
+            <span className="equipo-card-dot" aria-hidden="true" />
+            <h2 className="equipo-card-nombre">{equipo.nombre}</h2>
+            <span className="muted equipo-card-total">
+              <UserIcon size={13} /> {stats.total}
+            </span>
+          </div>
+
+          <div className="equipo-card-barra" aria-hidden="true">
+            <div className="equipo-card-barra-relleno" style={{ width: `${Math.round((tamanoRelativo ?? 0) * 100)}%` }} />
+          </div>
+
+          <div className="equipo-card-stats">
+            {stats.edad_promedio !== null && (
+              <span className="equipo-card-stat">Edad prom. {stats.edad_promedio}</span>
+            )}
+            <span className="equipo-card-stat">
+              <ShieldCheckIcon size={13} /> Bautizados {stats.bautizados}/{stats.total}
+            </span>
+            <span className="equipo-card-stat">
+              H {stats.hombres} / M {stats.mujeres}
+            </span>
+            <span className="equipo-card-stat">
+              <ReceiptIcon size={13} /> {stats.iglesias_distintas} iglesias
+            </span>
+            {stats.consejeros > 0 && (
+              <span className="equipo-card-stat">
+                <CheckIcon size={13} /> {stats.consejeros} consejero{stats.consejeros === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+        </m.button>
+      </Reveal>
+    );
+  }
 
   return (
     <Reveal delay={delay} className="equipo-card-wrap">

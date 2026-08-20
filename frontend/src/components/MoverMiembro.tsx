@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { PinIcon } from "./icons";
-import type { EquipoOut, MiembroOut } from "../lib/api";
+import type { EquipoBrief, EquipoOut, MiembroOut } from "../lib/api";
 import { ZONA_LABEL } from "./ZonaField";
 import "./MoverMiembro.css";
 
@@ -14,6 +14,10 @@ interface MoverMiembroProps {
   highlighted: boolean;
   onToggle: () => void;
   onMover: (equipoId: number | null) => void;
+  /** Solo se pasa en la lista de resultados de búsqueda (que mezcla
+   *  personas de todos los equipos): muestra a qué equipo pertenece cada
+   *  quien, ya que ahí no es obvio por el contexto de la tarjeta. */
+  equipoChip?: EquipoBrief | null;
 }
 
 /**
@@ -32,6 +36,7 @@ export function MoverMiembro({
   highlighted,
   onToggle,
   onMover,
+  equipoChip,
 }: MoverMiembroProps) {
   return (
     <div className={`mover-miembro ${highlighted ? "is-highlighted" : ""}`}>
@@ -44,6 +49,14 @@ export function MoverMiembro({
                 <PinIcon size={13} />
               </span>
             )}
+            {equipoChip !== undefined &&
+              (equipoChip ? (
+                <span className="mover-miembro-equipo-chip" style={{ "--color-equipo": equipoChip.color } as CSSProperties}>
+                  <span className="mover-miembro-dot" /> {equipoChip.nombre}
+                </span>
+              ) : (
+                <span className="mover-miembro-equipo-chip mover-miembro-equipo-chip--sin">Sin equipo</span>
+              ))}
           </p>
           <p className="muted mover-miembro-meta">
             {miembro.iglesia}

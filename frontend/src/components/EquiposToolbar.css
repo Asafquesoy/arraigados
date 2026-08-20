@@ -1,0 +1,92 @@
+.equipos-toolbar {
+  margin-top: 1.75rem;
+  padding: 1.25rem 1.5rem;
+  /* Los paneles de abajo animan su alto (FieldReveal) varias veces por
+     segundo mientras se abren/cierran — .glass-card trae backdrop-filter +
+     una sombra de gran radio (--sombra-suave), y ambos se repintan en CADA
+     frame de esa animación de alto (que ya de por sí fuerza reflow al no
+     poder ir por GPU). En un panel chico (un solo campo, como en el
+     formulario de registro) no se nota; aquí, con paneles más grandes
+     (criterios, formulario de color), sí se traba. Se apagan los dos para
+     esta tarjeta en particular — no es una tarjeta "hero", es una barra de
+     controles que se anima seguido. */
+  backdrop-filter: none;
+  background: var(--tarjeta-fondo-alta);
+  box-shadow: none;
+  /* Evita que el navegador tenga que remedir todo lo de abajo (pestañas,
+     rejilla) en cada frame de la animación de alto — le dice que el tamaño
+     de esta caja no depende de nada externo. */
+  contain: layout;
+}
+
+.equipos-toolbar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  color: var(--amarillo);
+}
+
+.equipos-toolbar-header h2 {
+  margin: 0;
+  font-size: var(--t-lg);
+  color: var(--hueso);
+}
+
+.equipos-toolbar-btns {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.equipos-toolbar-btns .btn.is-active {
+  background: var(--gradiente-raiz);
+  color: var(--corteza);
+  border-color: transparent;
+}
+
+.equipos-toolbar-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.equipos-toolbar-panel {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--tarjeta-borde);
+}
+
+.equipos-toolbar-repartir {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.equipos-toolbar-repartir-hint {
+  margin: 0;
+  font-size: var(--t-sm);
+}
+
+.equipos-toolbar-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--t-sm);
+  color: var(--hueso-tenue);
+  cursor: pointer;
+}
+
+@media (max-width: 719px) {
+  .equipos-toolbar-btns {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .equipos-toolbar-btns .btn {
+    flex: 1;
+  }
+}

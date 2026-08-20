@@ -34,6 +34,24 @@
   color: var(--amarillo);
 }
 
+.mover-miembro-equipo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--tarjeta-borde);
+  color: var(--hueso-tenue);
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+
+.mover-miembro-equipo-chip--sin {
+  color: var(--ambar);
+  border-color: rgba(245, 166, 35, 0.4);
+}
+
 .mover-miembro-meta {
   margin: 0.15rem 0 0;
   font-size: var(--t-xs);

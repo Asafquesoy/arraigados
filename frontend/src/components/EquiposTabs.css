@@ -1,0 +1,84 @@
+.equipos-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.4rem;
+  margin-top: 1.25rem;
+}
+
+.equipos-tabs.is-dimmed {
+  opacity: 0.55;
+}
+
+/* Pegajosa solo en escritorio/tablet grande — en móvil se comería media
+   pantalla, igual que .admin-filters en AdminPanel.css. */
+@media (min-width: 1024px) {
+  .equipos-tabs {
+    position: sticky;
+    top: 76px;
+    z-index: 10;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    padding: 0.6rem 0.5rem;
+    border-radius: var(--radio-m);
+    background: var(--corteza-alta);
+  }
+}
+
+.equipos-tab {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--tarjeta-borde);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--hueso-tenue);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--dur-rapida) ease, color var(--dur-rapida) ease, background var(--dur-rapida) ease;
+}
+
+.equipos-tab:hover {
+  border-color: var(--color-equipo, var(--amarillo));
+}
+
+.equipos-tab.is-active {
+  background: var(--color-equipo, var(--gradiente-raiz));
+  color: var(--corteza);
+  border-color: transparent;
+}
+
+.equipos-tab-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--color-equipo, var(--amarillo));
+  flex-shrink: 0;
+}
+
+.equipos-tab.is-active .equipos-tab-dot {
+  background: var(--corteza);
+}
+
+.equipos-tab-count {
+  opacity: 0.75;
+  font-size: var(--t-xs);
+}
+
+.equipos-tab--sin {
+  border-color: rgba(245, 166, 35, 0.4);
+  color: var(--ambar);
+}
+
+@media (pointer: coarse) {
+  .equipos-tab {
+    min-height: 44px;
+  }
+}

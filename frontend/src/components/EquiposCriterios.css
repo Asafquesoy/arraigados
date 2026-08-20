@@ -1,26 +1,5 @@
-.equipos-criterios {
-  margin-top: 1.75rem;
-}
-
-.equipos-criterios-card {
-  padding: 1.5rem;
-}
-
-.equipos-criterios-header {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  color: var(--amarillo);
-}
-
-.equipos-criterios-header h2 {
-  margin: 0;
-  font-size: var(--t-lg);
-  color: var(--hueso);
-}
-
 .equipos-criterios-nota {
-  margin-top: 0.6rem;
+  margin-top: 0;
   font-size: var(--t-sm);
 }
 

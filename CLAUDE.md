@@ -344,6 +344,34 @@ them by hand — no drag-and-drop, deliberately, for a non-technical staff audie
 expands a row of one big button per team instead. Every other role sees the same screen read-only
 (`canEdit = role === "ADMIN"`, same prop convention as `AdminRegistroToggle`/`AdminAjustes`).
 
+**UX for scale (~10 teams × ~15 people ≈ 150 rows):** the screen doesn't render every team's full
+member list at once — that was the original layout and it became an unusable multi-screen scroll
+once tested with realistic camp numbers. Instead:
+- `components/EquiposToolbar.tsx` collapses what used to be three always-open cards (new team /
+  criteria / repartir) into one row of three buttons, each expanding its panel via
+  `FieldReveal`/`AnimatePresence initial={false}` — only one panel open at a time.
+  `components/EquiposCriterios.tsx` no longer owns its own `glass-card`/`Reveal`; it's just the
+  panel content now, since the toolbar supplies the card.
+- `components/EquiposTabs.tsx` is a per-team tab bar (color dot + name + count), sticky under the
+  navbar from 1024px up (same `position: sticky` pattern as `.admin-filters` in
+  `AdminPanel.css`), horizontally scrollable with `scroll-snap` on mobile instead of wrapping.
+  `Equipos.tsx` keeps the active tab as `EquiposTabId = "resumen" | "sin-equipo" | number` state.
+- The default "Resumen" tab shows every team as a **compact** `EquipoCard` (`variant="resumen"`
+  prop on `components/EquipoCard.tsx`) — stats chips only, no member list, plus a CSS-only
+  relative size bar (`--color-equipo`-tinted, width = team size ÷ largest team) so imbalance is
+  visible without reading numbers. Clicking a card jumps to that team's tab, which renders the
+  same `EquipoCard` with `variant="detalle"` (the original full member-list layout).
+- Typing in the search box switches to a flat, all-teams results list (bypasses whichever tab is
+  active) — each `MoverMiembro` row gets an `equipoChip` prop showing which team that person is
+  in (or "Sin equipo"), since that's no longer implied by which card the row lives in. Search
+  input is debounced 250ms client-side before filtering.
+- `Equipos.tsx::handleMover` is optimistic (mirrors `togglePago` in `AdminPanel.tsx`): it moves
+  the member between the local `equipos`/`sin_equipo` arrays and recomputes that team's stats
+  with a client-side mirror of `resumen_equipo()` (`recalcularStats()` in `Equipos.tsx`) instead
+  of re-fetching the full distribution after every move — with ~150 rows a full refetch per move
+  was a visible stall. `handleRepartir` still replaces the whole `dist` from the server response,
+  since a full reshuffle really does change everything.
+
 The balancing algorithm lives in `backend/app/equipos_balance.py` — a pure module (no FastAPI, no
 DB session), deterministic (never uses `random`). One cost function
 (`costo_agregar(candidato, miembros_equipo, ...)`) backs both individual assignment

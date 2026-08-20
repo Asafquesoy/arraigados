@@ -2,71 +2,6 @@
   font-size: var(--t-xl);
 }
 
-.equipos-nuevo {
-  margin-top: 1.75rem;
-}
-
-.equipos-nuevo-card {
-  padding: 1.5rem;
-}
-
-.equipos-nuevo-header {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  color: var(--amarillo);
-}
-
-.equipos-nuevo-header h2 {
-  margin: 0;
-  font-size: var(--t-lg);
-  color: var(--hueso);
-}
-
-.equipos-nuevo-btn {
-  margin-left: auto;
-}
-
-.equipos-nuevo-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.equipos-repartir {
-  margin-top: 1.25rem;
-}
-
-.equipos-repartir-card {
-  padding: 1.25rem 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.equipos-repartir-titulo {
-  margin: 0;
-  font-weight: 700;
-  color: var(--hueso);
-}
-
-.equipos-repartir-hint {
-  margin: 0.2rem 0 0.6rem;
-  font-size: var(--t-sm);
-}
-
-.equipos-repartir-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: var(--t-sm);
-  color: var(--hueso-tenue);
-  cursor: pointer;
-}
-
 .equipos-buscador {
   margin-top: 1.5rem;
 }
@@ -84,31 +19,35 @@
   text-align: center;
 }
 
+/* auto-fill en vez de un repeat(N, 1fr) fijo: con ~10 equipos aprovecha el
+   ancho disponible sin depender de breakpoints a mano, y cae sola a una
+   columna en móvil. */
 .equipos-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-  margin-top: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1.1rem;
+  margin-top: 1.25rem;
   align-items: start;
 }
 
-@media (min-width: 720px) {
-  .equipos-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.equipos-grid--single {
+  grid-template-columns: 1fr;
+  max-width: 640px;
 }
 
-@media (min-width: 1180px) {
-  .equipos-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.equipos-resultados {
+  margin-top: 1.25rem;
+  padding: 1.25rem 1.5rem;
 }
 
-.equipos-sin-equipo-wrap {
-  margin-top: 1.5rem;
+.equipos-resultados-title {
+  margin: 0 0 0.5rem;
+  font-size: var(--t-lg);
+  color: var(--hueso);
 }
 
 .equipos-sin-equipo {
+  margin-top: 1.25rem;
   padding: 1.25rem 1.5rem;
 }
 

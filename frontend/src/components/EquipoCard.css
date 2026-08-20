@@ -88,3 +88,32 @@
 .equipo-card-empty {
   padding-block: 0.75rem;
 }
+
+.equipo-card--resumen {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  transition: transform var(--dur-rapida) ease, border-color var(--dur-rapida) ease;
+}
+
+.equipo-card--resumen:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-equipo, var(--amarillo));
+}
+
+.equipo-card-barra {
+  margin-top: 0.75rem;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.equipo-card-barra-relleno {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-equipo, var(--amarillo));
+  transition: width var(--dur-media) ease;
+}

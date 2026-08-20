@@ -1,6 +1,4 @@
-import { Reveal } from "./Reveal";
 import { ToggleSwitch } from "./ToggleSwitch";
-import { EquiposIcon } from "./icons";
 import type { EquiposConfig } from "../lib/api";
 import "./EquiposCriterios.css";
 
@@ -24,61 +22,54 @@ interface EquiposCriteriosProps {
 }
 
 /**
- * Mismo patrón estructural que AdminRegistroToggle.tsx/AdminAjustes.tsx
- * (glass-card + header con icono + controles ocultos si !canEdit), pero con
- * seis interruptores en vez de uno: el maestro ("acomodar solo") y los cinco
- * criterios de balanceo que consume equipos_balance.py en el backend.
+ * Contenido del panel "Cómo se reparten" dentro de EquiposToolbar.tsx — seis
+ * interruptores: el maestro ("acomodar solo") y los cinco criterios de
+ * balanceo que consume equipos_balance.py en el backend. Ya no trae su
+ * propio glass-card/Reveal: el panel plegable que lo envuelve pone el marco.
  */
 export function EquiposCriterios({ config, loading, canEdit, onChange }: EquiposCriteriosProps) {
   return (
-    <Reveal delay={0.1} className="equipos-criterios">
-      <div className="glass-card equipos-criterios-card">
-        <div className="equipos-criterios-header">
-          <EquiposIcon size={18} />
-          <h2>¿Cómo quieres que se repartan?</h2>
-        </div>
+    <div className="equipos-criterios">
+      <p className="muted equipos-criterios-nota">
+        Los consejeros nunca entran solos a un equipo — solo si tú los mueves a mano.
+      </p>
 
-        <p className="muted equipos-criterios-nota">
-          Los consejeros nunca entran solos a un equipo — solo si tú los mueves a mano.
+      {!canEdit && (
+        <p className="muted equipos-criterios-readonly">
+          Solo un administrador puede cambiar estos ajustes.
         </p>
+      )}
 
-        {!canEdit && (
-          <p className="muted equipos-criterios-readonly">
-            Solo un administrador puede cambiar estos ajustes.
-          </p>
-        )}
+      {canEdit && (
+        <>
+          <div className="equipos-criterios-master">
+            <ToggleSwitch
+              checked={config?.equipos_auto ?? true}
+              disabled={loading || !config}
+              onChange={(v) => onChange("equipos_auto", v)}
+              label={
+                config?.equipos_auto
+                  ? "Cada quien que se registre entra solo a un equipo"
+                  : "Nadie entra solo — solo con el botón «Repartir a todos»"
+              }
+            />
+          </div>
 
-        {canEdit && (
-          <>
-            <div className="equipos-criterios-master">
-              <ToggleSwitch
-                checked={config?.equipos_auto ?? true}
-                disabled={loading || !config}
-                onChange={(v) => onChange("equipos_auto", v)}
-                label={
-                  config?.equipos_auto
-                    ? "Cada quien que se registre entra solo a un equipo"
-                    : "Nadie entra solo — solo con el botón «Repartir a todos»"
-                }
-              />
-            </div>
-
-            <div className="equipos-criterios-grid">
-              {CRITERIOS.map(({ field, label, hint }) => (
-                <div className="equipos-criterios-item" key={field}>
-                  <ToggleSwitch
-                    checked={config?.[field] ?? true}
-                    disabled={loading || !config}
-                    onChange={(v) => onChange(field, v)}
-                    label={label}
-                  />
-                  <p className="muted equipos-criterios-hint">{hint}</p>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    </Reveal>
+          <div className="equipos-criterios-grid">
+            {CRITERIOS.map(({ field, label, hint }) => (
+              <div className="equipos-criterios-item" key={field}>
+                <ToggleSwitch
+                  checked={config?.[field] ?? true}
+                  disabled={loading || !config}
+                  onChange={(v) => onChange(field, v)}
+                  label={label}
+                />
+                <p className="muted equipos-criterios-hint">{hint}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
