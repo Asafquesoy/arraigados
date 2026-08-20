@@ -214,16 +214,16 @@ export function Recepcion() {
 
                 <div className="recepcion-card-action">
                   {camper.asistio ? (
-                    <>
-                      <p className="recepcion-card-llego">
+                    <div className="recepcion-card-llego-row">
+                      <p
+                        className="recepcion-card-llego"
+                        title={
+                          camper.asistio_en
+                            ? `${new Date(camper.asistio_en).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}${camper.asistio_por ? ` · registró ${camper.asistio_por}` : ""}`
+                            : undefined
+                        }
+                      >
                         <CheckIcon size={16} /> Llegó
-                        {camper.asistio_en && (
-                          <span className="muted">
-                            {" "}
-                            · {new Date(camper.asistio_en).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
-                            {camper.asistio_por && ` · registró ${camper.asistio_por}`}
-                          </span>
-                        )}
                       </p>
                       <ConfirmButton
                         label="Deshacer"
@@ -231,7 +231,7 @@ export function Recepcion() {
                         className="btn-sm"
                         onConfirm={() => marcarAsistencia(camper, false)}
                       />
-                    </>
+                    </div>
                   ) : (
                     <button
                       type="button"
