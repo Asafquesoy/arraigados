@@ -6,10 +6,11 @@ import { PasswordInput } from "../components/PasswordInput";
 import { CAMP_NAME } from "../config";
 import { useAdminAuth } from "../lib/AdminAuthContext";
 import { ApiError } from "../lib/api";
+import { destinoPorRol } from "../lib/roles";
 import "./AdminLogin.css";
 
 export function AdminLogin() {
-  const { username, loading, login } = useAdminAuth();
+  const { username, role, loading, login } = useAdminAuth();
   const navigate = useNavigate();
   const reduce = useReducedMotion();
   const [form, setForm] = useState({ username: "", password: "" });
@@ -18,7 +19,7 @@ export function AdminLogin() {
   const [shake, setShake] = useState(0);
 
   if (!loading && username) {
-    return <Navigate to="/admin/panel" replace />;
+    return <Navigate to={destinoPorRol(role)} replace />;
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -26,8 +27,8 @@ export function AdminLogin() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(form.username, form.password);
-      navigate("/admin/panel");
+      const res = await login(form.username, form.password);
+      navigate(destinoPorRol(res.role));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudo iniciar sesión.");
       setShake((s) => s + 1);

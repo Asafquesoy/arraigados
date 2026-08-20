@@ -39,6 +39,16 @@ export function Navbar() {
           )}
           {isAdminArea && username && (
             <>
+              {(role === "ADMIN" || role === "RECEPCION") && location.pathname !== "/admin/recepcion" && (
+                <Link to="/admin/recepcion" className="navbar-link">
+                  Recepción
+                </Link>
+              )}
+              {role !== "RECEPCION" && location.pathname !== "/admin/panel" && (
+                <Link to="/admin/panel" className="navbar-link">
+                  Panel
+                </Link>
+              )}
               {role === "ADMIN" && (
                 <Link to="/admin/usuarios" className="navbar-link">
                   Usuarios

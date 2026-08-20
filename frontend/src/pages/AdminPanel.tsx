@@ -43,6 +43,7 @@ export function AdminPanel() {
   const [zona, setZona] = useState<"" | Zona>("");
   const [sexo, setSexo] = useState<"" | Sexo>("");
   const [tipo, setTipo] = useState<"" | TipoParticipante>("");
+  const [asistio, setAsistio] = useState<"" | "true" | "false">("");
   const [page, setPage] = useState(1);
   const [ticketModal, setTicketModal] = useState<{ id: number; nombre: string } | null>(null);
   const [toast, setToast] = useToast();
@@ -60,6 +61,7 @@ export function AdminPanel() {
     if (zona) params.set("zona", zona);
     if (sexo) params.set("sexo", sexo);
     if (tipo) params.set("tipo", tipo);
+    if (asistio) params.set("asistio", asistio);
     return params;
   }
 
@@ -85,10 +87,13 @@ export function AdminPanel() {
     }, 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, pago, zona, sexo, tipo]);
+  }, [q, pago, zona, sexo, tipo, asistio]);
 
   if (!authLoading && !username) {
     return <Navigate to="/admin" replace />;
+  }
+  if (!authLoading && role === "RECEPCION") {
+    return <Navigate to="/admin/recepcion" replace />;
   }
 
   async function togglePago(camper: CamperOut, verificado: boolean) {
@@ -131,6 +136,7 @@ export function AdminPanel() {
     sexo && { key: "sexo", label: sexo === "M" ? "Masculino" : "Femenino", clear: () => setSexo("") },
     tipo && { key: "tipo", label: TIPO_LABEL[tipo], clear: () => setTipo("") },
     pago && { key: "pago", label: pago === "true" ? "Verificado" : "Pendiente", clear: () => setPago("") },
+    asistio && { key: "asistio", label: asistio === "true" ? "Llegó" : "No ha llegado", clear: () => setAsistio("") },
   ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
 
   return (
@@ -166,7 +172,7 @@ export function AdminPanel() {
           <input
             id="q"
             type="text"
-            placeholder="Nombre, iglesia o folio"
+            placeholder="Nombre, iglesia, ciudad, teléfono o folio"
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
@@ -207,6 +213,14 @@ export function AdminPanel() {
             <option value="">Todos</option>
             <option value="true">Verificado</option>
             <option value="false">Pendiente</option>
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="asistio-filter">Asistencia</label>
+          <select id="asistio-filter" value={asistio} onChange={(e) => setAsistio(e.target.value as typeof asistio)}>
+            <option value="">Todos</option>
+            <option value="true">Llegó</option>
+            <option value="false">No ha llegado</option>
           </select>
         </div>
         <div className="admin-export-row">
@@ -266,6 +280,7 @@ export function AdminPanel() {
                   <th>Bautizado</th>
                   <th>Comprobante</th>
                   <th>Pago</th>
+                  <th>Llegó</th>
                   {puedeBorrar && <th></th>}
                 </tr>
               </thead>
@@ -312,6 +327,13 @@ export function AdminPanel() {
                         onChange={(checked) => togglePago(camper, checked)}
                       />
                     </td>
+                    <td>
+                      {camper.asistio ? (
+                        <span className="admin-asistio-si">✓ Llegó</span>
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
                     {puedeBorrar && (
                       <td>
                         <ConfirmButton
@@ -350,6 +372,9 @@ export function AdminPanel() {
                     {camper.tipo === "CONSEJERO"
                       ? `Teléfono: ${camper.telefono || "—"}`
                       : `Bautizado: ${camper.bautizado ? "Sí" : "No"}`}
+                  </p>
+                  <p className="muted admin-row-meta">
+                    {camper.asistio ? <span className="admin-asistio-si">✓ Llegó</span> : "Aún no llega"}
                   </p>
                 </div>
 

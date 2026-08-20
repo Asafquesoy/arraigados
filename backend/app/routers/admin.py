@@ -20,6 +20,8 @@ from ..schemas import (
     AdminUserUpdate,
     AppSettingsOut,
     AppSettingsUpdate,
+    AsistenciaStatsResponse,
+    AsistenciaUpdate,
     CamperListResponse,
     CamperOut,
     ComprobanteStatsResponse,
@@ -33,11 +35,25 @@ router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(ge
 
 
 def _apply_filters(
-    query, q: str | None, pago: bool | None, zona: Zona | None, sexo: Sexo | None, tipo: TipoParticipante | None
+    query,
+    q: str | None,
+    pago: bool | None,
+    zona: Zona | None,
+    sexo: Sexo | None,
+    tipo: TipoParticipante | None,
+    asistio: bool | None = None,
 ):
     if q:
         like = f"%{q}%"
-        query = query.filter(or_(Camper.nombre.ilike(like), Camper.iglesia.ilike(like), Camper.folio.ilike(like)))
+        query = query.filter(
+            or_(
+                Camper.nombre.ilike(like),
+                Camper.iglesia.ilike(like),
+                Camper.folio.ilike(like),
+                Camper.ciudad.ilike(like),
+                Camper.telefono.ilike(like),
+            )
+        )
     if pago is not None:
         query = query.filter(Camper.pago_verificado == pago)
     if zona:
@@ -46,6 +62,8 @@ def _apply_filters(
         query = query.filter(Camper.sexo == sexo)
     if tipo:
         query = query.filter(Camper.tipo == tipo)
+    if asistio is not None:
+        query = query.filter(Camper.asistio == asistio)
     return query
 
 
@@ -56,11 +74,12 @@ def listar_registros(
     zona: Zona | None = None,
     sexo: Sexo | None = None,
     tipo: TipoParticipante | None = None,
+    asistio: bool | None = None,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=200),
     db: Session = Depends(get_db),
 ):
-    base = _apply_filters(db.query(Camper), q, pago, zona, sexo, tipo)
+    base = _apply_filters(db.query(Camper), q, pago, zona, sexo, tipo, asistio)
     total = base.count()
     items = (
         base.order_by(Camper.created_at.desc())
@@ -85,6 +104,25 @@ def actualizar_pago(
     camper.pago_verificado = payload.verificado
     camper.verificado_en = datetime.now(timezone.utc) if payload.verificado else None
     camper.verificado_por = admin.username if payload.verificado else None
+    db.commit()
+    db.refresh(camper)
+    return camper
+
+
+@router.patch("/registros/{camper_id}/asistencia", response_model=CamperOut)
+def marcar_asistencia(
+    camper_id: int,
+    payload: AsistenciaUpdate,
+    admin: AdminUser = Depends(require_role(AdminRole.ADMIN, AdminRole.RECEPCION)),
+    db: Session = Depends(get_db),
+):
+    camper = db.get(Camper, camper_id)
+    if not camper:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Registro no encontrado")
+
+    camper.asistio = payload.asistio
+    camper.asistio_en = datetime.now(timezone.utc) if payload.asistio else None
+    camper.asistio_por = admin.username if payload.asistio else None
     db.commit()
     db.refresh(camper)
     return camper
@@ -152,6 +190,8 @@ _EXPORT_HEADERS = [
     "Comprobante",
     "Pago verificado",
     "Verificado por",
+    "Asistió",
+    "Asistió en",
     "Fecha registro",
 ]
 
@@ -183,6 +223,8 @@ def _export_row(c: Camper) -> list:
         "Sí" if c.ticket_path else "No",
         "Sí" if c.pago_verificado else "No",
         c.verificado_por or "",
+        "Sí" if c.asistio else "No",
+        c.asistio_en.strftime("%Y-%m-%d %H:%M") if c.asistio_en else "",
         c.created_at.strftime("%Y-%m-%d %H:%M"),
     ]
 
@@ -194,8 +236,9 @@ def _export_rows(
     sexo: Sexo | None,
     tipo: TipoParticipante | None,
     db: Session,
+    asistio: bool | None = None,
 ) -> list[Camper]:
-    base = _apply_filters(db.query(Camper), q, pago, zona, sexo, tipo)
+    base = _apply_filters(db.query(Camper), q, pago, zona, sexo, tipo, asistio)
     return base.order_by(Camper.created_at.desc()).all()
 
 
@@ -206,9 +249,10 @@ def exportar_csv(
     zona: Zona | None = None,
     sexo: Sexo | None = None,
     tipo: TipoParticipante | None = None,
+    asistio: bool | None = None,
     db: Session = Depends(get_db),
 ):
-    rows = _export_rows(q, pago, zona, sexo, tipo, db)
+    rows = _export_rows(q, pago, zona, sexo, tipo, db, asistio)
 
     buffer = io.StringIO()
     buffer.write("﻿")  # BOM: para que Excel detecte UTF-8 y no manche los acentos
@@ -231,9 +275,10 @@ def exportar_xlsx(
     zona: Zona | None = None,
     sexo: Sexo | None = None,
     tipo: TipoParticipante | None = None,
+    asistio: bool | None = None,
     db: Session = Depends(get_db),
 ):
-    rows = _export_rows(q, pago, zona, sexo, tipo, db)
+    rows = _export_rows(q, pago, zona, sexo, tipo, db, asistio)
 
     wb = Workbook()
     ws = wb.active
@@ -304,6 +349,15 @@ def estadisticas_comprobantes(db: Session = Depends(get_db)):
     con_comprobante = db.query(func.count(Camper.id)).filter(Camper.ticket_path.isnot(None)).scalar() or 0
     sin_comprobante = db.query(func.count(Camper.id)).filter(Camper.ticket_path.is_(None)).scalar() or 0
     return ComprobanteStatsResponse(con_comprobante=con_comprobante, sin_comprobante=sin_comprobante)
+
+
+@router.get("/stats/asistencia", response_model=AsistenciaStatsResponse)
+def estadisticas_asistencia(db: Session = Depends(get_db)):
+    """Conteo de check-in sobre TODOS los registros — lo consume la pantalla
+    de recepción para sus tres StatTile de arriba."""
+    total = db.query(func.count(Camper.id)).scalar() or 0
+    asistieron = db.query(func.count(Camper.id)).filter(Camper.asistio.is_(True)).scalar() or 0
+    return AsistenciaStatsResponse(total=total, asistieron=asistieron, faltan=total - asistieron)
 
 
 @router.patch("/settings", response_model=AppSettingsOut)

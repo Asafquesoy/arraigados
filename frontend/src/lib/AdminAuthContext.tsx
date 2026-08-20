@@ -5,7 +5,7 @@ interface AdminAuthState {
   username: string | null;
   role: AdminRole | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<{ username: string; role: AdminRole }>;
   logout: () => Promise<void>;
 }
 
@@ -37,6 +37,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     });
     setUsername(res.username);
     setRole(res.role);
+    return res;
   }
 
   async function logout() {

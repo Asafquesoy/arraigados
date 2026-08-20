@@ -35,6 +35,9 @@ class CamperOut(BaseModel):
     pago_verificado: bool
     verificado_en: datetime | None
     verificado_por: str | None
+    asistio: bool
+    asistio_en: datetime | None
+    asistio_por: str | None
     created_at: datetime
 
     @computed_field
@@ -52,6 +55,10 @@ class CamperListResponse(BaseModel):
 
 class PagoUpdate(BaseModel):
     verificado: bool
+
+
+class AsistenciaUpdate(BaseModel):
+    asistio: bool
 
 
 class LoginRequest(BaseModel):
@@ -118,3 +125,9 @@ class AppSettingsUpdate(BaseModel):
 class ComprobanteStatsResponse(BaseModel):
     con_comprobante: int
     sin_comprobante: int
+
+
+class AsistenciaStatsResponse(BaseModel):
+    total: int
+    asistieron: int
+    faltan: int

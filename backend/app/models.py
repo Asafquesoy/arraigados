@@ -47,6 +47,7 @@ class AdminRole(str, enum.Enum):
     ADMIN = "ADMIN"
     VERIFICADOR_PAGO = "VERIFICADOR_PAGO"
     VISUALIZADOR = "VISUALIZADOR"
+    RECEPCION = "RECEPCION"
 
 
 class Camper(Base):
@@ -79,6 +80,9 @@ class Camper(Base):
     pago_verificado: Mapped[bool] = mapped_column(Boolean, default=False)
     verificado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     verificado_por: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    asistio: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    asistio_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    asistio_por: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 

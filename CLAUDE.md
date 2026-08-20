@@ -288,12 +288,13 @@ inside this direction rather than introducing an unrelated palette or mood.
 ### Data model
 
 Three tables (`backend/app/models.py`): `campers` (registration + `folio` unique short code +
-`pago_verificado`/`verificado_en`/`verificado_por` audit fields), `admin_users`
+`pago_verificado`/`verificado_en`/`verificado_por` audit fields, plus the matching
+`asistio`/`asistio_en`/`asistio_por` trio for camp-day check-in), `admin_users`
 (username/bcrypt hash/`role`), and `app_settings` (single row, `id=1` — runtime-editable flags,
 see the Runtime settings pattern above). `Sexo`, `TallaCamisa`, and `AdminRole`
-(`ADMIN`/`VERIFICADOR_PAGO`/`VISUALIZADOR`) are Python/DB enums defined in `models.py` and reused
-in `schemas.py`. `campers.ticket_path`/`ticket_mime` are nullable — a registration can exist
-without a receipt when the `pedir_comprobante` toggle is off; `CamperOut.tiene_comprobante`
+(`ADMIN`/`VERIFICADOR_PAGO`/`VISUALIZADOR`/`RECEPCION`) are Python/DB enums defined in `models.py`
+and reused in `schemas.py`. `campers.ticket_path`/`ticket_mime` are nullable — a registration can
+exist without a receipt when the `pedir_comprobante` toggle is off; `CamperOut.tiene_comprobante`
 (`schemas.py`, a `computed_field`) is what the frontend checks before showing the "Ver
 comprobante" button, since `ticket_path` itself is excluded from the API response.
 
@@ -315,6 +316,23 @@ dependency caching means stacking it on a route that's already behind the router
 account is created from the panel itself (`/admin/usuarios`, Admin role only) — `POST/PATCH/DELETE
 /api/admin/usuarios/*` guard against an admin deleting their own account, changing their own
 role, or deleting the last remaining Admin.
+
+The `RECEPCION` role exists solely for camp-day check-in: `PATCH
+/api/admin/registros/{id}/asistencia` (`routers/admin.py`) is gated to
+`require_role(AdminRole.ADMIN, AdminRole.RECEPCION)`, same shape as the existing pago-verification
+endpoint (sets `asistio`/`asistio_en`/`asistio_por`, clearing the audit fields when unchecked).
+Everything else stays behind its existing role checks — `RECEPCION` accounts can list registros
+and read `stats/*` (router-level auth only) but get 403 on `/pago`, `DELETE`, `/settings`, and
+`/usuarios/*`. On the frontend, `lib/roles.ts` centralizes `ROLE_LABELS`/`ROLES` and
+`destinoPorRol()` (used by `AdminLogin.tsx` to route each role to its landing page after login).
+`pages/Recepcion.tsx` (`/admin/recepcion`) is a dedicated, deliberately simple screen for
+non-technical staff at the entrance table — one big search box (name/iglesia/ciudad/teléfono/folio,
+the same broadened `_apply_filters` search used by the admin panel), three segmented filter
+buttons instead of a `<select>`, and large touch-friendly cards with a single "Marcar llegada"
+button (`ConfirmButton` for the undo) — no table view, unlike `AdminPanel.tsx`.
+`AdminPanel.tsx` guards `RECEPCION` accounts straight back to `/admin/recepcion` and, for every
+other role, surfaces attendance read-only (a "Llegó" column/chip and an asistencia filter) since
+marking arrivals is recepción's job, not the organizing panel's.
 
 ## Deployment
 

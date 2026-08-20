@@ -7,16 +7,9 @@ import { Toast } from "../components/Toast";
 import { UserIcon } from "../components/icons";
 import { useAdminAuth } from "../lib/AdminAuthContext";
 import { apiFetch, ApiError, type AdminRole, type AdminUserOut } from "../lib/api";
+import { ROLE_LABELS, ROLES } from "../lib/roles";
 import { useToast } from "../lib/useToast";
 import "./AdminUsers.css";
-
-const ROLE_LABELS: Record<AdminRole, string> = {
-  ADMIN: "Administrador",
-  VERIFICADOR_PAGO: "Verificador de pago",
-  VISUALIZADOR: "Visualizador",
-};
-
-const ROLES: AdminRole[] = ["ADMIN", "VERIFICADOR_PAGO", "VISUALIZADOR"];
 
 export function AdminUsers() {
   const { username, role, loading: authLoading } = useAdminAuth();

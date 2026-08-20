@@ -20,3 +20,4 @@ export * from "./DropIcon";
 export * from "./EyeIcon";
 export * from "./EyeOffIcon";
 export * from "./PhoneIcon";
+export * from "./CheckIcon";

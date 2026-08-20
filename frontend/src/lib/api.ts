@@ -64,6 +64,9 @@ export interface CamperOut {
   pago_verificado: boolean;
   verificado_en: string | null;
   verificado_por: string | null;
+  asistio: boolean;
+  asistio_en: string | null;
+  asistio_por: string | null;
   created_at: string;
 }
 
@@ -86,7 +89,7 @@ export interface ComprobanteStats {
   sin_comprobante: number;
 }
 
-export type AdminRole = "ADMIN" | "VERIFICADOR_PAGO" | "VISUALIZADOR";
+export type AdminRole = "ADMIN" | "VERIFICADOR_PAGO" | "VISUALIZADOR" | "RECEPCION";
 
 export interface AdminUserOut {
   id: number;
@@ -116,4 +119,10 @@ export interface TallaStatsResponse {
   items: TallaStatsItem[];
   sin_talla: number;
   total_campers: number;
+}
+
+export interface AsistenciaStats {
+  total: number;
+  asistieron: number;
+  faltan: number;
 }

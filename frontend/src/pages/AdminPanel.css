@@ -276,3 +276,8 @@
 .admin-comprobante-stats {
   margin-top: 1.75rem;
 }
+
+.admin-asistio-si {
+  color: var(--verde-claro);
+  font-weight: 600;
+}

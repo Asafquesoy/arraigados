@@ -17,6 +17,7 @@ import { Registro } from "./pages/Registro";
 const AdminLogin = lazy(() => import("./pages/AdminLogin").then((m) => ({ default: m.AdminLogin })));
 const AdminPanel = lazy(() => import("./pages/AdminPanel").then((m) => ({ default: m.AdminPanel })));
 const AdminUsers = lazy(() => import("./pages/AdminUsers").then((m) => ({ default: m.AdminUsers })));
+const Recepcion = lazy(() => import("./pages/Recepcion").then((m) => ({ default: m.Recepcion })));
 
 function AppRoutes() {
   const location = useLocation();
@@ -36,6 +37,7 @@ function AppRoutes() {
                 <Route path="/admin" element={<AdminLogin />} />
                 <Route path="/admin/panel" element={<AdminPanel />} />
                 <Route path="/admin/usuarios" element={<AdminUsers />} />
+                <Route path="/admin/recepcion" element={<Recepcion />} />
               </Routes>
             </Suspense>
           </PageTransition>
