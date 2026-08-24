@@ -6,6 +6,7 @@ import { CanopyBackground } from "./components/CanopyBackground";
 import { Footer } from "./components/Footer";
 import { Navbar } from "./components/Navbar";
 import { PageTransition } from "./components/PageTransition";
+import { useAnalyticsPageviews } from "./lib/analytics";
 import { AdminAuthProvider } from "./lib/AdminAuthContext";
 import { SettingsProvider } from "./lib/SettingsContext";
 import { Confirmacion } from "./pages/Confirmacion";
@@ -23,6 +24,7 @@ const Equipos = lazy(() => import("./pages/Equipos").then((m) => ({ default: m.E
 function AppRoutes() {
   const location = useLocation();
   const isAdminArea = location.pathname.startsWith("/admin");
+  useAnalyticsPageviews();
 
   return (
     <>

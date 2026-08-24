@@ -2,6 +2,24 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
+    <!-- Google Tag Manager: va lo más arriba posible del <head> para que
+         cargue antes que preloads/fuentes, tal como pide Google. El tracking
+         de cambios de ruta (necesario porque esto es una SPA) vive en
+         src/lib/analytics.ts, no aquí. -->
+    <!-- Google Tag Manager -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != "dataLayer" ? "&l=" + l : "";
+        j.async = true;
+        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, "script", "dataLayer", "GTM-MH8B3VLP");
+    </script>
+    <!-- End Google Tag Manager -->
     <!-- webp: mismo archivo que ya usa Navbar/Hero (ver Navbar.tsx, Hero.tsx) —
          si el favicon apuntara a logo.png en vez de logo.webp, el navegador
          tendría que descargar los dos (no comparten caché al ser URLs
@@ -49,6 +67,16 @@
     />
   </head>
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-MH8B3VLP"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
