@@ -3,6 +3,14 @@
   margin: 0.3rem 0 1.25rem;
 }
 
+/* La tabla de escritorio necesita más aire que el resto de páginas del sitio
+   para caber en 7 columnas sin desbordar — .page-container por sí solo
+   (min(1040px, 100% - 2.5rem), global.css) se quedaba corto incluso con las
+   16 columnas viejas fusionadas. */
+.admin-panel {
+  width: min(1400px, 100% - 2.5rem);
+}
+
 .admin-equipo-chip {
   display: inline-flex;
   align-items: center;
@@ -125,23 +133,27 @@
   text-align: center;
 }
 
-/* ---- Tabla (≥1024px) ---- */
+/* ---- Tabla (≥1024px) ----
+   7 columnas fusionadas (antes 15-16, una por dato crudo) con table-layout:
+   fixed + <colgroup> — el desbordamiento deja de ser posible por
+   construcción en vez de depender de que el contenido "quepa". El detalle
+   secundario (talla, teléfono, bautizado, promoción, auditoría) vive en una
+   fila expandible por campero en vez de en columnas siempre visibles. */
 .admin-table-wrap {
   display: none;
-  overflow-x: auto;
+  overflow: hidden;
   border-radius: var(--radio-l);
   border: 1px solid var(--tarjeta-borde);
 }
 
 .admin-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: var(--t-sm);
 }
 
 .admin-table thead th {
-  /* Nota: .admin-table-wrap solo scrollea en horizontal (overflow-x), así que
-     un sticky vertical aquí nunca se activa — no lo fingimos con position: sticky. */
   background: var(--corteza-alta);
   text-align: left;
   padding: 0.85rem 1rem;
@@ -151,52 +163,162 @@
   color: var(--hueso-tenue);
   border-bottom: 1px solid var(--tarjeta-borde);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .admin-table tbody td {
   padding: 0.8rem 1rem;
   border-bottom: 1px solid var(--tarjeta-borde);
   vertical-align: middle;
+  overflow: hidden;
 }
 
-.admin-table tbody tr {
+.admin-table-row {
   background: var(--tarjeta-fondo);
   transition: background var(--dur-rapida) ease;
+  cursor: pointer;
+  /* Acento de color del equipo — mismo truco que .equipo-card (EquipoCard.css) */
+  border-left: 3px solid var(--color-equipo, transparent);
 }
 
-.admin-table tbody tr:hover {
+.admin-table-row:hover,
+.admin-table-row.is-expanded {
   background: var(--tarjeta-fondo-alta);
+}
+
+.admin-table-row td {
+  border-left: none;
 }
 
 .admin-table tbody tr:last-child td {
   border-bottom: none;
 }
 
+.admin-table-detail-row td {
+  border-bottom: 1px solid var(--tarjeta-borde);
+  padding: 0;
+}
+
 .admin-table-name {
+  display: block;
   font-weight: 700;
-  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .admin-table-truncate {
-  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.admin-table-city {
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.admin-table-campero,
+.admin-table-perfil {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
 }
 
-/* 1180px y no 1024px: a 1024px min(1040px, 100%-2.5rem) deja ~999px útiles,
-   insuficiente para 9 columnas — la tabla se desbordaba justo al nacer. */
-@media (min-width: 1180px) {
+.admin-table-folio {
+  font-size: var(--t-xs);
+}
+
+.admin-chip-tipo {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--tarjeta-fondo-alta);
+  border: 1px solid var(--tarjeta-borde);
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+
+.admin-table-perfil-meta {
+  font-size: var(--t-xs);
+}
+
+.admin-table-pago {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  border-radius: var(--radio-s);
+  transition: background var(--dur-rapida) ease;
+}
+
+.admin-table-pago.is-verificado {
+  background: rgba(167, 217, 79, 0.1);
+}
+
+.admin-table-fecha-pago {
+  font-size: var(--t-xs);
+}
+
+.admin-table-expand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radio-s);
+  background: transparent;
+  color: var(--hueso-tenue);
+  cursor: pointer;
+  transition: background var(--dur-rapida) ease, transform var(--dur-rapida) var(--ease-suave);
+}
+
+.admin-table-expand:hover {
+  background: var(--tarjeta-fondo-alta);
+  color: var(--hueso);
+}
+
+.admin-table-expand.is-open {
+  transform: rotate(180deg);
+}
+
+.admin-table-detail {
+  overflow: hidden;
+  padding: 0 1.4rem;
+}
+
+.admin-table-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem 1.5rem;
+  padding: 1.1rem 0;
+}
+
+.admin-table-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: var(--t-sm);
+  min-width: 0;
+}
+
+.admin-table-detail-label {
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--hueso-tenue);
+}
+
+.admin-table-detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0 1.1rem;
+}
+
+/* 1024px: con 7 columnas fusionadas ya cabe en el ancho de .admin-panel
+   incluso a este breakpoint (antes se necesitaban 1180px para 9 columnas). */
+@media (min-width: 1024px) {
   .admin-table-wrap {
     display: block;
   }

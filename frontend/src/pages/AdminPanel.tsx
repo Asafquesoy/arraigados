@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState, type CSSProperties } from "react";
 import { Navigate } from "react-router-dom";
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { AdminAjustes } from "../components/AdminAjustes";
 import { AdminComprobanteStats } from "../components/AdminComprobanteStats";
 import { AdminRegistroToggle } from "../components/AdminRegistroToggle";
@@ -15,7 +15,7 @@ import { Toast } from "../components/Toast";
 import { ToggleSwitch } from "../components/ToggleSwitch";
 import { TIPO_LABEL } from "../components/TipoParticipanteField";
 import { ZONA_LABEL } from "../components/ZonaField";
-import { DownloadIcon, ReceiptIcon, SearchIcon, ShieldCheckIcon } from "../components/icons";
+import { ChevronDownIcon, DownloadIcon, ReceiptIcon, SearchIcon, ShieldCheckIcon } from "../components/icons";
 import { useAdminAuth } from "../lib/AdminAuthContext";
 import {
   apiFetch,
@@ -52,9 +52,12 @@ export function AdminPanel() {
   const [page, setPage] = useState(1);
   const [ticketModal, setTicketModal] = useState<{ id: number; nombre: string } | null>(null);
   const [toast, setToast] = useToast();
+  // Fila de detalle expandida en la tabla de escritorio — una sola a la vez.
+  const [expandido, setExpandido] = useState<number | null>(null);
+  const reduceMotion = useReducedMotion();
   // Coincide con el breakpoint de .admin-table-wrap en AdminPanel.css — se renderiza una
   // sola variante (tabla o tarjetas) en vez de las dos a la vez con una oculta por CSS.
-  const isDesktop = useMediaQuery("(min-width: 1180px)");
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
 
   const puedeVerificarPago = role === "ADMIN" || role === "VERIFICADOR_PAGO";
   const puedeBorrar = role === "ADMIN";
@@ -73,6 +76,7 @@ export function AdminPanel() {
 
   async function fetchData() {
     setLoading(true);
+    setExpandido(null);
     try {
       const res = await apiFetch<CamperListResponse>(`/admin/registros?${buildQuery()}`);
       setData(res);
@@ -298,98 +302,197 @@ export function AdminPanel() {
         {!loading && (data?.items.length ?? 0) > 0 && isDesktop && (
           <div className="admin-table-wrap">
             <table className="admin-table">
+              <colgroup>
+                <col style={{ width: "26%" }} />
+                <col style={{ width: "17%" }} />
+                <col style={{ width: "15%" }} />
+                <col style={{ width: "15%" }} />
+                <col style={{ width: "13%" }} />
+                <col style={{ width: "9%" }} />
+                <col style={{ width: "5%" }} />
+              </colgroup>
               <thead>
                 <tr>
-                  <th>Folio</th>
-                  <th>Nombre</th>
-                  <th>Tipo</th>
-                  <th>Zona</th>
-                  <th>Iglesia</th>
-                  <th>Edad</th>
-                  <th>Sexo</th>
-                  {showShirtSize && <th>Talla</th>}
-                  <th>Fecha de pago</th>
-                  <th>Promoción</th>
-                  <th>Bautizado</th>
-                  <th>Comprobante</th>
-                  <th>Pago</th>
-                  <th>Llegó</th>
+                  <th>Campero</th>
+                  <th>Perfil</th>
                   <th>Equipo</th>
-                  {puedeBorrar && <th></th>}
+                  <th>Pago</th>
+                  <th>Recibo</th>
+                  <th>Llegó</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
-                {data!.items.map((camper) => (
-                  <tr key={camper.id}>
-                    <td className="mono">{camper.folio}</td>
-                    <td className="admin-table-name">{camper.nombre}</td>
-                    <td>
-                      {camper.tipo ? TIPO_LABEL[camper.tipo] : "—"}
-                      {camper.telefono && (
-                        <>
-                          <br />
-                          <span className="muted mono">{camper.telefono}</span>
-                        </>
-                      )}
-                    </td>
-                    <td className="admin-table-city">{camper.zona ? ZONA_LABEL[camper.zona] : "—"}</td>
-                    <td className="admin-table-truncate">{camper.iglesia}</td>
-                    <td>{camper.edad}</td>
-                    <td>{camper.sexo === "M" ? "M" : "F"}</td>
-                    {showShirtSize && (
-                      <td>{camper.talla_camisa === "OTRA" ? camper.talla_otra || "Otra" : camper.talla_camisa ?? "—"}</td>
-                    )}
-                    <td className="mono">{camper.fecha_pago ?? "—"}</td>
-                    <td>{camper.tiene_promocion ? camper.promocion_detalle || "Sí" : "No"}</td>
-                    <td>{camper.bautizado ? "Sí" : "No"}</td>
-                    <td>
-                      {camper.tiene_comprobante ? (
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => setTicketModal({ id: camper.id, nombre: camper.nombre })}
-                        >
-                          <ReceiptIcon size={14} /> Ver
-                        </button>
-                      ) : (
-                        <span className="muted">—</span>
-                      )}
-                    </td>
-                    <td>
-                      <ToggleSwitch
-                        checked={camper.pago_verificado}
-                        disabled={!puedeVerificarPago}
-                        onChange={(checked) => togglePago(camper, checked)}
-                      />
-                    </td>
-                    <td>
-                      {camper.asistio ? (
-                        <span className="admin-asistio-si">✓ Llegó</span>
-                      ) : (
-                        <span className="muted">—</span>
-                      )}
-                    </td>
-                    <td>
-                      {camper.equipo ? (
-                        <span className="admin-equipo-chip">
-                          <span className="admin-equipo-dot" style={{ background: camper.equipo.color }} />
-                          {camper.equipo.nombre}
-                        </span>
-                      ) : (
-                        <span className="muted">—</span>
-                      )}
-                    </td>
-                    {puedeBorrar && (
-                      <td>
-                        <ConfirmButton
-                          label="Borrar"
-                          confirmLabel="¿Seguro?"
-                          className="btn-sm admin-delete-btn"
-                          onConfirm={() => borrarRegistro(camper)}
-                        />
-                      </td>
-                    )}
-                  </tr>
-                ))}
+                {data!.items.map((camper) => {
+                  const abierto = expandido === camper.id;
+                  return (
+                    <Fragment key={camper.id}>
+                      <tr
+                        className={`admin-table-row ${abierto ? "is-expanded" : ""}`}
+                        style={{ "--color-equipo": camper.equipo?.color ?? "transparent" } as CSSProperties}
+                        onClick={() => setExpandido(abierto ? null : camper.id)}
+                      >
+                        <td>
+                          <div className="admin-table-campero">
+                            <span className="muted mono admin-table-folio">{camper.folio}</span>
+                            <span className="admin-table-name">{camper.nombre}</span>
+                            <span className="muted admin-table-truncate">{camper.iglesia}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="admin-table-perfil">
+                            <span className="admin-chip-tipo">{camper.tipo ? TIPO_LABEL[camper.tipo] : "—"}</span>
+                            <span className="muted admin-table-perfil-meta">
+                              {camper.zona ? ZONA_LABEL[camper.zona] : "—"} · {camper.edad} años ·{" "}
+                              {camper.sexo === "M" ? "M" : "F"}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="admin-table-truncate">
+                          {camper.equipo ? (
+                            <span className="admin-equipo-chip">
+                              <span className="admin-equipo-dot" style={{ background: camper.equipo.color }} />
+                              {camper.equipo.nombre}
+                            </span>
+                          ) : (
+                            <span className="muted">—</span>
+                          )}
+                        </td>
+                        <td onClick={(e) => e.stopPropagation()}>
+                          <div className={`admin-table-pago ${camper.pago_verificado ? "is-verificado" : ""}`}>
+                            <span className="mono admin-table-fecha-pago">{camper.fecha_pago ?? "—"}</span>
+                            <ToggleSwitch
+                              checked={camper.pago_verificado}
+                              disabled={!puedeVerificarPago}
+                              onChange={(checked) => togglePago(camper, checked)}
+                            />
+                          </div>
+                        </td>
+                        <td>
+                          {camper.tiene_comprobante ? (
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTicketModal({ id: camper.id, nombre: camper.nombre });
+                              }}
+                            >
+                              <ReceiptIcon size={14} /> Ver
+                            </button>
+                          ) : (
+                            <span className="muted">—</span>
+                          )}
+                        </td>
+                        <td>
+                          {camper.asistio ? (
+                            <span className="admin-asistio-si">✓ Llegó</span>
+                          ) : (
+                            <span className="muted">—</span>
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className={`admin-table-expand ${abierto ? "is-open" : ""}`}
+                            aria-label={abierto ? "Ocultar detalle" : "Ver detalle"}
+                            aria-expanded={abierto}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandido(abierto ? null : camper.id);
+                            }}
+                          >
+                            <ChevronDownIcon size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                      <AnimatePresence initial={false}>
+                        {abierto && (
+                          <tr className="admin-table-detail-row" key="detail">
+                            <td colSpan={7}>
+                              <m.div
+                                className="admin-table-detail"
+                                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                                animate={
+                                  reduceMotion
+                                    ? { opacity: 1, transition: { duration: 0.15 } }
+                                    : { opacity: 1, height: "auto", transition: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }
+                                }
+                                exit={
+                                  reduceMotion
+                                    ? { opacity: 0, transition: { duration: 0.15 } }
+                                    : { opacity: 0, height: 0, transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] } }
+                                }
+                              >
+                                <div className="admin-table-detail-grid">
+                                  {showShirtSize && (
+                                    <div className="admin-table-detail-item">
+                                      <span className="admin-table-detail-label">Talla</span>
+                                      <span>{camper.talla_camisa === "OTRA" ? camper.talla_otra || "Otra" : camper.talla_camisa ?? "—"}</span>
+                                    </div>
+                                  )}
+                                  <div className="admin-table-detail-item">
+                                    <span className="admin-table-detail-label">Teléfono</span>
+                                    <span className="mono">{camper.telefono || "—"}</span>
+                                  </div>
+                                  <div className="admin-table-detail-item">
+                                    <span className="admin-table-detail-label">Ciudad</span>
+                                    <span>{camper.ciudad || "—"}</span>
+                                  </div>
+                                  <div className="admin-table-detail-item">
+                                    <span className="admin-table-detail-label">Bautizado</span>
+                                    <span>
+                                      {camper.bautizado
+                                        ? camper.bautismo_mes && camper.bautismo_anio
+                                          ? `Sí (${camper.bautismo_mes}/${camper.bautismo_anio})`
+                                          : "Sí"
+                                        : "No"}
+                                    </span>
+                                  </div>
+                                  <div className="admin-table-detail-item">
+                                    <span className="admin-table-detail-label">Promoción</span>
+                                    <span>{camper.tiene_promocion ? camper.promocion_detalle || "Sí" : "No"}</span>
+                                  </div>
+                                  {camper.pago_verificado && (
+                                    <div className="admin-table-detail-item">
+                                      <span className="admin-table-detail-label">Verificado por</span>
+                                      <span>
+                                        {camper.verificado_por ?? "—"}
+                                        {camper.verificado_en && <><br /><span className="muted mono">{camper.verificado_en}</span></>}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {camper.asistio && (
+                                    <div className="admin-table-detail-item">
+                                      <span className="admin-table-detail-label">Llegada registrada por</span>
+                                      <span>
+                                        {camper.asistio_por ?? "—"}
+                                        {camper.asistio_en && <><br /><span className="muted mono">{camper.asistio_en}</span></>}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div className="admin-table-detail-item">
+                                    <span className="admin-table-detail-label">Registrado el</span>
+                                    <span className="mono">{camper.created_at}</span>
+                                  </div>
+                                </div>
+                                {puedeBorrar && (
+                                  <div className="admin-table-detail-actions">
+                                    <ConfirmButton
+                                      label="Borrar registro"
+                                      confirmLabel="¿Seguro? Sí, borrar"
+                                      className="btn-sm admin-delete-btn"
+                                      onConfirm={() => borrarRegistro(camper)}
+                                    />
+                                  </div>
+                                )}
+                              </m.div>
+                            </td>
+                          </tr>
+                        )}
+                      </AnimatePresence>
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

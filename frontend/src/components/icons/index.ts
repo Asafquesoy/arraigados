@@ -23,3 +23,4 @@ export * from "./PhoneIcon";
 export * from "./CheckIcon";
 export * from "./EquiposIcon";
 export * from "./PinIcon";
+export * from "./ChevronDownIcon";

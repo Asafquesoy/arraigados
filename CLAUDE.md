@@ -154,8 +154,17 @@ this shape exists to avoid.
   mount); `pages/AdminLogin.tsx` and `pages/AdminPanel.tsx` both redirect via `<Navigate>` based
   on this context rather than route guards/middleware.
 - `src/lib/useMediaQuery.ts` is a `matchMedia` hook used to pick between layout variants (e.g.
-  `AdminPanel.tsx` table vs. cards) — prefer it over rendering both variants and hiding one with
-  CSS, which duplicates the DOM (and duplicates state like `ToggleSwitch`) for no benefit.
+  `AdminPanel.tsx` table vs. cards, breakpoint `1024px`, kept in sync with the same value in
+  `AdminPanel.css`) — prefer it over rendering both variants and hiding one with CSS, which
+  duplicates the DOM (and duplicates state like `ToggleSwitch`) for no benefit. The desktop table
+  itself merges `CamperOut`'s ~16 fields into 7 fixed-width columns (`table-layout: fixed` +
+  `<colgroup>`, so it can never overflow) — folio/nombre/iglesia, tipo+zona+edad+sexo, equipo,
+  fecha de pago + `ToggleSwitch`, comprobante, llegó, and an expand chevron. Secondary fields
+  (talla, teléfono, bautizado, promoción, ciudad, verification/attendance audit fields, borrar)
+  live in a single per-row expandable detail (`admin-table-detail-row`, one row open at a time via
+  `expandido` state, `AnimatePresence`/`m.div` height animation respecting `useReducedMotion()`)
+  instead of adding columns — adding a field back as a column is what caused the horizontal-scroll
+  bug this pattern replaced.
 - Icons in `src/components/icons/` are hand-drawn SVGs specific to this project (root, leaf,
   church, shirt, receipt, shield-check, etc.) — no icon library is used; add new icons following
   the same `IconProps { size, className, strokeWidth? }` shape (`icons/types.ts`).
