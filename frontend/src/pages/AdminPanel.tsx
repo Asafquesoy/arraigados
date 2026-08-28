@@ -7,6 +7,7 @@ import { AdminRegistroToggle } from "../components/AdminRegistroToggle";
 import { AdminResumen } from "../components/AdminResumen";
 import { AdminShirtStats } from "../components/AdminShirtStats";
 import { ConfirmButton } from "../components/ConfirmButton";
+import { EditarCamperModal } from "../components/EditarCamperModal";
 import { Reveal } from "../components/Reveal";
 import { SkeletonRow } from "../components/Skeleton";
 import { StatTile } from "../components/StatTile";
@@ -15,7 +16,7 @@ import { Toast } from "../components/Toast";
 import { ToggleSwitch } from "../components/ToggleSwitch";
 import { TIPO_LABEL } from "../components/TipoParticipanteField";
 import { ZONA_LABEL } from "../components/ZonaField";
-import { ChevronDownIcon, DownloadIcon, ReceiptIcon, SearchIcon, ShieldCheckIcon } from "../components/icons";
+import { ChevronDownIcon, DownloadIcon, PencilIcon, ReceiptIcon, SearchIcon, ShieldCheckIcon } from "../components/icons";
 import { useAdminAuth } from "../lib/AdminAuthContext";
 import {
   apiFetch,
@@ -65,6 +66,8 @@ export function AdminPanel() {
 
   const puedeVerificarPago = role === "ADMIN" || role === "VERIFICADOR_PAGO";
   const puedeBorrar = role === "ADMIN";
+  const puedeEditar = role === "ADMIN";
+  const [editando, setEditando] = useState<CamperOut | null>(null);
 
   function buildQuery(extra: Record<string, string> = {}) {
     const params = new URLSearchParams({ page: String(page), page_size: String(PAGE_SIZE), ...extra });
@@ -150,6 +153,13 @@ export function AdminPanel() {
       );
       setToast(err instanceof ApiError ? err.message : "No se pudo actualizar el pago. Intenta de nuevo.");
     }
+  }
+
+  function onRegistroActualizado(actualizado: CamperOut) {
+    setData((prev) =>
+      prev ? { ...prev, items: prev.items.map((c) => (c.id === actualizado.id ? actualizado : c)) } : prev
+    );
+    setToast("Datos actualizados.");
   }
 
   async function borrarRegistro(camper: CamperOut) {
@@ -506,14 +516,25 @@ export function AdminPanel() {
                                     <span className="mono">{camper.created_at}</span>
                                   </div>
                                 </div>
-                                {puedeBorrar && (
+                                {(puedeEditar || puedeBorrar) && (
                                   <div className="admin-table-detail-actions">
-                                    <ConfirmButton
-                                      label="Borrar registro"
-                                      confirmLabel="¿Seguro? Sí, borrar"
-                                      className="btn-sm admin-delete-btn"
-                                      onConfirm={() => borrarRegistro(camper)}
-                                    />
+                                    {puedeEditar && (
+                                      <button
+                                        type="button"
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={() => setEditando(camper)}
+                                      >
+                                        <PencilIcon size={14} /> Editar
+                                      </button>
+                                    )}
+                                    {puedeBorrar && (
+                                      <ConfirmButton
+                                        label="Borrar registro"
+                                        confirmLabel="¿Seguro? Sí, borrar"
+                                        className="btn-sm admin-delete-btn"
+                                        onConfirm={() => borrarRegistro(camper)}
+                                      />
+                                    )}
                                   </div>
                                 )}
                               </m.div>
@@ -575,6 +596,11 @@ export function AdminPanel() {
                       <ReceiptIcon size={16} /> Ver comprobante
                     </button>
                   )}
+                  {puedeEditar && (
+                    <button className="btn btn-ghost admin-ticket-btn" onClick={() => setEditando(camper)}>
+                      <PencilIcon size={16} /> Editar
+                    </button>
+                  )}
                   {puedeBorrar && (
                     <ConfirmButton
                       label="Borrar registro"
@@ -627,6 +653,12 @@ export function AdminPanel() {
               />
             );
           })()}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editando && (
+          <EditarCamperModal camper={editando} onClose={() => setEditando(null)} onSaved={onRegistroActualizado} />
+        )}
       </AnimatePresence>
 
       <Toast message={toast} />

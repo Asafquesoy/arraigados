@@ -66,6 +66,30 @@ class CamperListResponse(BaseModel):
     page_size: int
 
 
+class CamperUpdate(BaseModel):
+    """Payload de PATCH /api/admin/registros/{id} — el modal de edición manda
+    siempre el objeto completo (no un parche parcial como AppSettingsUpdate),
+    porque los campos condicionales (teléfono, bautismo, promoción, talla
+    "otra") necesitan verse todos juntos para poder normalizarse de forma
+    coherente, igual que en el registro público (ver validacion_camper.py)."""
+
+    nombre: str = Field(min_length=2, max_length=150)
+    iglesia: str = Field(min_length=2, max_length=150)
+    edad: int = Field(ge=5, le=99)
+    sexo: Sexo
+    zona: Zona
+    tipo: TipoParticipante
+    fecha_pago: date
+    tiene_promocion: bool
+    telefono: str | None = Field(default=None, max_length=30)
+    bautizado: bool | None = None
+    bautismo_mes: int | None = Field(default=None, ge=1, le=12)
+    bautismo_anio: int | None = Field(default=None, ge=1960)
+    promocion_detalle: str | None = Field(default=None, max_length=200)
+    talla_camisa: TallaCamisa | None = None
+    talla_otra: str | None = Field(default=None, max_length=50)
+
+
 class PagoUpdate(BaseModel):
     verificado: bool
 

@@ -12,122 +12,15 @@ import { YesNoField } from "../../components/YesNoField";
 import { ZONA_LABEL, ZonaField } from "../../components/ZonaField";
 import { CalendarIcon, ChurchIcon, DropIcon, PhoneIcon, TagIcon, UserIcon } from "../../components/icons";
 import { ApiError } from "../../lib/api";
-import type { Sexo, TallaCamisa, TipoParticipante, Zona } from "../../lib/api";
+import type { Sexo, Zona } from "../../lib/api";
+import { fieldError, HOY, INITIAL_STATE, type FieldKey, type FormState } from "../../lib/camperForm";
 import { useSettings } from "../../lib/SettingsContext";
 import "./FormularioRegistro.css";
 
-interface FormState {
-  tipo: TipoParticipante | "";
-  nombre: string;
-  edad: string;
-  sexo: Sexo | "";
-  telefono: string;
-  bautizado: boolean | "";
-  bautismo_mes: number | "";
-  bautismo_anio: number | "";
-  iglesia: string;
-  zona: Zona | "";
-  talla_camisa: TallaCamisa | "";
-  talla_otra: string;
-  fecha_pago: string;
-  tiene_promocion: boolean | "";
-  promocion_tipo: string;
-}
-
-type FieldKey = keyof FormState | "ticket";
-
-const INITIAL_STATE: FormState = {
-  tipo: "",
-  nombre: "",
-  edad: "",
-  sexo: "",
-  telefono: "",
-  bautizado: "",
-  bautismo_mes: "",
-  bautismo_anio: "",
-  iglesia: "",
-  zona: "",
-  talla_camisa: "",
-  talla_otra: "",
-  fecha_pago: "",
-  tiene_promocion: "",
-  promocion_tipo: "",
-};
-
 const STEPS = ["Quién eres", "De dónde vienes", "Tu pago"];
-
-const HOY = new Date().toISOString().slice(0, 10);
 
 function esCampamentoGratis(promocion: string): boolean {
   return promocion.toLowerCase().includes("gratis");
-}
-
-function fieldError(
-  key: FieldKey,
-  form: FormState,
-  ticket: File | null,
-  showShirtSize: boolean,
-  pedirComprobante: boolean
-): string | null {
-  switch (key) {
-    case "tipo":
-      return !form.tipo ? "Selecciona una opción." : null;
-    case "nombre":
-      return form.nombre.trim().length < 2 ? "Escribe tu nombre completo." : null;
-    case "edad": {
-      const n = Number(form.edad);
-      return !form.edad || Number.isNaN(n) || n < 5 || n > 99 ? "Ingresa una edad válida (5-99)." : null;
-    }
-    case "sexo":
-      return !form.sexo ? "Selecciona una opción." : null;
-    case "telefono": {
-      if (form.tipo !== "CONSEJERO") return null;
-      const digits = form.telefono.replace(/[\s-]/g, "");
-      return !/^\d{10}$/.test(digits) ? "Ingresa un teléfono de 10 dígitos." : null;
-    }
-    case "bautizado":
-      return form.tipo === "CAMPERO" && form.bautizado === "" ? "Selecciona una opción." : null;
-    case "bautismo_mes":
-      return form.tipo === "CAMPERO" && form.bautizado === true && form.bautismo_mes === ""
-        ? "Indica el mes de tu bautismo."
-        : null;
-    case "bautismo_anio": {
-      if (form.tipo !== "CAMPERO" || form.bautizado !== true) return null;
-      if (form.bautismo_anio === "") return "Indica el año de tu bautismo.";
-      const hoy = new Date();
-      if (
-        form.bautismo_mes !== "" &&
-        (form.bautismo_anio > hoy.getFullYear() ||
-          (form.bautismo_anio === hoy.getFullYear() && form.bautismo_mes > hoy.getMonth() + 1))
-      ) {
-        return "La fecha de tu bautismo no puede ser futura.";
-      }
-      return null;
-    }
-    case "iglesia":
-      return form.iglesia.trim().length < 2 ? "Indica la iglesia de procedencia." : null;
-    case "zona":
-      return !form.zona ? "Selecciona tu zona." : null;
-    case "talla_camisa":
-      return showShirtSize && !form.talla_camisa ? "Selecciona una talla." : null;
-    case "talla_otra":
-      return showShirtSize && form.talla_camisa === "OTRA" && form.talla_otra.trim().length < 1
-        ? "Menciona qué talla necesitas."
-        : null;
-    case "fecha_pago":
-      if (!form.fecha_pago) return "Indica la fecha en que realizaste tu pago.";
-      return form.fecha_pago > HOY ? "La fecha de pago no puede ser futura." : null;
-    case "tiene_promocion":
-      return form.tiene_promocion === "" ? "Selecciona una opción." : null;
-    case "promocion_tipo":
-      return form.tiene_promocion === true && form.promocion_tipo.trim().length < 1
-        ? "Escribe qué promoción obtuviste."
-        : null;
-    case "ticket":
-      return pedirComprobante && !ticket ? "Sube la imagen o PDF de tu comprobante de pago." : null;
-    default:
-      return null;
-  }
 }
 
 const STEP_FIELDS: FieldKey[][] = [

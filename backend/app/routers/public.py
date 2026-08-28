@@ -10,6 +10,7 @@ from ..models import AppSettings, Camper, Equipo, Sexo, TallaCamisa, TipoPartici
 from ..ratelimit import rate_limit
 from ..schemas import CamperCreateResponse
 from ..storage import save_ticket
+from ..validacion_camper import normalizar_datos_camper, validar_datos_camper
 from .equipos import criterios_desde_settings
 
 logger = logging.getLogger("arraigados")
@@ -51,20 +52,17 @@ async def crear_registro(
     if not registro_abierto:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "El registro está cerrado por ahora.")
 
-    if tipo == TipoParticipante.CAMPERO and bautizado is None:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Indica si estás bautizado.")
-    if tipo == TipoParticipante.CONSEJERO and not (telefono or "").strip():
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Indica tu número de teléfono.")
-    if tipo == TipoParticipante.CAMPERO and bautizado and (bautismo_mes is None or bautismo_anio is None):
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Indica la fecha de tu bautismo.")
-    if tipo == TipoParticipante.CAMPERO and bautizado and bautismo_mes is not None and bautismo_anio is not None:
-        hoy = date.today()
-        if (bautismo_anio, bautismo_mes) > (hoy.year, hoy.month):
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "La fecha de tu bautismo no puede ser futura.")
-    if tiene_promocion and not (promocion_detalle or "").strip():
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Menciona qué promoción obtuviste.")
-    if talla_camisa == TallaCamisa.OTRA and not (talla_otra or "").strip():
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Menciona qué talla necesitas.")
+    validar_datos_camper(
+        tipo=tipo,
+        telefono=telefono,
+        bautizado=bautizado,
+        bautismo_mes=bautismo_mes,
+        bautismo_anio=bautismo_anio,
+        tiene_promocion=tiene_promocion,
+        promocion_detalle=promocion_detalle,
+        talla_camisa=talla_camisa,
+        talla_otra=talla_otra,
+    )
 
     pedir_comprobante = settings_row.pedir_comprobante if settings_row else True
     if pedir_comprobante and ticket is None:
@@ -73,21 +71,23 @@ async def crear_registro(
     filename, mime = await save_ticket(ticket) if ticket is not None else (None, None)
 
     camper = Camper(
-        nombre=nombre.strip(),
-        iglesia=iglesia.strip(),
-        edad=edad,
-        sexo=sexo,
-        zona=zona,
-        tipo=tipo,
-        telefono=telefono.strip() if tipo == TipoParticipante.CONSEJERO and telefono else None,
-        bautizado=bautizado if tipo == TipoParticipante.CAMPERO else None,
-        bautismo_mes=bautismo_mes if tipo == TipoParticipante.CAMPERO and bautizado else None,
-        bautismo_anio=bautismo_anio if tipo == TipoParticipante.CAMPERO and bautizado else None,
-        fecha_pago=fecha_pago,
-        tiene_promocion=tiene_promocion,
-        promocion_detalle=promocion_detalle.strip() if tiene_promocion and promocion_detalle else None,
-        talla_camisa=talla_camisa,
-        talla_otra=talla_otra.strip() if talla_camisa == TallaCamisa.OTRA and talla_otra else None,
+        **normalizar_datos_camper(
+            nombre=nombre,
+            iglesia=iglesia,
+            edad=edad,
+            sexo=sexo,
+            zona=zona,
+            tipo=tipo,
+            telefono=telefono,
+            bautizado=bautizado,
+            bautismo_mes=bautismo_mes,
+            bautismo_anio=bautismo_anio,
+            fecha_pago=fecha_pago,
+            tiene_promocion=tiene_promocion,
+            promocion_detalle=promocion_detalle,
+            talla_camisa=talla_camisa,
+            talla_otra=talla_otra,
+        ),
         ticket_path=filename,
         ticket_mime=mime,
     )

@@ -24,6 +24,7 @@ from ..schemas import (
     AsistenciaUpdate,
     CamperListResponse,
     CamperOut,
+    CamperUpdate,
     ComprobanteStatsResponse,
     EquipoAsignacion,
     PagoUpdate,
@@ -31,6 +32,7 @@ from ..schemas import (
     TallaStatsResponse,
 )
 from ..security import get_current_admin, hash_password, require_role
+from ..validacion_camper import normalizar_datos_camper, validar_datos_camper
 
 router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(get_current_admin)])
 
@@ -155,6 +157,61 @@ def mover_de_equipo(
 
     camper.equipo_id = payload.equipo_id
     camper.equipo_fijado = payload.equipo_id is not None
+    db.commit()
+    db.refresh(camper)
+    return camper
+
+
+@router.patch("/registros/{camper_id}", response_model=CamperOut)
+def actualizar_registro(
+    camper_id: int,
+    payload: CamperUpdate,
+    _admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Edita los datos de captura de un registro (nombre, edad, iglesia, zona,
+    teléfono, bautismo, promoción, talla, fecha de pago). Deliberadamente no
+    toca folio, comprobante, campos de auditoría de pago/asistencia ni
+    equipo_id/equipo_fijado — eso se gestiona desde sus propios endpoints
+    (/pago, /asistencia, /equipo, /admin/equipos). Tampoco vuelve a correr el
+    reparto de equipos aunque cambien edad/sexo/iglesia/zona/bautismo: si
+    quedó desbalanceado, "Repartir a todos" en /admin/equipos lo corrige."""
+    camper = db.get(Camper, camper_id)
+    if not camper:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Registro no encontrado")
+
+    validar_datos_camper(
+        tipo=payload.tipo,
+        telefono=payload.telefono,
+        bautizado=payload.bautizado,
+        bautismo_mes=payload.bautismo_mes,
+        bautismo_anio=payload.bautismo_anio,
+        tiene_promocion=payload.tiene_promocion,
+        promocion_detalle=payload.promocion_detalle,
+        talla_camisa=payload.talla_camisa,
+        talla_otra=payload.talla_otra,
+    )
+
+    datos = normalizar_datos_camper(
+        nombre=payload.nombre,
+        iglesia=payload.iglesia,
+        edad=payload.edad,
+        sexo=payload.sexo,
+        zona=payload.zona,
+        tipo=payload.tipo,
+        telefono=payload.telefono,
+        bautizado=payload.bautizado,
+        bautismo_mes=payload.bautismo_mes,
+        bautismo_anio=payload.bautismo_anio,
+        fecha_pago=payload.fecha_pago,
+        tiene_promocion=payload.tiene_promocion,
+        promocion_detalle=payload.promocion_detalle,
+        talla_camisa=payload.talla_camisa,
+        talla_otra=payload.talla_otra,
+    )
+    for campo, valor in datos.items():
+        setattr(camper, campo, valor)
+
     db.commit()
     db.refresh(camper)
     return camper

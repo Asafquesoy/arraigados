@@ -1,0 +1,61 @@
+.editar-camper-modal {
+  background: var(--corteza-alta);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-m);
+  width: min(720px, 100%);
+  max-height: 90vh;
+  max-height: calc(var(--alto-viewport) * 0.9);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--sombra-suave);
+}
+
+.editar-camper-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.editar-camper-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+
+.editar-camper-heading {
+  margin: 0;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--amarillo-suave);
+}
+
+.editar-camper-error {
+  margin: 0;
+}
+
+.editar-camper-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--e-3);
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--tarjeta-borde);
+}
+
+@media (max-width: 480px) {
+  .editar-camper-body {
+    padding: 0.85rem;
+  }
+
+  .editar-camper-actions {
+    flex-direction: column-reverse;
+  }
+
+  .editar-camper-actions .btn {
+    width: 100%;
+  }
+}

@@ -320,6 +320,7 @@
 .admin-table-detail-actions {
   display: flex;
   justify-content: flex-end;
+  gap: var(--e-3);
   padding: 0 0 1.1rem;
 }
 

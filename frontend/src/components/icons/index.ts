@@ -24,3 +24,4 @@ export * from "./CheckIcon";
 export * from "./EquiposIcon";
 export * from "./PinIcon";
 export * from "./ChevronDownIcon";
+export * from "./PencilIcon";

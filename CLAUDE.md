@@ -139,6 +139,22 @@ this shape exists to avoid.
 - `config.py` (`Settings`, pydantic-settings) is the single source of truth for env-driven
   config and reads `.env` relative to the process's working directory — this is why backend
   commands must be run from `backend/`.
+- The conditional validation/normalization rules for a camper's data (consejero requires
+  teléfono, campero's `bautizado` gates `bautismo_mes`/`bautismo_anio`, `tiene_promocion` gates
+  `promocion_detalle`, `talla_camisa == OTRA` gates `talla_otra`) live in one place,
+  `app/validacion_camper.py` (`validar_datos_camper`/`normalizar_datos_camper`, pure functions,
+  no FastAPI-routing or DB session — same shape as `equipos_balance.py`). Both
+  `POST /api/registros` (`routers/public.py::crear_registro`) and
+  `PATCH /api/admin/registros/{id}` (`routers/admin.py::actualizar_registro`, Admin-only — lets
+  an admin correct a registrant's captured data from the panel) call these so the two can never
+  diverge on what counts as valid. The client-side mirror is
+  `frontend/src/lib/camperForm.ts` (`fieldError`), shared by
+  `pages/sections/FormularioRegistro.tsx` and `components/EditarCamperModal.tsx` — adding a field
+  to the registration form means touching both of these modules, not duplicating the rule.
+  `actualizar_registro` deliberately never touches `folio`, the receipt, the
+  `pago_verificado`/`asistio` audit fields, or `equipo_id`/`equipo_fijado` — those stay behind
+  their own endpoints (`/pago`, `/asistencia`, `/equipo`, `/admin/equipos`) — and it does not
+  re-run the team-balancing pass even if edad/sexo/iglesia/zona/bautismo change.
 
 ### Frontend structure
 

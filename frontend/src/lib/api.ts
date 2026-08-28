@@ -78,6 +78,24 @@ export interface CamperOut {
   equipo_fijado: boolean;
 }
 
+export interface CamperUpdate {
+  nombre: string;
+  iglesia: string;
+  edad: number;
+  sexo: Sexo;
+  zona: Zona;
+  tipo: TipoParticipante;
+  fecha_pago: string;
+  tiene_promocion: boolean;
+  telefono?: string | null;
+  bautizado?: boolean | null;
+  bautismo_mes?: number | null;
+  bautismo_anio?: number | null;
+  promocion_detalle?: string | null;
+  talla_camisa?: TallaCamisa | null;
+  talla_otra?: string | null;
+}
+
 export interface CamperListResponse {
   items: CamperOut[];
   total: number;
