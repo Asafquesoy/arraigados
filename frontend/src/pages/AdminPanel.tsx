@@ -470,10 +470,6 @@ export function AdminPanel() {
                                     <span className="mono">{camper.telefono || "—"}</span>
                                   </div>
                                   <div className="admin-table-detail-item">
-                                    <span className="admin-table-detail-label">Ciudad</span>
-                                    <span>{camper.ciudad || "—"}</span>
-                                  </div>
-                                  <div className="admin-table-detail-item">
                                     <span className="admin-table-detail-label">Bautizado</span>
                                     <span>
                                       {camper.bautizado
