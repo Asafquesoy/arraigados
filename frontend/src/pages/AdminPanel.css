@@ -144,6 +144,13 @@
   overflow: hidden;
   border-radius: var(--radio-l);
   border: 1px solid var(--tarjeta-borde);
+  /* La fila de detalle anima `height`, una propiedad de layout: sin esto el
+     navegador recalcula el layout/pintado de TODA la página (paneles de
+     ajustes arriba, paginación y footer abajo) en cada frame, y el costo
+     escala con cuánto de eso esté visible — por eso el cierre se veía fluido
+     solo con el scroll hasta abajo. `contain: layout paint` acota ese
+     recálculo a este contenedor. */
+  contain: layout paint;
 }
 
 .admin-table {

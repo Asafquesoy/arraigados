@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, type CSSProperties } from "react";
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Navigate } from "react-router-dom";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { AdminAjustes } from "../components/AdminAjustes";
@@ -54,6 +54,10 @@ export function AdminPanel() {
   const [toast, setToast] = useToast();
   // Fila de detalle expandida en la tabla de escritorio — una sola a la vez.
   const [expandido, setExpandido] = useState<number | null>(null);
+  const detailRefs = useRef<Record<number, HTMLTableRowElement | null>>({});
+  // Id de la fila que se está abriendo — se consulta en onAnimationComplete para
+  // hacer scroll solo cuando termina la animación de apertura, nunca la de cierre.
+  const openingIdRef = useRef<number | null>(null);
   const reduceMotion = useReducedMotion();
   // Coincide con el breakpoint de .admin-table-wrap en AdminPanel.css — se renderiza una
   // sola variante (tabla o tarjetas) en vez de las dos a la vez con una oculta por CSS.
@@ -114,6 +118,16 @@ export function AdminPanel() {
   }
   if (!authLoading && role === "RECEPCION") {
     return <Navigate to="/admin/recepcion" replace />;
+  }
+
+  function toggleDetalle(id: number) {
+    if (expandido === id) {
+      openingIdRef.current = null;
+      setExpandido(null);
+      return;
+    }
+    openingIdRef.current = id;
+    setExpandido(id);
   }
 
   async function togglePago(camper: CamperOut, verificado: boolean) {
@@ -330,7 +344,7 @@ export function AdminPanel() {
                       <tr
                         className={`admin-table-row ${abierto ? "is-expanded" : ""}`}
                         style={{ "--color-equipo": camper.equipo?.color ?? "transparent" } as CSSProperties}
-                        onClick={() => setExpandido(abierto ? null : camper.id)}
+                        onClick={() => toggleDetalle(camper.id)}
                       >
                         <td>
                           <div className="admin-table-campero">
@@ -398,7 +412,7 @@ export function AdminPanel() {
                             aria-expanded={abierto}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setExpandido(abierto ? null : camper.id);
+                              toggleDetalle(camper.id);
                             }}
                           >
                             <ChevronDownIcon size={16} />
@@ -407,7 +421,13 @@ export function AdminPanel() {
                       </tr>
                       <AnimatePresence initial={false}>
                         {abierto && (
-                          <tr className="admin-table-detail-row" key="detail">
+                          <tr
+                            className="admin-table-detail-row"
+                            key="detail"
+                            ref={(el) => {
+                              detailRefs.current[camper.id] = el;
+                            }}
+                          >
                             <td colSpan={7}>
                               <m.div
                                 className="admin-table-detail"
@@ -420,8 +440,23 @@ export function AdminPanel() {
                                 exit={
                                   reduceMotion
                                     ? { opacity: 0, transition: { duration: 0.15 } }
-                                    : { opacity: 0, height: 0, transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] } }
+                                    : // --ease-salida (tokens.css): arranca lenta y acelera hacia el
+                                      // final, a diferencia de easeSuave (pensada para entradas) que
+                                      // frena mucho cerca del final y hacía ver el cierre "atorado".
+                                      { opacity: 0, height: 0, transition: { duration: 0.2, ease: [0.7, 0, 0.84, 0] } }
                                 }
+                                onAnimationComplete={() => {
+                                  // Solo la animación de apertura deja este id armado en
+                                  // openingIdRef (toggleDetalle lo limpia al cerrar) — así el
+                                  // cierre de una fila nunca dispara un scroll de otra.
+                                  if (openingIdRef.current === camper.id) {
+                                    openingIdRef.current = null;
+                                    detailRefs.current[camper.id]?.scrollIntoView({
+                                      behavior: reduceMotion ? "auto" : "smooth",
+                                      block: "nearest",
+                                    });
+                                  }
+                                }}
                               >
                                 <div className="admin-table-detail-grid">
                                   {showShirtSize && (
