@@ -1,3 +1,4 @@
+import { Carta } from "./sections/Carta";
 import { Detalles } from "./sections/Detalles";
 import { FormularioRegistro } from "./sections/FormularioRegistro";
 import { Hero } from "./sections/Hero";
@@ -13,6 +14,7 @@ export function Registro() {
       <Hero onScrollToForm={scrollToForm} />
       <Detalles />
       <Pago />
+      <Carta />
       <FormularioRegistro />
     </div>
   );

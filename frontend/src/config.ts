@@ -41,6 +41,11 @@ export const CONTACTS: Contact[] = [
   { name: "Haniel Guevara", phone: "834 162 3612", whatsapp: "528341623612" },
 ];
 
+export const CARTA_PREINSCRIPCION = {
+  href: "/carta-preinscripcion-arraigados-2026.docx",
+  filename: "Carta de preinscripcion Arraigados 2026.docx",
+};
+
 export const SOCIAL_LINKS = {
   instagram: "https://www.instagram.com/arbjdunamis/",
   facebook: "https://www.facebook.com/ARBJdunamis?locale=es_LA",
@@ -79,7 +84,7 @@ export const CAMP_DETAILS: CampDetail[] = [
   {
     icon: "church",
     title: "¿Para quién?",
-    body: "Jóvenes acreditados con su carta pastoral de nuestras iglesias asociadas, afines y simpatizantes.",
+    body: "Jóvenes de nuestras iglesias asociadas, afines y simpatizantes, acreditados con la carta de preinscripción firmada y sellada por su iglesia.",
   },
   {
     icon: "shirt",

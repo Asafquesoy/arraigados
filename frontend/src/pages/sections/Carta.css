@@ -1,0 +1,51 @@
+.carta-title {
+  margin-top: 0.3rem;
+}
+
+.carta-intro {
+  max-width: 62ch;
+  font-size: var(--t-lg);
+  margin-top: 0.6rem;
+}
+
+.carta-card {
+  padding: 1.5rem;
+  margin-top: 1.2rem;
+}
+
+.carta-requisitos {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.6rem;
+  color: var(--hueso);
+  font-size: var(--t-base);
+}
+
+.carta-destacado {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1.1rem 0 0;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--tarjeta-borde);
+  color: var(--amarillo-suave);
+  font-size: var(--t-base);
+}
+
+.carta-download {
+  margin-top: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.carta-cta {
+  margin-top: 1.2rem;
+}
+
+@media (pointer: coarse) {
+  .carta-download {
+    min-height: 44px;
+  }
+}
