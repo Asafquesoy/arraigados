@@ -10,6 +10,7 @@ import { ZONA_LABEL } from "../components/ZonaField";
 import { CheckIcon, ReceiptIcon, SearchIcon, ShieldCheckIcon } from "../components/icons";
 import { useAdminAuth } from "../lib/AdminAuthContext";
 import { apiFetch, ApiError, type AsistenciaStats, type CamperListResponse, type CamperOut } from "../lib/api";
+import { formatFechaHora } from "../lib/fecha";
 import { useSettings } from "../lib/SettingsContext";
 import { useToast } from "../lib/useToast";
 import "./Recepcion.css";
@@ -200,7 +201,9 @@ export function Recepcion() {
                     <span className="recepcion-chip">{camper.iglesia}</span>
                     {camper.ciudad && <span className="recepcion-chip">{camper.ciudad}</span>}
                     {camper.zona && <span className="recepcion-chip">{ZONA_LABEL[camper.zona]}</span>}
-                    {camper.telefono && <span className="recepcion-chip mono">{camper.telefono}</span>}
+                    {camper.tipo === "CONSEJERO" && camper.telefono && (
+                      <span className="recepcion-chip mono">{camper.telefono}</span>
+                    )}
                     {showShirtSize && camper.talla_camisa && (
                       <span className="recepcion-chip">
                         Talla {camper.talla_camisa === "OTRA" ? camper.talla_otra || "Otra" : camper.talla_camisa}
@@ -224,7 +227,7 @@ export function Recepcion() {
                         className="recepcion-card-llego"
                         title={
                           camper.asistio_en
-                            ? `${new Date(camper.asistio_en).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}${camper.asistio_por ? ` · registró ${camper.asistio_por}` : ""}`
+                            ? `${formatFechaHora(camper.asistio_en)}${camper.asistio_por ? ` · registró ${camper.asistio_por}` : ""}`
                             : undefined
                         }
                       >

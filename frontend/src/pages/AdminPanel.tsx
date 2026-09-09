@@ -6,6 +6,7 @@ import { AdminComprobanteStats } from "../components/AdminComprobanteStats";
 import { AdminRegistroToggle } from "../components/AdminRegistroToggle";
 import { AdminResumen } from "../components/AdminResumen";
 import { AdminShirtStats } from "../components/AdminShirtStats";
+import { CamperDetalle } from "../components/CamperDetalle";
 import { ConfirmButton } from "../components/ConfirmButton";
 import { EditarCamperModal } from "../components/EditarCamperModal";
 import { Reveal } from "../components/Reveal";
@@ -29,6 +30,7 @@ import {
   type TipoParticipante,
   type Zona,
 } from "../lib/api";
+import { formatFechaCorta } from "../lib/fecha";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { useSettings } from "../lib/SettingsContext";
 import { useToast } from "../lib/useToast";
@@ -384,7 +386,7 @@ export function AdminPanel() {
                         </td>
                         <td onClick={(e) => e.stopPropagation()}>
                           <div className={`admin-table-pago ${camper.pago_verificado ? "is-verificado" : ""}`}>
-                            <span className="mono admin-table-fecha-pago">{camper.fecha_pago ?? "—"}</span>
+                            <span className="mono admin-table-fecha-pago">{formatFechaCorta(camper.fecha_pago)}</span>
                             <ToggleSwitch
                               checked={camper.pago_verificado}
                               disabled={!puedeVerificarPago}
@@ -468,54 +470,7 @@ export function AdminPanel() {
                                   }
                                 }}
                               >
-                                <div className="admin-table-detail-grid">
-                                  {showShirtSize && (
-                                    <div className="admin-table-detail-item">
-                                      <span className="admin-table-detail-label">Talla</span>
-                                      <span>{camper.talla_camisa === "OTRA" ? camper.talla_otra || "Otra" : camper.talla_camisa ?? "—"}</span>
-                                    </div>
-                                  )}
-                                  <div className="admin-table-detail-item">
-                                    <span className="admin-table-detail-label">Teléfono</span>
-                                    <span className="mono">{camper.telefono || "—"}</span>
-                                  </div>
-                                  <div className="admin-table-detail-item">
-                                    <span className="admin-table-detail-label">Bautizado</span>
-                                    <span>
-                                      {camper.bautizado
-                                        ? camper.bautismo_mes && camper.bautismo_anio
-                                          ? `Sí (${camper.bautismo_mes}/${camper.bautismo_anio})`
-                                          : "Sí"
-                                        : "No"}
-                                    </span>
-                                  </div>
-                                  <div className="admin-table-detail-item">
-                                    <span className="admin-table-detail-label">Promoción</span>
-                                    <span>{camper.tiene_promocion ? camper.promocion_detalle || "Sí" : "No"}</span>
-                                  </div>
-                                  {camper.pago_verificado && (
-                                    <div className="admin-table-detail-item">
-                                      <span className="admin-table-detail-label">Verificado por</span>
-                                      <span>
-                                        {camper.verificado_por ?? "—"}
-                                        {camper.verificado_en && <><br /><span className="muted mono">{camper.verificado_en}</span></>}
-                                      </span>
-                                    </div>
-                                  )}
-                                  {camper.asistio && (
-                                    <div className="admin-table-detail-item">
-                                      <span className="admin-table-detail-label">Llegada registrada por</span>
-                                      <span>
-                                        {camper.asistio_por ?? "—"}
-                                        {camper.asistio_en && <><br /><span className="muted mono">{camper.asistio_en}</span></>}
-                                      </span>
-                                    </div>
-                                  )}
-                                  <div className="admin-table-detail-item">
-                                    <span className="admin-table-detail-label">Registrado el</span>
-                                    <span className="mono">{camper.created_at}</span>
-                                  </div>
-                                </div>
+                                <CamperDetalle camper={camper} showShirtSize={showShirtSize} />
                                 {(puedeEditar || puedeBorrar) && (
                                   <div className="admin-table-detail-actions">
                                     {puedeEditar && (
@@ -552,76 +507,98 @@ export function AdminPanel() {
 
         {!loading &&
           !isDesktop &&
-          data?.items.map((camper) => (
-            <div className="glass-card admin-row" key={camper.id}>
-              <div className="admin-row-main">
-                <div>
+          data?.items.map((camper) => {
+            const abierto = expandido === camper.id;
+            return (
+              <div className="glass-card admin-row" key={camper.id}>
+                <div className="admin-row-header">
                   <p className="admin-row-name">{camper.nombre}</p>
-                  <p className="muted admin-row-meta mono">
-                    {camper.folio} · {camper.tipo ? TIPO_LABEL[camper.tipo] : "—"} ·{" "}
-                    {camper.zona ? ZONA_LABEL[camper.zona] : "—"} · {camper.edad} años ·{" "}
-                    {camper.sexo === "M" ? "Masculino" : "Femenino"}
-                    {showShirtSize && camper.talla_camisa
-                      ? ` · Talla ${camper.talla_camisa === "OTRA" ? camper.talla_otra || "Otra" : camper.talla_camisa}`
-                      : ""}
-                  </p>
-                  <p className="muted admin-row-meta">{camper.iglesia}</p>
-                  <p className="muted admin-row-meta">
-                    Pago: {camper.fecha_pago ?? "—"} · Promoción: {camper.tiene_promocion ? camper.promocion_detalle || "Sí" : "No"} ·{" "}
-                    {camper.tipo === "CONSEJERO"
-                      ? `Teléfono: ${camper.telefono || "—"}`
-                      : `Bautizado: ${camper.bautizado ? "Sí" : "No"}`}
-                  </p>
-                  <p className="muted admin-row-meta">
-                    {camper.asistio ? <span className="admin-asistio-si">✓ Llegó</span> : "Aún no llega"}
-                  </p>
-                  <p className="muted admin-row-meta">
+                  <p className="muted mono admin-row-folio">{camper.folio}</p>
+                  <div className="admin-row-chips">
+                    <span className="admin-chip-tipo">{camper.tipo ? TIPO_LABEL[camper.tipo] : "—"}</span>
+                    {camper.zona && <span className="admin-chip-tipo">{ZONA_LABEL[camper.zona]}</span>}
                     {camper.equipo ? (
                       <span className="admin-equipo-chip">
                         <span className="admin-equipo-dot" style={{ background: camper.equipo.color }} />
                         {camper.equipo.nombre}
                       </span>
                     ) : (
-                      "Sin equipo"
+                      <span className="muted">Sin equipo</span>
                     )}
-                  </p>
+                    {camper.asistio && <span className="admin-asistio-si">✓ Llegó</span>}
+                  </div>
+                  <p className="muted admin-row-iglesia">{camper.iglesia}</p>
                 </div>
 
-                <div className="admin-row-actions">
-                  {camper.tiene_comprobante && (
+                <div className="admin-row-status">
+                  <ToggleSwitch
+                    checked={camper.pago_verificado}
+                    disabled={!puedeVerificarPago}
+                    onChange={(checked) => togglePago(camper, checked)}
+                    label={camper.pago_verificado ? "Pagado / Verificado" : "Pendiente"}
+                  />
+                  {camper.tiene_comprobante ? (
                     <button
                       className="btn btn-ghost admin-ticket-btn"
                       onClick={() => setTicketModal({ id: camper.id, nombre: camper.nombre })}
                     >
                       <ReceiptIcon size={16} /> Ver comprobante
                     </button>
-                  )}
-                  {puedeEditar && (
-                    <button className="btn btn-ghost admin-ticket-btn" onClick={() => setEditando(camper)}>
-                      <PencilIcon size={16} /> Editar
-                    </button>
-                  )}
-                  {puedeBorrar && (
-                    <ConfirmButton
-                      label="Borrar registro"
-                      confirmLabel="¿Seguro? Sí, borrar"
-                      className="admin-delete-btn"
-                      onConfirm={() => borrarRegistro(camper)}
-                    />
+                  ) : (
+                    <span className="muted admin-row-sin-recibo">Sin comprobante</span>
                   )}
                 </div>
-              </div>
 
-              <div className="admin-row-status">
-                <ToggleSwitch
-                  checked={camper.pago_verificado}
-                  disabled={!puedeVerificarPago}
-                  onChange={(checked) => togglePago(camper, checked)}
-                  label={camper.pago_verificado ? "Pagado / Verificado" : "Pendiente"}
-                />
+                <button
+                  type="button"
+                  className="admin-row-detalle-toggle"
+                  aria-expanded={abierto}
+                  onClick={() => toggleDetalle(camper.id)}
+                >
+                  {abierto ? "Ocultar detalle" : "Ver detalle"}
+                  <ChevronDownIcon size={16} className={abierto ? "is-open" : ""} />
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {abierto && (
+                    <m.div
+                      className="admin-row-detalle"
+                      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                      animate={
+                        reduceMotion
+                          ? { opacity: 1, transition: { duration: 0.15 } }
+                          : { opacity: 1, height: "auto", transition: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }
+                      }
+                      exit={
+                        reduceMotion
+                          ? { opacity: 0, transition: { duration: 0.15 } }
+                          : { opacity: 0, height: 0, transition: { duration: 0.2, ease: [0.7, 0, 0.84, 0] } }
+                      }
+                    >
+                      <CamperDetalle camper={camper} showShirtSize={showShirtSize} />
+                      {(puedeEditar || puedeBorrar) && (
+                        <div className="admin-row-actions">
+                          {puedeEditar && (
+                            <button className="btn btn-ghost admin-ticket-btn" onClick={() => setEditando(camper)}>
+                              <PencilIcon size={16} /> Editar
+                            </button>
+                          )}
+                          {puedeBorrar && (
+                            <ConfirmButton
+                              label="Borrar registro"
+                              confirmLabel="¿Seguro? Sí, borrar"
+                              className="admin-delete-btn"
+                              onConfirm={() => borrarRegistro(camper)}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </m.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </div>
-          ))}
+            );
+          })}
       </div>
 
       {data && totalPages > 1 && (

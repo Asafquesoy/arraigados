@@ -180,7 +180,18 @@ this shape exists to avoid.
   live in a single per-row expandable detail (`admin-table-detail-row`, one row open at a time via
   `expandido` state, `AnimatePresence`/`m.div` height animation respecting `useReducedMotion()`)
   instead of adding columns — adding a field back as a column is what caused the horizontal-scroll
-  bug this pattern replaced.
+  bug this pattern replaced. That detail's contents are `components/CamperDetalle.tsx`, shared with
+  the sub-1024px card view's own collapsible detail (`admin-row-detalle` in `AdminPanel.tsx`) so the
+  two layouts can never again show different fields for the same registro — which fields it shows
+  depends on `tipo`: teléfono only for `CONSEJERO`, bautismo only for `CAMPERO` (mirroring the same
+  rule in `lib/camperForm.ts::fieldError`, the registration form's source of truth for which fields
+  each participant type is even asked). Dates in the panel (`created_at`, `verificado_en`,
+  `asistio_en`, `fecha_pago`) are formatted with `lib/fecha.ts` (`formatFechaHora`/`formatFechaCorta`)
+  rather than inline `toLocaleString` calls — it exists specifically to dodge two timezone traps:
+  SQLite (dev) stores datetimes naive (no offset), so `formatFechaHora` appends `Z` before parsing
+  since the backend always writes UTC (`models.py::_now`); and `fecha_pago` is a date-only string,
+  which `new Date(s)` would parse as UTC midnight and render one day early in Mexico's timezone, so
+  `formatFechaCorta` builds the `Date` from its y/m/d parts instead.
 - Icons in `src/components/icons/` are hand-drawn SVGs specific to this project (root, leaf,
   church, shirt, receipt, shield-check, etc.) — no icon library is used; add new icons following
   the same `IconProps { size, className, strokeWidth? }` shape (`icons/types.ts`).
