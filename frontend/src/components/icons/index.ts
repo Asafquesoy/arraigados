@@ -25,3 +25,5 @@ export * from "./EquiposIcon";
 export * from "./PinIcon";
 export * from "./ChevronDownIcon";
 export * from "./PencilIcon";
+export * from "./MenuIcon";
+export * from "./CloseIcon";

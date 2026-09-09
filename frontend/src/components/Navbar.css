@@ -72,6 +72,10 @@
   font-family: inherit;
 }
 
+.navbar-link.is-active {
+  color: var(--amarillo);
+}
+
 .navbar-admin-name {
   font-size: 0.85rem;
   color: var(--verde-claro);
@@ -83,6 +87,8 @@
   white-space: nowrap;
 }
 
+/* Solo la barra pública (Registro / Admin, 2 enlaces) usa este ajuste — el
+   área admin en móvil se resuelve con el menú hamburguesa de abajo. */
 @media (max-width: 420px) {
   .navbar-links {
     gap: 0.75rem;
@@ -90,4 +96,83 @@
   .navbar-admin-name {
     display: none;
   }
+}
+
+/* ---- Menú hamburguesa (solo área admin, <768px) ----
+   El glassmorphism está scoped a este archivo (ver CLAUDE.md), así que el
+   panel reutiliza el mismo lenguaje visual que .navbar.is-scrolled. */
+.navbar-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: var(--radio-s);
+  background: transparent;
+  color: var(--hueso);
+  cursor: pointer;
+  transition: background var(--dur-rapida) ease;
+}
+
+.navbar-menu-btn:hover {
+  background: var(--vidrio-fondo);
+}
+
+.navbar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-drawer);
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.navbar-drawer {
+  position: fixed;
+  top: calc(64px + 1px);
+  left: var(--e-4);
+  right: var(--e-4);
+  z-index: calc(var(--z-drawer) + 1);
+  display: flex;
+  flex-direction: column;
+  background: var(--vidrio-fondo);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--vidrio-borde);
+  border-radius: var(--radio-l);
+  box-shadow: var(--sombra-alta);
+  padding: var(--e-3) var(--e-4) var(--e-4);
+  max-height: calc(100dvh - 64px - var(--e-6));
+  overflow-y: auto;
+}
+
+.navbar-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--e-3);
+  margin-bottom: var(--e-2);
+  border-bottom: 1px solid var(--vidrio-borde);
+}
+
+.navbar-drawer-links {
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar-drawer-links .navbar-link {
+  min-height: 44px;
+  padding: 0.7rem 0.2rem;
+  font-size: var(--t-base);
+  border-bottom: 1px solid var(--vidrio-borde);
+}
+
+.navbar-drawer-links .navbar-link:last-child {
+  border-bottom: none;
+}
+
+.navbar-drawer-logout {
+  min-height: 44px;
+  margin-top: var(--e-2);
+  padding: 0.7rem 0.2rem;
+  color: var(--coral-error);
 }

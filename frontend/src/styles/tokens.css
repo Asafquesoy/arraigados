@@ -99,6 +99,7 @@
   --z-fondo: 0;
   --z-contenido: 1;
   --z-navbar: 50;
+  --z-drawer: 75;
   --z-modal: 100;
 
   /* ---- Textura de grano (overlay muy sutil) ---- */
