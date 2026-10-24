@@ -17,10 +17,12 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch<{ username: string; role: AdminRole }>("/auth/me")
+    // `/auth/me` responde `null` (200) cuando no hay sesión; el `catch` queda
+    // para errores de red o del servidor.
+    apiFetch<{ username: string; role: AdminRole } | null>("/auth/me")
       .then((res) => {
-        setUsername(res.username);
-        setRole(res.role);
+        setUsername(res?.username ?? null);
+        setRole(res?.role ?? null);
       })
       .catch(() => {
         setUsername(null);

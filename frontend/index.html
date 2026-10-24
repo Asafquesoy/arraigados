@@ -20,6 +20,19 @@
       })(window, document, "script", "dataLayer", "GTM-MH8B3VLP");
     </script>
     <!-- End Google Tag Manager -->
+    <!-- Modo ligero: marca <html> si el equipo declara pocos núcleos o poca
+         memoria (deviceMemory solo existe en Chromium; si falta se ignora).
+         Va inline y antes del primer pintado para que un equipo lento no
+         renderice ni un frame del fondo completo. Ver .equipo-ligero en
+         src/components/CanopyBackground.css. -->
+    <script>
+      (function () {
+        var n = navigator;
+        if ((n.hardwareConcurrency && n.hardwareConcurrency <= 4) || (n.deviceMemory && n.deviceMemory <= 4)) {
+          document.documentElement.classList.add("equipo-ligero");
+        }
+      })();
+    </script>
     <!-- webp: mismo archivo que ya usa Navbar/Hero (ver Navbar.tsx, Hero.tsx) —
          si el favicon apuntara a logo.png en vez de logo.webp, el navegador
          tendría que descargar los dos (no comparten caché al ser URLs

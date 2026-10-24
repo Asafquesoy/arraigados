@@ -3,8 +3,9 @@ import "./CanopyBackground.css";
 /**
  * Fondo fijo de la app: dosel nocturno con rayos de luz dorada que respiran,
  * hojas a la deriva y una capa de grano. Se monta una sola vez en App.tsx.
- * Puramente decorativo (aria-hidden) y desactiva su movimiento con
- * prefers-reduced-motion vía CSS (ver global.css).
+ * Puramente decorativo (aria-hidden). Desactiva su movimiento con
+ * prefers-reduced-motion y se recorta en móvil y en equipos lentos
+ * (`.equipo-ligero`) — todo en CanopyBackground.css.
  */
 export function CanopyBackground({ variant = "full" }: { variant?: "full" | "sutil" }) {
   return (

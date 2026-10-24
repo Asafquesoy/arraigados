@@ -167,7 +167,9 @@ this shape exists to avoid.
   `apiFetch` (needs raw `fetch` for `FormData`) and sets the same header directly — keep both in
   sync if this ever changes.
 - `src/lib/AdminAuthContext.tsx` holds admin session state app-wide (checks `/auth/me` on
-  mount); `pages/AdminLogin.tsx` and `pages/AdminPanel.tsx` both redirect via `<Navigate>` based
+  mount — which answers `200 null`, not 401, when there is no session, via
+  `security.get_optional_admin`, so public pages don't log a console error on every load; every
+  other `/api/admin/*` route still uses `get_current_admin` and 401s as before); `pages/AdminLogin.tsx` and `pages/AdminPanel.tsx` both redirect via `<Navigate>` based
   on this context rather than route guards/middleware.
 - `src/lib/useMediaQuery.ts` is a `matchMedia` hook used to pick between layout variants (e.g.
   `AdminPanel.tsx` table vs. cards, breakpoint `1024px`, kept in sync with the same value in
@@ -310,6 +312,16 @@ inside this direction rather than introducing an unrelated palette or mood.
 - **Glassmorphism is scoped to `Navbar.css` only** — `backdrop-filter: blur(...)` must not
   spread to other components; `.glass-card` (the general card style, `global.css`) also uses a
   light blur but that's the pre-existing baseline, not a new instance to imitate elsewhere.
+- **Background cost / `.equipo-ligero`:** `CanopyBackground` (fixed, mounted outside `<Routes>`,
+  so it animates on every route) is the most expensive layer on a slow PC. Its light rays are
+  plain `radial-gradient`s that fade to 0 at their own edge (`--gradiente-luz`/
+  `--gradiente-luz-verde`, `ellipse closest-side`) — **no `filter: blur` and no `mix-blend-mode`**
+  on any full-screen layer; don't reintroduce them. An inline script in `index.html` adds
+  `equipo-ligero` to `<html>` when `navigator.hardwareConcurrency <= 4` or
+  `navigator.deviceMemory <= 4` (Chromium-only; ignored if absent), and `CanopyBackground.css`
+  trims the same layers it already trims under `max-width: 640px` (second ray, grain, leaves;
+  slower first ray). Any new decorative full-screen effect should respect both that class and
+  `prefers-reduced-motion`.
 - **Select dropdown text color:** `<option>` elements ignore the dark-theme `color` set on their
   parent `<select>` once the browser renders its native (usually white) dropdown — always pair
   `.field select` styling with an explicit `.field select option { color: var(--corteza); }`

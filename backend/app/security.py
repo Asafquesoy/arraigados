@@ -48,6 +48,21 @@ def get_current_admin(
     return admin
 
 
+def get_optional_admin(
+    session_token: str | None = Cookie(default=None, alias=COOKIE_NAME),
+    db: Session = Depends(get_db),
+) -> AdminUser | None:
+    """Misma resolución que `get_current_admin`, pero devuelve None en vez de
+    lanzar 401 — para `/auth/me`, que el frontend llama en cada carga (también
+    en las páginas públicas) solo para saber si hay sesión. Un 401 ahí es una
+    respuesta normal y ensucia la consola del navegador. Las rutas que exigen
+    sesión siguen usando `get_current_admin`."""
+    try:
+        return get_current_admin(session_token, db)
+    except HTTPException:
+        return None
+
+
 def require_role(*roles: AdminRole):
     """Dependency factory: exige que el admin autenticado tenga uno de `roles`.
     Se apila sobre get_current_admin (ya exigido a nivel de router) — FastAPI

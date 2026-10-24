@@ -14,7 +14,6 @@
   top: -20vh;
   background: var(--gradiente-luz);
   opacity: 0.14;
-  filter: blur(30px);
   animation: rayo-respirar 9s ease-in-out infinite;
 }
 
@@ -27,7 +26,7 @@
 .canopy-rayo--b {
   right: 4%;
   width: 45vw;
-  background: radial-gradient(circle, rgba(127, 181, 57, 0.5) 0%, rgba(127, 181, 57, 0) 70%);
+  background: var(--gradiente-luz-verde);
   transform: rotate(-10deg);
   animation-delay: 3.5s;
   opacity: 0.1;
@@ -50,14 +49,20 @@
   animation-duration: 14s;
 }
 
-/* Los rayos son la capa más cara del fondo (blur grande + animación en bucle,
-   siempre activa en TODAS las rutas porque `CanopyBackground` vive fuera de
-   `<Routes>`). En móvil se recortan: menos blur y más lento en vez de
-   apagarlos del todo, para conservar algo de atmósfera sin castigar la GPU. */
+/* Los rayos son la capa más cara del fondo (animación en bucle, siempre
+   activa en TODAS las rutas porque `CanopyBackground` vive fuera de
+   `<Routes>`). Ya no usan `filter: blur`: el degradado mismo se desvanece
+   (ver `--gradiente-luz`), así que animar transform/opacity no obliga a
+   rasterizar de nuevo un blur grande en cada frame. En móvil y en equipos
+   lentos se recortan más: más lento y con una sola capa, en vez de apagarlos
+   del todo, para conservar algo de atmósfera sin castigar la GPU.
+
+   `.equipo-ligero` la pone el script inline de `index.html` en <html> cuando
+   el equipo declara pocos núcleos o poca memoria — mismo recorte que móvil,
+   pero decidido por capacidad y no por ancho de pantalla. */
 @media (max-width: 640px) {
   .canopy-rayo {
     width: 90vw;
-    filter: blur(14px);
     animation-duration: 16s;
   }
 
@@ -68,13 +73,21 @@
     display: none;
   }
 
-  /* El grano usa `mix-blend-mode: overlay` a pantalla completa — un blend
-     mode fuerza a re-componer toda la capa de fondo contra lo que hay
-     debajo en cada frame en el que algo encima se mueve (los rayos, las
-     hojas). En móvil no vale ese costo por un grano al 3.5% de opacidad. */
+  /* El grano es una capa a pantalla completa; en móvil no vale el costo por
+     un grano a ~2.5% de opacidad. */
   .canopy-grano {
     display: none;
   }
+}
+
+.equipo-ligero .canopy-rayo {
+  animation-duration: 16s;
+}
+
+.equipo-ligero .canopy-rayo--b,
+.equipo-ligero .canopy-grano,
+.equipo-ligero .canopy-hojas {
+  display: none;
 }
 
 .canopy-hojas {
@@ -165,8 +178,10 @@
   position: absolute;
   inset: 0;
   background-image: var(--grano);
-  opacity: 0.035;
-  mix-blend-mode: overlay;
+  /* Sin `mix-blend-mode`: un blend a pantalla completa obliga a re-componer
+     el fondo contra lo de abajo cada vez que algo encima se mueve. Con
+     mezcla normal se baja la opacidad para que el grano siga siendo sutil. */
+  opacity: 0.025;
 }
 
 @media (prefers-reduced-motion: reduce) {

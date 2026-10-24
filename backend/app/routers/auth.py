@@ -6,7 +6,7 @@ from ..database import get_db
 from ..models import AdminUser
 from ..ratelimit import rate_limit
 from ..schemas import AdminOut, LoginRequest
-from ..security import COOKIE_NAME, create_access_token, get_current_admin, verify_password
+from ..security import COOKIE_NAME, create_access_token, get_optional_admin, verify_password
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -42,6 +42,10 @@ def logout(response: Response):
     return {"ok": True}
 
 
-@router.get("/me", response_model=AdminOut)
-def me(admin: AdminUser = Depends(get_current_admin)):
+@router.get("/me", response_model=AdminOut | None)
+def me(admin: AdminUser | None = Depends(get_optional_admin)):
+    # `null` (200) significa "sin sesión" — no es un error, y así las páginas
+    # públicas no registran un 401 en la consola en cada carga.
+    if admin is None:
+        return None
     return AdminOut(username=admin.username, role=admin.role)

@@ -34,7 +34,21 @@
     linear-gradient(180deg, var(--corteza-alta) 0%, var(--corteza) 60%, var(--corteza-baja) 100%);
 
   --gradiente-raiz: linear-gradient(180deg, var(--amarillo) 0%, var(--ambar) 55%, var(--naranja-raiz) 100%);
-  --gradiente-luz: radial-gradient(circle, rgba(255, 200, 0, 0.9) 0%, rgba(255, 200, 0, 0) 70%);
+  /* Elipse que llega a 0 justo en el borde de la caja (`closest-side`): sin
+     `filter: blur` que difumine el recorte, el degradado mismo tiene que
+     desvanecerse antes de tocar el borde o se vería un corte duro. */
+  --gradiente-luz: radial-gradient(
+    ellipse closest-side,
+    rgba(255, 200, 0, 0.9) 0%,
+    rgba(255, 200, 0, 0.4) 45%,
+    rgba(255, 200, 0, 0) 100%
+  );
+  --gradiente-luz-verde: radial-gradient(
+    ellipse closest-side,
+    rgba(127, 181, 57, 0.5) 0%,
+    rgba(127, 181, 57, 0.2) 45%,
+    rgba(127, 181, 57, 0) 100%
+  );
 
   /* ---- Vidrio / tarjetas ---- */
   --vidrio-fondo: rgba(20, 33, 15, 0.55);

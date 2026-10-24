@@ -209,11 +209,18 @@ export function AdminPanel() {
 
       <AdminAjustes canEdit={role === "ADMIN"} />
 
-      <AdminShirtStats canEdit={role === "ADMIN"} />
+      {/* Estos tres piden `/admin/stats/*` al montarse: sin esperar a que
+          `/auth/me` confirme la sesión disparaban 401 antes del redirect al
+          login cuando alguien abría el panel sin sesión. */}
+      {username && (
+        <>
+          <AdminShirtStats canEdit={role === "ADMIN"} />
 
-      <AdminComprobanteStats canEdit={role === "ADMIN"} />
+          <AdminComprobanteStats canEdit={role === "ADMIN"} />
 
-      <AdminResumen />
+          <AdminResumen />
+        </>
+      )}
 
       <div className="glass-card admin-filters">
         <div className="field">
