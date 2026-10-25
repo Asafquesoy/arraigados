@@ -342,6 +342,13 @@ inside this direction rather than introducing an unrelated palette or mood.
   parent `<select>` once the browser renders its native (usually white) dropdown — always pair
   `.field select` styling with an explicit `.field select option { color: var(--corteza); }`
   rule (already in `global.css`), or new selects will render invisible white-on-white text.
+- **Form fields must be allowed to shrink:** `.form-grid` uses `minmax(0, 1fr)` columns and `.field`
+  has `min-width: 0` (both in `global.css`). With plain `1fr` (= `minmax(auto, 1fr)`) a grid column
+  never goes below the natural width of its content, and a `<select>` is as wide as its longest
+  `<option>` — the Zona select ("Metro (Tampico, Madero, Altamira)", ~298px) stuck out of the card on
+  phones ≤375px and, once the iglesia input was focused with long text, scrolled the whole
+  `overflow: hidden` card sideways ("se ve cortado"). Don't revert those two rules; selects also
+  get `text-overflow: ellipsis` so a long chosen option truncates instead of overflowing.
 - **Touch targets:** interactive elements should be ≥44px under `@media (pointer: coarse)` —
   see the block in `global.css` for the pattern (`.btn-sm`, chip buttons, icon-only buttons).
 - Full context and the original audit trail (design direction rationale, responsive-audit
