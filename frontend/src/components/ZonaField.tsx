@@ -16,15 +16,22 @@ interface ZonaFieldProps {
   onChange: (value: Zona | "") => void;
   onBlur?: () => void;
   error?: string;
+  autoFocus?: boolean;
 }
 
-export function ZonaField({ value, onChange, onBlur, error }: ZonaFieldProps) {
+export function ZonaField({ value, onChange, onBlur, error, autoFocus }: ZonaFieldProps) {
   return (
     <div className={`field ${error ? "has-error" : ""}`}>
       <label htmlFor="zona">
         <CityIcon size={14} /> Zona
       </label>
-      <select id="zona" value={value} onChange={(e) => onChange(e.target.value as Zona | "")} onBlur={onBlur}>
+      <select
+        id="zona"
+        value={value}
+        autoFocus={autoFocus}
+        onChange={(e) => onChange(e.target.value as Zona | "")}
+        onBlur={onBlur}
+      >
         <option value="">Selecciona una opción</option>
         {ZONAS.map((zona) => (
           <option key={zona} value={zona}>

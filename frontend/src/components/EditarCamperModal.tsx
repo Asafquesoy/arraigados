@@ -6,6 +6,7 @@ import { useSettings } from "../lib/SettingsContext";
 import { BautismoFechaField } from "./BautismoFechaField";
 import { FieldReveal } from "./FieldReveal";
 import { ShirtSizeField } from "./ShirtSizeField";
+import { IglesiaField } from "./IglesiaField";
 import { TipoParticipanteField } from "./TipoParticipanteField";
 import { YesNoField } from "./YesNoField";
 import { ZonaField } from "./ZonaField";
@@ -295,26 +296,21 @@ export function EditarCamperModal({ camper, onClose, onSaved }: EditarCamperModa
           <section className="editar-camper-section">
             <h3 className="editar-camper-heading">De dónde viene</h3>
             <div className="form-grid">
-              <div className={`field ${errors.iglesia ? "has-error" : ""}`}>
-                <label htmlFor="edit-iglesia">
-                  <ChurchIcon size={14} /> Iglesia de procedencia
-                </label>
-                <input
-                  id="edit-iglesia"
-                  type="text"
-                  value={form.iglesia}
-                  onChange={(e) => setForm({ ...form, iglesia: e.target.value })}
-                  onBlur={() => validateField("iglesia")}
-                  placeholder="Nombre de la iglesia"
-                />
-                {errors.iglesia && <span className="field-error">{errors.iglesia}</span>}
-              </div>
-
+              {/* La zona va primero: de ella salen las sugerencias de iglesia. */}
               <ZonaField
                 value={form.zona}
                 onChange={(v) => setForm({ ...form, zona: v })}
                 onBlur={() => validateField("zona")}
                 error={errors.zona}
+              />
+
+              <IglesiaField
+                id="edit-iglesia"
+                value={form.iglesia}
+                onChange={(v) => setForm({ ...form, iglesia: v })}
+                onBlur={() => validateField("iglesia")}
+                error={errors.iglesia}
+                zona={form.zona}
               />
 
               {showShirtSize && (

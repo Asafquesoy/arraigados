@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..equipos_balance import Criterios, construir_contexto, elegir_equipo
+from ..iglesias import canonicalizar_iglesia, iglesias_de_zona
 from ..models import AppSettings, Camper, Equipo, Sexo, TallaCamisa, TipoParticipante, Zona
 from ..ratelimit import rate_limit
 from ..schemas import CamperCreateResponse
@@ -16,6 +17,18 @@ from .equipos import criterios_desde_settings
 logger = logging.getLogger("arraigados")
 
 router = APIRouter(prefix="/api/registros", tags=["registro"])
+iglesias_router = APIRouter(prefix="/api/iglesias", tags=["iglesias"])
+
+
+@iglesias_router.get(
+    "",
+    response_model=list[str],
+    dependencies=[Depends(rate_limit("iglesias", max_hits=120, window_seconds=600))],
+)
+def listar_iglesias(zona: Zona, db: Session = Depends(get_db)):
+    """Nombres (solo nombres, nunca personas) de las iglesias ya registradas
+    en una zona — alimenta el autocompletado del formulario público."""
+    return iglesias_de_zona(db, zona)
 
 
 @router.post(
@@ -69,6 +82,10 @@ async def crear_registro(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Sube tu comprobante de pago.")
 
     filename, mime = await save_ticket(ticket) if ticket is not None else (None, None)
+
+    # Si lo escrito es igual (tras limpiar mayúsculas/acentos/relleno) a una
+    # iglesia ya registrada en esa zona, se guarda con su nombre oficial.
+    iglesia = canonicalizar_iglesia(db, iglesia, zona)
 
     camper = Camper(
         **normalizar_datos_camper(

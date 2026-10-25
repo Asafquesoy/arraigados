@@ -4,6 +4,7 @@ import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { BautismoFechaField, MES_LABEL } from "../../components/BautismoFechaField";
 import { FieldReveal } from "../../components/FieldReveal";
 import { FileDrop } from "../../components/FileDrop";
+import { IglesiaField } from "../../components/IglesiaField";
 import { Reveal } from "../../components/Reveal";
 import { ShirtSizeField } from "../../components/ShirtSizeField";
 import { StepProgress } from "../../components/StepProgress";
@@ -351,27 +352,22 @@ export function FormularioRegistro() {
 
               {step === 1 && (
                 <div className="form-grid">
-                  <div className={`field ${errors.iglesia ? "has-error" : ""}`}>
-                    <label htmlFor="iglesia">
-                      <ChurchIcon size={14} /> Iglesia de procedencia
-                    </label>
-                    <input
-                      id="iglesia"
-                      type="text"
-                      autoFocus
-                      value={form.iglesia}
-                      onChange={(e) => setForm({ ...form, iglesia: e.target.value })}
-                      onBlur={() => validateField("iglesia")}
-                      placeholder="Nombre de la iglesia"
-                    />
-                    {errors.iglesia && <span className="field-error">{errors.iglesia}</span>}
-                  </div>
-
+                  {/* La zona va primero: de ella salen las sugerencias de iglesia. */}
                   <ZonaField
                     value={form.zona}
                     onChange={(v) => setForm({ ...form, zona: v })}
                     onBlur={() => validateField("zona")}
                     error={errors.zona}
+                    autoFocus
+                  />
+
+                  <IglesiaField
+                    id="iglesia"
+                    value={form.iglesia}
+                    onChange={(v) => setForm({ ...form, iglesia: v })}
+                    onBlur={() => validateField("iglesia")}
+                    error={errors.iglesia}
+                    zona={form.zona}
                   />
 
                   {showShirtSize && (

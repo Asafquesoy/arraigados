@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from ..config import settings
 from ..database import get_db
+from ..iglesias import canonicalizar_iglesia
 from ..models import AdminRole, AdminUser, AppSettings, Camper, Equipo, Sexo, TallaCamisa, TipoParticipante, Zona
 from ..schemas import (
     AdminUserCreate,
@@ -225,7 +226,7 @@ def actualizar_registro(
 
     datos = normalizar_datos_camper(
         nombre=payload.nombre,
-        iglesia=payload.iglesia,
+        iglesia=canonicalizar_iglesia(db, payload.iglesia, payload.zona),
         edad=payload.edad,
         sexo=payload.sexo,
         zona=payload.zona,

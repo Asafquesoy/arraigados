@@ -155,6 +155,22 @@ this shape exists to avoid.
   `pago_verificado`/`asistio` audit fields, or `equipo_id`/`equipo_fijado` — those stay behind
   their own endpoints (`/pago`, `/asistencia`, `/equipo`, `/admin/equipos`) — and it does not
   re-run the team-balancing pass even if edad/sexo/iglesia/zona/bautismo change.
+- **Church names are unified, because `equipos_balance` compares `iglesia` as text** — the same church
+  used to arrive as "Iglesia Bautista Eliacim" / "Eliacim" / "ELIACIM", so the team balancer saw
+  several churches. `app/iglesias.py` (pure module + two DB helpers) fixes this at write time:
+  `clave_iglesia()` ignores case, accents, punctuation and filler words (iglesia, bautista, ib, el,
+  de…) and expands the sigla `pib` → `primera`; `canonicalizar_iglesia(db, texto, zona)` replaces
+  what was typed with the official spelling **only when its key is exactly equal** to an existing
+  church *in the same zona* (same name in another zona is another church) — never by similarity, so
+  Betania/Betsaida or "Emanuel"/"Emanuel de Ciudad Madero" stay separate. Called from
+  `public.py::crear_registro` and `admin.py::actualizar_registro`. `GET /api/iglesias?zona=` (public,
+  rate-limited, names only) feeds `components/IglesiaField.tsx`, an autocomplete combobox whose
+  suggestion list is **in the page flow, not floating** (so the animated step container can't clip it
+  and the phone keyboard doesn't cover it); that's why the form now asks **zona before iglesia**
+  (`FormularioRegistro.tsx` and `EditarCamperModal.tsx`). Typing without picking a suggestion is
+  still allowed. It does **not** fix typos ("Eliasim") — suggestions are what prevent those. The
+  one-time cleanup of the production data was done by hand (backup + mapping in a single
+  transaction), not by this code.
 
 ### Frontend structure
 

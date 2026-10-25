@@ -1,0 +1,81 @@
+/* Lista de sugerencias EN el flujo (no flotante) — ver el comentario de
+   IglesiaField.tsx. */
+.iglesia-field-lista {
+  margin: 0.4rem 0 0;
+  /* El padding separa la barra de scroll (que vive en la lista interior) de
+     las esquinas redondeadas; overflow: hidden recorta cualquier cosa que
+     aún las toque. */
+  padding: 0.35rem 0.35rem 0.35rem 0.25rem;
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-m);
+  background: var(--corteza-alta);
+  overflow: hidden;
+}
+
+.iglesia-field-opciones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 13rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Barra delgada y del color del sitio en vez de la clásica del sistema (con
+   flechas y pista clara, que desentona sobre el fondo oscuro). Chrome/Safari
+   usan los pseudo-elementos (permiten quitar las flechas); si el navegador
+   no los soporta (Firefox) cae a las propiedades estándar. No se declaran
+   ambas a la vez: en Chrome las estándar anulan a los pseudo-elementos. */
+.iglesia-field-opciones::-webkit-scrollbar {
+  width: 8px;
+}
+
+.iglesia-field-opciones::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.iglesia-field-opciones::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--amarillo) 45%, transparent);
+  border-radius: 999px;
+}
+
+.iglesia-field-opciones::-webkit-scrollbar-button {
+  display: none;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .iglesia-field-opciones {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--amarillo) 45%, transparent) transparent;
+  }
+}
+
+.iglesia-field-opcion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  min-height: 44px;
+  border-radius: var(--radio-s);
+  color: var(--hueso);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.iglesia-field-opcion svg {
+  flex-shrink: 0;
+  color: var(--amarillo);
+}
+
+.iglesia-field-opcion:hover,
+.iglesia-field-opcion.is-active {
+  background: rgba(255, 200, 0, 0.12);
+}
+
+.iglesia-field-ayuda {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: var(--t-xs);
+  color: var(--hueso-apagado);
+}
