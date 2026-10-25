@@ -215,21 +215,23 @@ export function EquipoCard({
           {equipo.miembros.length > 0 && miembrosFiltrados.length === 0 && (
             <p className="muted equipo-card-empty">Nadie coincide con la búsqueda en este equipo.</p>
           )}
-          {miembrosFiltrados.map((m) => (
-            <MoverMiembro
-              key={m.id}
-              miembro={m}
-              equipoActualId={equipo.id}
-              equipos={equipos}
-              canEdit={canEdit}
-              open={movingId === m.id}
-              busy={busyId === m.id}
-              highlighted={q !== "" && coincide(m, q)}
-              onToggle={() => onToggleMove(m.id)}
-              onMover={(destinoId) => onMover(m, equipo.id, destinoId)}
-              onStaff={(esStaff) => onStaff(m, equipo.id, esStaff)}
-            />
-          ))}
+          <div className="mover-lista">
+            {miembrosFiltrados.map((m) => (
+              <MoverMiembro
+                key={m.id}
+                miembro={m}
+                equipoActualId={equipo.id}
+                equipos={equipos}
+                canEdit={canEdit}
+                open={movingId === m.id}
+                busy={busyId === m.id}
+                highlighted={q !== "" && coincide(m, q)}
+                onToggle={() => onToggleMove(m.id)}
+                onMover={(destinoId) => onMover(m, equipo.id, destinoId)}
+                onStaff={(esStaff) => onStaff(m, equipo.id, esStaff)}
+              />
+            ))}
+          </div>
         </div>
       </m.div>
     </Reveal>

@@ -408,22 +408,24 @@ export function Equipos() {
             {searchResults.length} resultado{searchResults.length === 1 ? "" : "s"} para «{qTrim}»
           </h2>
           {searchResults.length === 0 && <p className="muted equipo-card-empty">Nadie coincide con la búsqueda.</p>}
-          {searchResults.map(({ miembro, equipoActualId, equipoChip }) => (
-            <MoverMiembro
-              key={miembro.id}
-              miembro={miembro}
-              equipoActualId={equipoActualId}
-              equipos={equipos}
-              canEdit={canEdit}
-              open={movingId === miembro.id}
-              busy={busyId === miembro.id}
-              highlighted={false}
-              equipoChip={equipoChip}
-              onToggle={() => setMovingId((prev) => (prev === miembro.id ? null : miembro.id))}
-              onMover={(destinoId) => handleMover(miembro, equipoActualId, destinoId)}
-              onStaff={(esStaff) => handleStaff(miembro, equipoActualId, esStaff)}
-            />
-          ))}
+          <div className="mover-lista">
+            {searchResults.map(({ miembro, equipoActualId, equipoChip }) => (
+              <MoverMiembro
+                key={miembro.id}
+                miembro={miembro}
+                equipoActualId={equipoActualId}
+                equipos={equipos}
+                canEdit={canEdit}
+                open={movingId === miembro.id}
+                busy={busyId === miembro.id}
+                highlighted={false}
+                equipoChip={equipoChip}
+                onToggle={() => setMovingId((prev) => (prev === miembro.id ? null : miembro.id))}
+                onMover={(destinoId) => handleMover(miembro, equipoActualId, destinoId)}
+                onStaff={(esStaff) => handleStaff(miembro, equipoActualId, esStaff)}
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -474,21 +476,23 @@ export function Equipos() {
       {!loading && !searching && tab === "sin-equipo" && sinEquipo.length > 0 && (
         <div className="glass-card equipos-sin-equipo">
           <h2 className="equipos-sin-equipo-title">Sin equipo ({sinEquipo.length})</h2>
-          {sinEquipo.map((m) => (
-            <MoverMiembro
-              key={m.id}
-              miembro={m}
-              equipoActualId={null}
-              equipos={equipos}
-              canEdit={canEdit}
-              open={movingId === m.id}
-              busy={busyId === m.id}
-              highlighted={false}
-              onToggle={() => setMovingId((prev) => (prev === m.id ? null : m.id))}
-              onMover={(destinoId) => handleMover(m, null, destinoId)}
-              onStaff={(esStaff) => handleStaff(m, null, esStaff)}
-            />
-          ))}
+          <div className="mover-lista">
+            {sinEquipo.map((m) => (
+              <MoverMiembro
+                key={m.id}
+                miembro={m}
+                equipoActualId={null}
+                equipos={equipos}
+                canEdit={canEdit}
+                open={movingId === m.id}
+                busy={busyId === m.id}
+                highlighted={false}
+                onToggle={() => setMovingId((prev) => (prev === m.id ? null : m.id))}
+                onMover={(destinoId) => handleMover(m, null, destinoId)}
+                onStaff={(esStaff) => handleStaff(m, null, esStaff)}
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -496,21 +500,23 @@ export function Equipos() {
         <div className="glass-card equipos-sin-equipo">
           <h2 className="equipos-sin-equipo-title">Staff ({staff.length})</h2>
           <p className="muted">El staff no entra a ningún equipo ni al reparto.</p>
-          {staff.map((m) => (
-            <MoverMiembro
-              key={m.id}
-              miembro={m}
-              equipoActualId={null}
-              equipos={equipos}
-              canEdit={canEdit}
-              open={movingId === m.id}
-              busy={busyId === m.id}
-              highlighted={false}
-              onToggle={() => setMovingId((prev) => (prev === m.id ? null : m.id))}
-              onMover={() => {}}
-              onStaff={(esStaff) => handleStaff(m, null, esStaff)}
-            />
-          ))}
+          <div className="mover-lista">
+            {staff.map((m) => (
+              <MoverMiembro
+                key={m.id}
+                miembro={m}
+                equipoActualId={null}
+                equipos={equipos}
+                canEdit={canEdit}
+                open={movingId === m.id}
+                busy={busyId === m.id}
+                highlighted={false}
+                onToggle={() => setMovingId((prev) => (prev === m.id ? null : m.id))}
+                onMover={() => {}}
+                onStaff={(esStaff) => handleStaff(m, null, esStaff)}
+              />
+            ))}
+          </div>
         </div>
       )}
 

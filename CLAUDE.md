@@ -400,10 +400,19 @@ once tested with realistic camp numbers. Instead:
   `FieldReveal`/`AnimatePresence initial={false}` — only one panel open at a time.
   `components/EquiposCriterios.tsx` no longer owns its own `glass-card`/`Reveal`; it's just the
   panel content now, since the toolbar supplies the card.
-- `components/EquiposTabs.tsx` is a per-team tab bar (color dot + name + count), sticky under the
-  navbar from 1024px up (same `position: sticky` pattern as `.admin-filters` in
-  `AdminPanel.css`), horizontally scrollable with `scroll-snap` on mobile instead of wrapping.
-  `Equipos.tsx` keeps the active tab as `EquiposTabId = "resumen" | "sin-equipo" | number` state.
+- `components/EquiposTabs.tsx` is the screen's navigation bar, sticky under the navbar from 1024px
+  up (same `position: sticky` pattern as `.admin-filters` in `AdminPanel.css`). Only the fixed
+  views (Resumen / Sin equipo / Staff) are pills; **teams are not one tab each** — that was a
+  horizontally scrolling / multi-row bar that got unusable at ~10 teams. They sit behind
+  `components/EquipoSelector.tsx` (‹ current team ›): the button opens a bottom sheet on mobile
+  (portal, body-scroll lock, Esc/Tab trap, same pattern as `TicketModal.tsx`) and an anchored menu
+  on desktop (outside-click/Esc to close), picked via `useMediaQuery("(min-width: 1024px)")` and
+  both rendering the same `EquipoPickerGrid`. The bar is two rows on mobile and one row on desktop,
+  and is the same height with 3 teams as with 10. `Equipos.tsx` keeps the active view as
+  `EquiposTabId = "resumen" | "sin-equipo" | "staff" | number` state. A team's detail card uses the
+  full content width (no `max-width`), and every list of people (team detail, Sin equipo, Staff,
+  search results) wraps its `MoverMiembro` rows in `.mover-lista` (`MoverMiembro.css`), which is
+  2 columns from 1024px up — keep new person lists inside that wrapper so they lay out the same.
 - The default "Resumen" tab shows every team as a **compact** `EquipoCard` (`variant="resumen"`
   prop on `components/EquipoCard.tsx`) — stats chips only, no member list, plus a CSS-only
   relative size bar (`--color-equipo`-tinted, width = team size ÷ largest team) so imbalance is

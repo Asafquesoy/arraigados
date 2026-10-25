@@ -32,7 +32,6 @@
 
 .equipos-grid--single {
   grid-template-columns: 1fr;
-  max-width: 640px;
 }
 
 .equipos-resultados {

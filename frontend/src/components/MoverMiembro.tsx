@@ -42,7 +42,7 @@ export function MoverMiembro({
   equipoChip,
 }: MoverMiembroProps) {
   return (
-    <div className={`mover-miembro ${highlighted ? "is-highlighted" : ""}`}>
+    <div className={`mover-miembro ${highlighted ? "is-highlighted" : ""} ${open ? "is-open" : ""}`}>
       <div className="mover-miembro-row">
         <div className="mover-miembro-info">
           <p className="mover-miembro-nombre">

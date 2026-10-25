@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { EquipoSelector } from "./EquipoSelector";
 import type { EquipoOut } from "../lib/api";
 import "./EquiposTabs.css";
 
@@ -14,60 +14,55 @@ interface EquiposTabsProps {
 }
 
 /**
- * Barra de pestañas por equipo — reemplaza tener las ~10 tarjetas de equipo
- * (cada una con hasta ~15 miembros) abiertas todas a la vez. En escritorio
- * queda pegajosa bajo el navbar (mismo patrón que `.admin-filters` en
- * AdminPanel.css); en móvil hace scroll horizontal con scroll-snap en vez de
- * apilarse verticalmente.
+ * Barra de navegación de la pantalla de Equipos. Las vistas fijas (Resumen /
+ * Sin equipo / Staff) son pastillas; los equipos NO van como una pestaña cada
+ * uno (con ~10 se volvía una barra larguísima) sino detrás de un
+ * `EquipoSelector` (‹ equipo actual ›). Mide lo mismo con 3 equipos que con
+ * 10. En escritorio queda en una sola fila pegajosa bajo el navbar (mismo
+ * patrón que `.admin-filters` en AdminPanel.css); en móvil son dos filas.
  */
 export function EquiposTabs({ equipos, sinEquipoCount, staffCount, active, dimmed, onChange }: EquiposTabsProps) {
   return (
     <div className={`equipos-tabs ${dimmed ? "is-dimmed" : ""}`} role="tablist" aria-label="Equipos">
-      <button
-        type="button"
-        role="tab"
-        aria-selected={active === "resumen"}
-        className={`equipos-tab ${active === "resumen" ? "is-active" : ""}`}
-        onClick={() => onChange("resumen")}
-      >
-        Resumen
-      </button>
-      {equipos.map((e) => (
-        <button
-          key={e.id}
-          type="button"
-          role="tab"
-          aria-selected={active === e.id}
-          className={`equipos-tab ${active === e.id ? "is-active" : ""}`}
-          style={{ "--color-equipo": e.color } as CSSProperties}
-          onClick={() => onChange(e.id)}
-        >
-          <span className="equipos-tab-dot" aria-hidden="true" />
-          {e.nombre} <span className="equipos-tab-count">{e.stats.total}</span>
-        </button>
-      ))}
-      {sinEquipoCount > 0 && (
+      <div className="equipos-tabs-vistas">
         <button
           type="button"
           role="tab"
-          aria-selected={active === "sin-equipo"}
-          className={`equipos-tab equipos-tab--sin ${active === "sin-equipo" ? "is-active" : ""}`}
-          onClick={() => onChange("sin-equipo")}
+          aria-selected={active === "resumen"}
+          className={`equipos-tab ${active === "resumen" ? "is-active" : ""}`}
+          onClick={() => onChange("resumen")}
         >
-          Sin equipo <span className="equipos-tab-count">{sinEquipoCount}</span>
+          Resumen
         </button>
-      )}
-      {staffCount > 0 && (
-        <button
-          type="button"
-          role="tab"
-          aria-selected={active === "staff"}
-          className={`equipos-tab equipos-tab--sin ${active === "staff" ? "is-active" : ""}`}
-          onClick={() => onChange("staff")}
-        >
-          Staff <span className="equipos-tab-count">{staffCount}</span>
-        </button>
-      )}
+        {sinEquipoCount > 0 && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={active === "sin-equipo"}
+            className={`equipos-tab equipos-tab--sin ${active === "sin-equipo" ? "is-active" : ""}`}
+            onClick={() => onChange("sin-equipo")}
+          >
+            Sin equipo <span className="equipos-tab-count">{sinEquipoCount}</span>
+          </button>
+        )}
+        {staffCount > 0 && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={active === "staff"}
+            className={`equipos-tab equipos-tab--sin ${active === "staff" ? "is-active" : ""}`}
+            onClick={() => onChange("staff")}
+          >
+            Staff <span className="equipos-tab-count">{staffCount}</span>
+          </button>
+        )}
+      </div>
+
+      <EquipoSelector
+        equipos={equipos}
+        activoId={typeof active === "number" ? active : null}
+        onChange={onChange}
+      />
     </div>
   );
 }

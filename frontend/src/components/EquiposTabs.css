@@ -1,10 +1,9 @@
+/* Móvil: dos filas — vistas fijas (se envuelven si no caben) y, debajo, el
+   selector de equipo a todo lo ancho. */
 .equipos-tabs {
   display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 0.4rem;
+  flex-direction: column;
+  gap: 0.6rem;
   margin-top: 1.25rem;
 }
 
@@ -12,23 +11,34 @@
   opacity: 0.55;
 }
 
+.equipos-tabs-vistas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 /* Pegajosa solo en escritorio/tablet grande — en móvil se comería media
-   pantalla, igual que .admin-filters en AdminPanel.css. */
+   pantalla, igual que .admin-filters en AdminPanel.css. Una sola fila:
+   vistas a la izquierda, selector de equipo a la derecha. */
 @media (min-width: 1024px) {
   .equipos-tabs {
     position: sticky;
     top: 76px;
     z-index: 10;
-    flex-wrap: wrap;
-    overflow-x: visible;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     padding: 0.6rem 0.5rem;
     border-radius: var(--radio-m);
     background: var(--corteza-alta);
   }
+
+  .equipos-tabs .equipo-selector {
+    flex: 0 1 26rem;
+  }
 }
 
 .equipos-tab {
-  scroll-snap-align: start;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -53,18 +63,6 @@
   background: var(--color-equipo, var(--gradiente-raiz));
   color: var(--corteza);
   border-color: transparent;
-}
-
-.equipos-tab-dot {
-  width: 0.6rem;
-  height: 0.6rem;
-  border-radius: 50%;
-  background: var(--color-equipo, var(--amarillo));
-  flex-shrink: 0;
-}
-
-.equipos-tab.is-active .equipos-tab-dot {
-  background: var(--corteza);
 }
 
 .equipos-tab-count {

@@ -7,6 +7,29 @@
   border-bottom: none;
 }
 
+/* Lista de personas: una columna en móvil; en compu, 2 columnas para
+   aprovechar el ancho de la tarjeta en vez de dejar media pantalla vacía.
+   align-items: start — al abrir "Mover" solo crece esa fila, no la vecina. */
+@media (min-width: 1024px) {
+  .mover-lista {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2rem;
+    align-items: start;
+  }
+
+  .mover-lista .mover-miembro:last-child {
+    border-bottom: 1px solid var(--tarjeta-borde);
+  }
+
+  /* La fila con "Mover" abierto se extiende a las 2 columnas: con ~10
+     equipos sus botones ocupan varias líneas y en media columna dejaban un
+     hueco enorme junto a ella. */
+  .mover-lista .mover-miembro.is-open {
+    grid-column: 1 / -1;
+  }
+}
+
 .mover-miembro.is-highlighted {
   background: rgba(255, 200, 0, 0.08);
   border-radius: var(--radio-s);
