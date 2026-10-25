@@ -164,6 +164,23 @@ export function AdminPanel() {
     setToast("Datos actualizados.");
   }
 
+  async function toggleStaff(camper: CamperOut) {
+    const esStaff = !camper.es_staff;
+    try {
+      const updated = await apiFetch<CamperOut>(`/admin/registros/${camper.id}/staff`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ es_staff: esStaff }),
+      });
+      setData((prev) =>
+        prev ? { ...prev, items: prev.items.map((c) => (c.id === camper.id ? updated : c)) } : prev
+      );
+      setToast(esStaff ? `${camper.nombre} quedó como staff.` : `${camper.nombre} ya no es staff.`);
+    } catch (err) {
+      setToast(err instanceof ApiError ? err.message : "No se pudo actualizar. Intenta de nuevo.");
+    }
+  }
+
   async function borrarRegistro(camper: CamperOut) {
     try {
       await apiFetch(`/admin/registros/${camper.id}`, { method: "DELETE" });
@@ -387,6 +404,8 @@ export function AdminPanel() {
                               <span className="admin-equipo-dot" style={{ background: camper.equipo.color }} />
                               {camper.equipo.nombre}
                             </span>
+                          ) : camper.es_staff ? (
+                            <span className="admin-chip-tipo">Staff</span>
                           ) : (
                             <span className="muted">—</span>
                           )}
@@ -489,6 +508,15 @@ export function AdminPanel() {
                                         <PencilIcon size={14} /> Editar
                                       </button>
                                     )}
+                                    {puedeEditar && (
+                                      <button
+                                        type="button"
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={() => toggleStaff(camper)}
+                                      >
+                                        {camper.es_staff ? "Quitar de staff" : "Marcar como staff"}
+                                      </button>
+                                    )}
                                     {puedeBorrar && (
                                       <ConfirmButton
                                         label="Borrar registro"
@@ -529,6 +557,8 @@ export function AdminPanel() {
                         <span className="admin-equipo-dot" style={{ background: camper.equipo.color }} />
                         {camper.equipo.nombre}
                       </span>
+                    ) : camper.es_staff ? (
+                      <span className="admin-chip-tipo">Staff</span>
                     ) : (
                       <span className="muted">Sin equipo</span>
                     )}
@@ -588,6 +618,11 @@ export function AdminPanel() {
                           {puedeEditar && (
                             <button className="btn btn-ghost admin-ticket-btn" onClick={() => setEditando(camper)}>
                               <PencilIcon size={16} /> Editar
+                            </button>
+                          )}
+                          {puedeEditar && (
+                            <button className="btn btn-ghost admin-ticket-btn" onClick={() => toggleStaff(camper)}>
+                              {camper.es_staff ? "Quitar de staff" : "Marcar como staff"}
                             </button>
                           )}
                           {puedeBorrar && (

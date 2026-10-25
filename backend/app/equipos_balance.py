@@ -239,7 +239,10 @@ def repartir(
     importar `incluir_fijados`: solo tienen equipo si un admin los fijó a
     mano, y ese placement nunca lo toca esta función. Si alguno quedó con
     `equipo_id` sin estar fijado (de una asignación automática de antes de
-    este comportamiento), aquí se libera."""
+    este comportamiento), aquí se libera.
+
+    El staff (`Camper.es_staff`) tampoco entra aquí: los routers lo filtran
+    antes de llamar a esta función, así que `participantes` nunca lo incluye."""
     if not equipos:
         return {}
 

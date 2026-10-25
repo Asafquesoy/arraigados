@@ -125,6 +125,9 @@ export function Equipos() {
     if (tab === "sin-equipo" && (dist?.sin_equipo.length ?? 0) === 0) {
       setTab("resumen");
     }
+    if (tab === "staff" && (dist?.staff.length ?? 0) === 0) {
+      setTab("resumen");
+    }
   }, [equipos, tab, dist]);
 
   if (!authLoading && !username) {
@@ -218,7 +221,7 @@ export function Equipos() {
         ? [miembroMovido, ...dist.sin_equipo.filter((m) => m.id !== miembro.id)]
         : dist.sin_equipo.filter((m) => m.id !== miembro.id);
 
-    setDist({ equipos: nextEquipos, sin_equipo: nextSinEquipo });
+    setDist({ ...dist, equipos: nextEquipos, sin_equipo: nextSinEquipo });
     setBusyId(miembro.id);
     try {
       await apiFetch(`/admin/registros/${miembro.id}/equipo`, {
@@ -230,6 +233,45 @@ export function Equipos() {
     } catch (err) {
       setDist(previous);
       setToast(err instanceof ApiError ? err.message : "No se pudo mover. Intenta de nuevo.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  // Optimista, mismo patrón que handleMover: marcar staff saca a la persona de
+  // su equipo (o de "Sin equipo") y la pasa a `staff`; desmarcar la deja en
+  // "Sin equipo" (el backend tampoco la reasigna sola).
+  async function handleStaff(miembro: MiembroOut, equipoActualId: number | null, esStaff: boolean) {
+    setMovingId(null);
+    if (!dist) return;
+    const previous = dist;
+    const miembroNuevo: MiembroOut = { ...miembro, es_staff: esStaff, equipo_fijado: false };
+
+    const nextEquipos = dist.equipos.map((e) => {
+      if (esStaff && e.id === equipoActualId) {
+        const miembros = e.miembros.filter((m) => m.id !== miembro.id);
+        return { ...e, miembros, stats: recalcularStats(miembros) };
+      }
+      return e;
+    });
+    const sinMiembro = (lista: MiembroOut[]) => lista.filter((m) => m.id !== miembro.id);
+
+    setDist({
+      equipos: nextEquipos,
+      sin_equipo: esStaff ? sinMiembro(dist.sin_equipo) : [miembroNuevo, ...sinMiembro(dist.sin_equipo)],
+      staff: esStaff ? [miembroNuevo, ...sinMiembro(dist.staff)] : sinMiembro(dist.staff),
+    });
+    setBusyId(miembro.id);
+    try {
+      await apiFetch(`/admin/registros/${miembro.id}/staff`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ es_staff: esStaff }),
+      });
+      setToast(esStaff ? `${miembro.nombre} quedó como staff.` : `${miembro.nombre} ya no es staff.`);
+    } catch (err) {
+      setDist(previous);
+      setToast(err instanceof ApiError ? err.message : "No se pudo actualizar. Intenta de nuevo.");
     } finally {
       setBusyId(null);
     }
@@ -252,7 +294,8 @@ export function Equipos() {
   }
 
   const sinEquipo = dist?.sin_equipo ?? [];
-  const totalPersonas = equipos.reduce((acc, e) => acc + e.stats.total, 0) + sinEquipo.length;
+  const staff = dist?.staff ?? [];
+  const totalPersonas = equipos.reduce((acc, e) => acc + e.stats.total, 0) + sinEquipo.length + staff.length;
   const maxTamano = Math.max(1, ...equipos.map((e) => e.stats.total));
 
   const qTrim = qDebounced.trim();
@@ -268,6 +311,9 @@ export function Equipos() {
         ...sinEquipo
           .filter((m) => coincideMiembro(m, qTrim))
           .map((m) => ({ miembro: m, equipoActualId: null as number | null, equipoChip: null })),
+        ...staff
+          .filter((m) => coincideMiembro(m, qTrim))
+          .map((m) => ({ miembro: m, equipoActualId: null as number | null, equipoChip: null })),
       ]
     : [];
 
@@ -278,11 +324,12 @@ export function Equipos() {
       <Reveal>
         <p className="eyebrow">Panel administrativo</p>
         <h1 className="display-title equipos-title">Equipos</h1>
-        {!loading && (equipos.length > 0 || sinEquipo.length > 0) ? (
+        {!loading && (equipos.length > 0 || sinEquipo.length > 0 || staff.length > 0) ? (
           <p className="muted">
             {equipos.length} equipo{equipos.length === 1 ? "" : "s"} · {totalPersonas} persona
             {totalPersonas === 1 ? "" : "s"}
             {sinEquipo.length > 0 ? ` · ${sinEquipo.length} sin equipo` : ""}
+            {staff.length > 0 ? ` · ${staff.length} staff` : ""}
           </p>
         ) : (
           <p className="muted">Crea equipos, decide cómo se reparten y mueve a quien haga falta.</p>
@@ -310,7 +357,7 @@ export function Equipos() {
         onRepartir={handleRepartir}
       />
 
-      {(equipos.length > 0 || sinEquipo.length > 0) && (
+      {(equipos.length > 0 || sinEquipo.length > 0 || staff.length > 0) && (
         <>
           <div className="field equipos-buscador">
             <label htmlFor="equipos-q">
@@ -329,6 +376,7 @@ export function Equipos() {
             <EquiposTabs
               equipos={equipos}
               sinEquipoCount={sinEquipo.length}
+              staffCount={staff.length}
               active={tab}
               dimmed={false}
               onChange={setTab}
@@ -344,7 +392,7 @@ export function Equipos() {
         </div>
       )}
 
-      {!loading && equipos.length === 0 && sinEquipo.length === 0 && (
+      {!loading && equipos.length === 0 && sinEquipo.length === 0 && staff.length === 0 && (
         <div className="glass-card equipos-empty">
           <p className="muted">
             {canEdit
@@ -373,6 +421,7 @@ export function Equipos() {
               equipoChip={equipoChip}
               onToggle={() => setMovingId((prev) => (prev === miembro.id ? null : miembro.id))}
               onMover={(destinoId) => handleMover(miembro, equipoActualId, destinoId)}
+              onStaff={(esStaff) => handleStaff(miembro, equipoActualId, esStaff)}
             />
           ))}
         </div>
@@ -395,6 +444,7 @@ export function Equipos() {
               onSelect={() => setTab(equipo.id)}
               onToggleMove={() => {}}
               onMover={() => {}}
+              onStaff={() => {}}
               onRename={() => handleRenombrar(equipo.id, equipo.nombre, equipo.color)}
               onDelete={() => handleBorrar(equipo.id)}
             />
@@ -414,6 +464,7 @@ export function Equipos() {
             variant="detalle"
             onToggleMove={(id) => setMovingId((prev) => (prev === id ? null : id))}
             onMover={handleMover}
+            onStaff={handleStaff}
             onRename={(nombre, color) => handleRenombrar(equipoActivo.id, nombre, color)}
             onDelete={() => handleBorrar(equipoActivo.id)}
           />
@@ -435,6 +486,29 @@ export function Equipos() {
               highlighted={false}
               onToggle={() => setMovingId((prev) => (prev === m.id ? null : m.id))}
               onMover={(destinoId) => handleMover(m, null, destinoId)}
+              onStaff={(esStaff) => handleStaff(m, null, esStaff)}
+            />
+          ))}
+        </div>
+      )}
+
+      {!loading && !searching && tab === "staff" && staff.length > 0 && (
+        <div className="glass-card equipos-sin-equipo">
+          <h2 className="equipos-sin-equipo-title">Staff ({staff.length})</h2>
+          <p className="muted">El staff no entra a ningún equipo ni al reparto.</p>
+          {staff.map((m) => (
+            <MoverMiembro
+              key={m.id}
+              miembro={m}
+              equipoActualId={null}
+              equipos={equipos}
+              canEdit={canEdit}
+              open={movingId === m.id}
+              busy={busyId === m.id}
+              highlighted={false}
+              onToggle={() => setMovingId((prev) => (prev === m.id ? null : m.id))}
+              onMover={() => {}}
+              onStaff={(esStaff) => handleStaff(m, null, esStaff)}
             />
           ))}
         </div>

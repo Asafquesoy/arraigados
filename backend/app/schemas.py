@@ -52,6 +52,7 @@ class CamperOut(BaseModel):
     created_at: datetime
     equipo: EquipoBrief | None
     equipo_fijado: bool
+    es_staff: bool
 
     @computed_field
     @property
@@ -214,6 +215,7 @@ class MiembroOut(BaseModel):
     bautismo_mes: int | None
     bautismo_anio: int | None
     equipo_fijado: bool
+    es_staff: bool
 
 
 class EquipoOut(BaseModel):
@@ -230,6 +232,7 @@ class EquipoOut(BaseModel):
 class DistribucionOut(BaseModel):
     equipos: list[EquipoOut]
     sin_equipo: list[MiembroOut]
+    staff: list[MiembroOut]
 
 
 class EquiposConfig(BaseModel):
@@ -252,6 +255,10 @@ class EquiposConfigUpdate(BaseModel):
 
 class EquipoAsignacion(BaseModel):
     equipo_id: int | None = None
+
+
+class StaffUpdate(BaseModel):
+    es_staff: bool
 
 
 class RepartirRequest(BaseModel):

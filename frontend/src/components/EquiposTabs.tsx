@@ -2,11 +2,12 @@ import type { CSSProperties } from "react";
 import type { EquipoOut } from "../lib/api";
 import "./EquiposTabs.css";
 
-export type EquiposTabId = "resumen" | "sin-equipo" | number;
+export type EquiposTabId = "resumen" | "sin-equipo" | "staff" | number;
 
 interface EquiposTabsProps {
   equipos: EquipoOut[];
   sinEquipoCount: number;
+  staffCount: number;
   active: EquiposTabId;
   dimmed: boolean;
   onChange: (tab: EquiposTabId) => void;
@@ -19,7 +20,7 @@ interface EquiposTabsProps {
  * AdminPanel.css); en móvil hace scroll horizontal con scroll-snap en vez de
  * apilarse verticalmente.
  */
-export function EquiposTabs({ equipos, sinEquipoCount, active, dimmed, onChange }: EquiposTabsProps) {
+export function EquiposTabs({ equipos, sinEquipoCount, staffCount, active, dimmed, onChange }: EquiposTabsProps) {
   return (
     <div className={`equipos-tabs ${dimmed ? "is-dimmed" : ""}`} role="tablist" aria-label="Equipos">
       <button
@@ -54,6 +55,17 @@ export function EquiposTabs({ equipos, sinEquipoCount, active, dimmed, onChange 
           onClick={() => onChange("sin-equipo")}
         >
           Sin equipo <span className="equipos-tab-count">{sinEquipoCount}</span>
+        </button>
+      )}
+      {staffCount > 0 && (
+        <button
+          type="button"
+          role="tab"
+          aria-selected={active === "staff"}
+          className={`equipos-tab equipos-tab--sin ${active === "staff" ? "is-active" : ""}`}
+          onClick={() => onChange("staff")}
+        >
+          Staff <span className="equipos-tab-count">{staffCount}</span>
         </button>
       )}
     </div>

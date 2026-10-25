@@ -71,10 +71,17 @@ def obtener_distribucion(db: Session = Depends(get_db)):
         .order_by(Equipo.orden.asc(), Equipo.id.asc())
         .all()
     )
-    sin_equipo = db.query(Camper).filter(Camper.equipo_id.is_(None)).order_by(Camper.created_at.desc()).all()
+    sin_equipo = (
+        db.query(Camper)
+        .filter(Camper.equipo_id.is_(None), Camper.es_staff.is_(False))
+        .order_by(Camper.created_at.desc())
+        .all()
+    )
+    staff = db.query(Camper).filter(Camper.es_staff.is_(True)).order_by(Camper.created_at.desc()).all()
     return DistribucionOut(
         equipos=[_equipo_out(e) for e in equipos],
         sin_equipo=[MiembroOut.model_validate(c) for c in sin_equipo],
+        staff=[MiembroOut.model_validate(c) for c in staff],
     )
 
 
@@ -177,7 +184,8 @@ def repartir_equipos(
 
     settings_row = _get_or_create_settings(db)
     criterios = criterios_desde_settings(settings_row)
-    participantes = db.query(Camper).all()
+    # El staff no entra al reparto ni cuenta para los promedios de los equipos.
+    participantes = db.query(Camper).filter(Camper.es_staff.is_(False)).all()
 
     asignaciones = repartir(participantes, equipos, criterios, incluir_fijados=payload.incluir_fijados)
     campers_por_id = {c.id: c for c in participantes}

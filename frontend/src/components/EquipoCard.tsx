@@ -18,6 +18,7 @@ interface EquipoCardProps {
   delay?: number;
   onToggleMove: (id: number) => void;
   onMover: (miembro: MiembroOut, equipoActualId: number | null, destinoId: number | null) => void;
+  onStaff: (miembro: MiembroOut, equipoActualId: number | null, esStaff: boolean) => void;
   onRename: (nombre: string, color: string) => Promise<void>;
   onDelete: () => void;
   /** "resumen": tarjeta compacta y clicable, sin lista de miembros — para la
@@ -47,6 +48,7 @@ export function EquipoCard({
   delay = 0,
   onToggleMove,
   onMover,
+  onStaff,
   onRename,
   onDelete,
   variant = "detalle",
@@ -225,6 +227,7 @@ export function EquipoCard({
               highlighted={q !== "" && coincide(m, q)}
               onToggle={() => onToggleMove(m.id)}
               onMover={(destinoId) => onMover(m, equipo.id, destinoId)}
+              onStaff={(esStaff) => onStaff(m, equipo.id, esStaff)}
             />
           ))}
         </div>

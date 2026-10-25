@@ -105,7 +105,7 @@ async def crear_registro(
             equipos = db.query(Equipo).order_by(Equipo.orden.asc(), Equipo.id.asc()).all()
             if equipos:
                 criterios = criterios_desde_settings(settings_row) if settings_row else Criterios()
-                participantes = db.query(Camper).all()
+                participantes = db.query(Camper).filter(Camper.es_staff.is_(False)).all()
                 equipos_miembros: dict[int, list[Camper]] = {e.id: [] for e in equipos}
                 for c in participantes:
                     if c.equipo_id in equipos_miembros:

@@ -97,6 +97,16 @@
   border-style: dashed;
 }
 
+.mover-miembro-opcion--staff {
+  color: var(--ambar);
+  border-color: rgba(245, 166, 35, 0.4);
+}
+
+.mover-miembro-equipo-chip--staff {
+  color: var(--amarillo);
+  border-color: rgba(255, 200, 0, 0.45);
+}
+
 @media (pointer: coarse) {
   .mover-miembro-opcion {
     min-height: 44px;

@@ -337,8 +337,8 @@ inside this direction rather than introducing an unrelated palette or mood.
 
 Four tables (`backend/app/models.py`): `campers` (registration + `folio` unique short code +
 `pago_verificado`/`verificado_en`/`verificado_por` audit fields, plus the matching
-`asistio`/`asistio_en`/`asistio_por` trio for camp-day check-in, plus `equipo_id`/`equipo_fijado`
-— see Equipos below), `admin_users` (username/bcrypt hash/`role`), `equipos` (id/nombre/color/
+`asistio`/`asistio_en`/`asistio_por` trio for camp-day check-in, plus `equipo_id`/`equipo_fijado`/
+`es_staff` — see Equipos below), `admin_users` (username/bcrypt hash/`role`), `equipos` (id/nombre/color/
 orden — see below), and `app_settings` (single row, `id=1` — runtime-editable flags, see the
 Runtime settings pattern above). `Sexo`, `TallaCamisa`, and `AdminRole`
 (`ADMIN`/`VERIFICADOR_PAGO`/`VISUALIZADOR`/`RECEPCION`) are Python/DB enums defined in `models.py`
@@ -446,6 +446,21 @@ counselor's registration (`routers/public.py::crear_registro`) skips the auto-as
 entirely regardless of `equipos_auto`. Because of this there is no `eq_balance_consejeros`
 criterion — since counselors are never candidates in `elegir_equipo`, there's nothing about them
 left to balance.
+
+**`campers.es_staff` (bool, default `false`, migration `0013`) keeps people out of teams entirely** —
+for staff who are registered but don't go in a team. `PATCH /api/admin/registros/{id}/staff`
+(`routers/admin.py::marcar_staff`, Admin-only) sets it and, when turning it on, clears
+`equipo_id`/`equipo_fijado`; turning it off leaves the person in "Sin equipo" (never reassigned
+automatically). The exclusion lives in the routers, not in `equipos_balance.py` (which stays pure):
+`repartir_equipos` and `crear_registro` query `Camper.es_staff.is_(False)` before building the
+balancing context, so staff also don't skew team averages. `GET /admin/equipos/distribucion`
+returns them in a separate `staff` list (never in `sin_equipo`), `?equipo_id=0` ("Sin equipo"
+filter) excludes them, `PATCH .../equipo` rejects assigning a staff member (409), and the export's
+"Equipo" column says "Staff". Staff still count everywhere else — payments, attendance, shirts,
+exports. UI: "Es staff (sin equipo)" button inside `MoverMiembro.tsx`'s "Mover" options and a "Staff"
+tab in `EquiposTabs.tsx` (with "Ya no es staff" to undo; `Equipos.tsx::handleStaff` is optimistic
+like `handleMover`), plus "Marcar como staff"/"Quitar de staff" next to "Editar" in `AdminPanel.tsx`
+(both layouts). The public form never asks for it — only an admin can mark staff.
 
 `campers.equipo_fijado` is the key to combining automatic and manual assignment without one
 undoing the other: `PATCH /api/admin/registros/{id}/equipo` (`routers/admin.py::mover_de_equipo`,

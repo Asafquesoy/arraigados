@@ -14,6 +14,8 @@ interface MoverMiembroProps {
   highlighted: boolean;
   onToggle: () => void;
   onMover: (equipoId: number | null) => void;
+  /** Marca o desmarca a la persona como staff (el staff nunca va en un equipo). */
+  onStaff: (esStaff: boolean) => void;
   /** Solo se pasa en la lista de resultados de búsqueda (que mezcla
    *  personas de todos los equipos): muestra a qué equipo pertenece cada
    *  quien, ya que ahí no es obvio por el contexto de la tarjeta. */
@@ -36,6 +38,7 @@ export function MoverMiembro({
   highlighted,
   onToggle,
   onMover,
+  onStaff,
   equipoChip,
 }: MoverMiembroProps) {
   return (
@@ -49,7 +52,9 @@ export function MoverMiembro({
                 <PinIcon size={13} />
               </span>
             )}
-            {equipoChip !== undefined &&
+            {miembro.es_staff && <span className="mover-miembro-equipo-chip mover-miembro-equipo-chip--staff">Staff</span>}
+            {!miembro.es_staff &&
+              equipoChip !== undefined &&
               (equipoChip ? (
                 <span className="mover-miembro-equipo-chip" style={{ "--color-equipo": equipoChip.color } as CSSProperties}>
                   <span className="mover-miembro-dot" /> {equipoChip.nombre}
@@ -73,23 +78,35 @@ export function MoverMiembro({
 
       {open && (
         <div className="mover-miembro-opciones" role="group" aria-label={`Mover a ${miembro.nombre}`}>
-          {equipos
-            .filter((e) => e.id !== equipoActualId)
-            .map((e) => (
-              <button
-                key={e.id}
-                type="button"
-                className="mover-miembro-opcion"
-                style={{ "--color-equipo": e.color } as CSSProperties}
-                onClick={() => onMover(e.id)}
-              >
-                <span className="mover-miembro-dot" /> {e.nombre}
-              </button>
-            ))}
-          {equipoActualId !== null && (
-            <button type="button" className="mover-miembro-opcion mover-miembro-opcion--fuera" onClick={() => onMover(null)}>
-              Sacar del equipo
+          {miembro.es_staff ? (
+            // El staff no se mueve a ningún equipo: la única opción es dejar de serlo.
+            <button type="button" className="mover-miembro-opcion" onClick={() => onStaff(false)}>
+              Ya no es staff
             </button>
+          ) : (
+            <>
+              {equipos
+                .filter((e) => e.id !== equipoActualId)
+                .map((e) => (
+                  <button
+                    key={e.id}
+                    type="button"
+                    className="mover-miembro-opcion"
+                    style={{ "--color-equipo": e.color } as CSSProperties}
+                    onClick={() => onMover(e.id)}
+                  >
+                    <span className="mover-miembro-dot" /> {e.nombre}
+                  </button>
+                ))}
+              {equipoActualId !== null && (
+                <button type="button" className="mover-miembro-opcion mover-miembro-opcion--fuera" onClick={() => onMover(null)}>
+                  Sacar del equipo
+                </button>
+              )}
+              <button type="button" className="mover-miembro-opcion mover-miembro-opcion--staff" onClick={() => onStaff(true)}>
+                Es staff (sin equipo)
+              </button>
+            </>
           )}
         </div>
       )}

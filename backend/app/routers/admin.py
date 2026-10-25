@@ -28,6 +28,7 @@ from ..schemas import (
     ComprobanteStatsResponse,
     EquipoAsignacion,
     PagoUpdate,
+    StaffUpdate,
     TallaStatsItem,
     TallaStatsResponse,
 )
@@ -70,8 +71,12 @@ def _apply_filters(
         query = query.filter(Camper.asistio == asistio)
     if equipo_id is not None:
         # 0 es el valor centinela que usa el filtro del panel para "Sin equipo"
-        # — no hay equipo con id 0 (autoincrement empieza en 1).
-        query = query.filter(Camper.equipo_id.is_(None) if equipo_id == 0 else Camper.equipo_id == equipo_id)
+        # — no hay equipo con id 0 (autoincrement empieza en 1). El staff no
+        # cuenta como "sin equipo": simplemente no va en ninguno.
+        if equipo_id == 0:
+            query = query.filter(Camper.equipo_id.is_(None), Camper.es_staff.is_(False))
+        else:
+            query = query.filter(Camper.equipo_id == equipo_id)
     return query
 
 
@@ -155,8 +160,34 @@ def mover_de_equipo(
     if payload.equipo_id is not None and not db.get(Equipo, payload.equipo_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Equipo no encontrado")
 
+    if camper.es_staff and payload.equipo_id is not None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "El staff no va en un equipo. Quítalo de staff primero.")
+
     camper.equipo_id = payload.equipo_id
     camper.equipo_fijado = payload.equipo_id is not None
+    db.commit()
+    db.refresh(camper)
+    return camper
+
+
+@router.patch("/registros/{camper_id}/staff", response_model=CamperOut)
+def marcar_staff(
+    camper_id: int,
+    payload: StaffUpdate,
+    _admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Marca (o desmarca) a alguien como staff. Al marcarlo sale de su equipo
+    (equipo_id/equipo_fijado se limpian) y deja de entrar al reparto; al
+    desmarcarlo queda en "Sin equipo" — no se reasigna solo."""
+    camper = db.get(Camper, camper_id)
+    if not camper:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Registro no encontrado")
+
+    camper.es_staff = payload.es_staff
+    if payload.es_staff:
+        camper.equipo_id = None
+        camper.equipo_fijado = False
     db.commit()
     db.refresh(camper)
     return camper
@@ -316,7 +347,7 @@ def _export_row(c: Camper) -> list:
         "Sí" if c.asistio else "No",
         c.asistio_en.strftime("%Y-%m-%d %H:%M") if c.asistio_en else "",
         c.created_at.strftime("%Y-%m-%d %H:%M"),
-        _sanitizar_celda(c.equipo.nombre) if c.equipo else "Sin equipo",
+        _sanitizar_celda(c.equipo.nombre) if c.equipo else ("Staff" if c.es_staff else "Sin equipo"),
     ]
 
 

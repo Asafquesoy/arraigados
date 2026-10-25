@@ -91,6 +91,10 @@ class Camper(Base):
     # "Repartir a todos" respeta a los fijados por defecto para no deshacer
     # silenciosamente un ajuste manual (ver equipos_balance.repartir()).
     equipo_fijado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # True cuando un admin marcó a esta persona como staff: nunca entra a un
+    # equipo (ni al reparto automático ni a "Sin equipo"), pero cuenta igual en
+    # pagos, asistencia, camisetas y exportes.
+    es_staff: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     equipo: Mapped["Equipo | None"] = relationship(back_populates="miembros")
 

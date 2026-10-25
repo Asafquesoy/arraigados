@@ -76,6 +76,7 @@ export interface CamperOut {
   created_at: string;
   equipo: EquipoBrief | null;
   equipo_fijado: boolean;
+  es_staff: boolean;
 }
 
 export interface CamperUpdate {
@@ -178,6 +179,7 @@ export interface MiembroOut {
   bautismo_mes: number | null;
   bautismo_anio: number | null;
   equipo_fijado: boolean;
+  es_staff: boolean;
 }
 
 export interface EquipoOut {
@@ -192,6 +194,7 @@ export interface EquipoOut {
 export interface DistribucionOut {
   equipos: EquipoOut[];
   sin_equipo: MiembroOut[];
+  staff: MiembroOut[];
 }
 
 export interface EquiposConfig {
