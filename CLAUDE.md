@@ -525,3 +525,19 @@ Three services in `docker-compose.yml`: `db` (Postgres with healthcheck + `pgdat
 per `frontend/nginx.conf`). See `README.md` for the full Droplet setup walkthrough (Docker
 install, `.env` setup, `./deploy.sh`, useful `docker compose` commands, and the note on adding
 TLS via Certbot in front of the `frontend` container).
+
+**Production topology and what it means for performance** (measured against arraigados.lat, not
+in the README): a second, host-level nginx on the Droplet (Certbot TLS, HTTP/1.1, site file
+`/etc/nginx/sites-enabled/arraigados`) terminates HTTPS and proxies to the `frontend` container on
+`127.0.0.1:8080`. That host nginx talks to the container over **HTTP/1.0** and only compresses
+`text/html` — so `frontend/nginx.conf` sets `gzip_http_version 1.0` + `gzip_proxied any` on
+purpose: without them nginx (which only gzips HTTP/1.1+ by default) served the main JS (295KB →
+96KB) and CSS uncompressed while the HTML looked fine. Don't remove those two lines; check with
+`curl -sI -H "Accept-Encoding: gzip" https://arraigados.lat/assets/<index-*.js>` (expect
+`Content-Encoding: gzip`). Likewise Google Tag Manager (~300KB with the Analytics script it pulls
+in, ~31% of the page weight) is **injected after the window `load` event** from the inline
+script in `index.html`, not at the top of `<head>`: on a slow phone it was delaying the load by
+~39% (6.0s → 3.7s). Only `dataLayer` and its first event are created immediately, so
+`src/lib/analytics.ts` can push events at any time — they queue until GTM arrives. The logo was
+also looked at: `logo.webp` (66KB) doesn't shrink usefully with lossy, near-lossless or smaller
+variants (it's detailed art and the hero shows it large), so it was left as is.

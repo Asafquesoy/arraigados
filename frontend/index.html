@@ -2,21 +2,37 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <!-- Google Tag Manager: va lo más arriba posible del <head> para que
-         cargue antes que preloads/fuentes, tal como pide Google. El tracking
-         de cambios de ruta (necesario porque esto es una SPA) vive en
-         src/lib/analytics.ts, no aquí. -->
+    <!-- Google Tag Manager: el contenedor (gtm.js + el script de Analytics que
+         arrastra) pesa ~300KB, casi la mitad de lo que descarga el propio
+         sitio. Pedirlo al inicio del <head> lo hacía competir con el JS, el
+         CSS y el póster; en un teléfono lento con 3G eso alargaba la carga un
+         ~39% (6.0s -> 3.7s sin GTM). Por eso solo se crea `dataLayer` (y su
+         primer evento) de inmediato — sin costo, y deja que src/lib/analytics.ts
+         empuje eventos desde el primer momento — y el <script> de GTM se
+         inyecta cuando la página termina de cargar y el navegador está
+         libre. Lo empujado a `dataLayer` antes de que GTM llegue queda en
+         cola y GTM lo procesa al cargar, así que no se pierde nada.
+         El tracking de cambios de ruta (necesario porque esto es una SPA)
+         vive en src/lib/analytics.ts, no aquí. -->
     <!-- Google Tag Manager -->
     <script>
       (function (w, d, s, l, i) {
         w[l] = w[l] || [];
         w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
-        var f = d.getElementsByTagName(s)[0],
-          j = d.createElement(s),
-          dl = l != "dataLayer" ? "&l=" + l : "";
-        j.async = true;
-        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
-        f.parentNode.insertBefore(j, f);
+        function cargar() {
+          var f = d.getElementsByTagName(s)[0],
+            j = d.createElement(s),
+            dl = l != "dataLayer" ? "&l=" + l : "";
+          j.async = true;
+          j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+          f.parentNode.insertBefore(j, f);
+        }
+        function cuandoEsteLibre() {
+          if (w.requestIdleCallback) w.requestIdleCallback(cargar, { timeout: 3000 });
+          else setTimeout(cargar, 1000);
+        }
+        if (d.readyState === "complete") cuandoEsteLibre();
+        else w.addEventListener("load", cuandoEsteLibre);
       })(window, document, "script", "dataLayer", "GTM-MH8B3VLP");
     </script>
     <!-- End Google Tag Manager -->
