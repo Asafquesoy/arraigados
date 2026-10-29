@@ -12,7 +12,10 @@
   margin-top: 1.75rem;
   max-width: 720px;
   margin-inline: auto;
-  overflow: hidden;
+  /* Solo recorta en horizontal (el deslizamiento ±40px entre pasos); en
+     vertical queda visible para que la lista flotante de iglesias pueda
+     sobresalir de la tarjeta. */
+  overflow-x: clip;
 }
 
 .form-server-error {

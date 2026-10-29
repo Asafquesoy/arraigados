@@ -165,12 +165,22 @@ this shape exists to avoid.
   Betania/Betsaida or "Emanuel"/"Emanuel de Ciudad Madero" stay separate. Called from
   `public.py::crear_registro` and `admin.py::actualizar_registro`. `GET /api/iglesias?zona=` (public,
   rate-limited, names only) feeds `components/IglesiaField.tsx`, an autocomplete combobox whose
-  suggestion list is **in the page flow, not floating** (so the animated step container can't clip it
-  and the phone keyboard doesn't cover it); that's why the form now asks **zona before iglesia**
+  suggestion list **floats** (`position: absolute` under the input, inside `.iglesia-field-control`) —
+  it used to be in the page flow, which pushed the form buttons down ~250px, left a blank gap next to
+  the neighbouring field and jumped on every keystroke. For it not to be clipped, `.form-card` uses
+  `overflow-x: clip` (only the ±40px step slide needs clipping), never `overflow: hidden`; on touch
+  screens focusing the input scrolls it near the top so the list sits above the keyboard; that's why the form now asks **zona before iglesia**
   (`FormularioRegistro.tsx` and `EditarCamperModal.tsx`). Typing without picking a suggestion is
   still allowed. It does **not** fix typos ("Eliasim") — suggestions are what prevent those. The
   one-time cleanup of the production data was done by hand (backup + mapping in a single
-  transaction), not by this code.
+  transaction), not by this code. The suggestion box is deliberately **two layers**
+  (`.iglesia-field-lista` = rounded border + `overflow: hidden` + padding; inner
+  `.iglesia-field-opciones` = the scroller): with a single `overflow: auto` element that has a
+  `border-radius`, the OS scrollbar sits flush against the rounded corners and sticks out of them.
+  Its thin amber scrollbar uses `::-webkit-scrollbar*` (which can hide the arrow buttons) and
+  falls back to `scrollbar-width`/`scrollbar-color` only under `@supports not
+  selector(::-webkit-scrollbar)` — never declare both, in Chrome the standard properties cancel the
+  pseudo-elements.
 
 ### Frontend structure
 
@@ -541,3 +551,54 @@ script in `index.html`, not at the top of `<head>`: on a slow phone it was delay
 `src/lib/analytics.ts` can push events at any time — they queue until GTM arrives. The logo was
 also looked at: `logo.webp` (66KB) doesn't shrink usefully with lossy, near-lossless or smaller
 variants (it's detailed art and the hero shows it large), so it was left as is.
+
+### Deploy runbook (what has been done in practice)
+
+The Droplet keeps the repo at `/root/arraigados` (SSH as `root`; ask the owner for access — no
+credentials belong in this repo or in any file) and database dumps at `/root/backups/`. Its
+`deploy.sh` shows as modified there only because of the executable bit — `git pull --ff-only`
+still works. Order that has worked every time:
+1. Push to `main`.
+2. On the server: `pg_dump` into `/root/backups/arraigados_pre_deploy_<timestamp>.sql`
+   (`docker compose exec -T db pg_dump -U $POSTGRES_USER $POSTGRES_DB`, values from `.env`).
+3. `git pull --ff-only origin main`.
+4. **If `frontend/nginx.conf` changed, validate it before touching the live site** — a bad config
+   leaves the `frontend` container crash-looping and the site down:
+   `docker run --rm --network arraigados_default -v /root/arraigados/frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro nginx:1.27-alpine nginx -t`
+   (it must run on the compose network so the `backend` upstream resolves; the
+   "duplicate MIME type text/html" warning is harmless and long-standing).
+5. `./deploy.sh` (builds, restarts, runs `alembic upgrade head`, re-seeds the admin).
+6. Verify read-only: `/api/settings` 200, `/api/iglesias?zona=METRO`, row counts in `campers`,
+   `alembic_version`, and `docker compose logs --tail 20 backend`. A `CancelledError` traceback
+   right before "Application startup complete" is just the old process shutting down.
+The registration form is open to the public, so a deploy means a few seconds of downtime; prefer
+quiet moments.
+
+### Copying production data into the dev database (for realistic tests)
+
+`backend/dev.db` (SQLite, gitignored) can be refreshed from production: (1) copy the current
+`dev.db` into `backend/data/` first (that folder is gitignored; a stray `dev.db.bak` in `backend/`
+is not); (2) over SSH run read-only `SELECT row_to_json(t) FROM (SELECT * FROM <table> ORDER BY id)
+t` for `equipos`, `campers` and `app_settings` (never `ORDER BY` the JSON column itself — Postgres
+can't order `json`); (3) load the rows through the SQLAlchemy models in one transaction (`delete`
++ insert preserving ids; coerce date/datetime strings and map enum names with `col.type.enum_class`).
+Deliberately **not** copied: `admin_users` (don't spread production password hashes — keep the dev
+logins) and the receipt files (`ticket_path` points at images that only exist on the server, so
+"Ver comprobante" 404s in dev). The result holds real names and counselors' phone numbers — keep it
+out of git and don't share the file. Delete any temporary export right after importing.
+
+### Testing the app with the Playwright MCP — gotchas
+
+- Navigating to the same URL that differs only by `#hash` does **not** reload the page; after
+  `goto` call `page.reload()` (or change the query string) when each run must start fresh — the
+  multi-step registration form otherwise stays on the step it was left on.
+- The dev servers on `:8000`/`:5173` may already be running and belong to the developer
+  (`uvicorn --reload`, Vite HMR): reuse them, don't kill them, and don't leave test rows behind —
+  delete only what you created (e.g. folios prefixed `QA`, a temporary admin) and never touch real
+  records.
+- Throttle with CDP, not `page.route`, when measuring (`Emulation.setCPUThrottlingRate`,
+  `Network.emulateNetworkConditions`, `Network.setCacheDisabled`). A route handler that waits for
+  the page's `load` event deadlocks if the routed request is an async script, because async scripts
+  delay `load`.
+- Element screenshots of sections under the sticky navbar show the navbar painted in the middle of
+  the image; that's a capture artifact, not a layout bug.

@@ -26,9 +26,12 @@ const cacheIglesias = new Map<Zona, string[]>();
  * persona escriba sin elegir de la lista se guarda tal cual (el backend solo
  * lo unifica si es igual a una iglesia existente, ver `app/iglesias.py`).
  *
- * La lista va EN el flujo de la página (no flotando): así no la recorta el
- * contenedor animado de los pasos del formulario ni choca con el teclado del
- * teléfono.
+ * La lista FLOTA bajo el input (posición absoluta) en vez de ir en el flujo:
+ * en el flujo empujaba hacia abajo los botones del formulario, dejaba un hueco
+ * junto al campo vecino y brincaba con cada tecla. Para que no la recorte la
+ * tarjeta del formulario, `.form-card` solo recorta en horizontal. En pantallas
+ * táctiles el campo se acerca al borde superior al enfocar, para que la lista
+ * quede sobre el teclado.
  */
 export function IglesiaField({ id, value, onChange, onBlur, error, zona }: IglesiaFieldProps) {
   const listId = useId();
@@ -97,6 +100,7 @@ export function IglesiaField({ id, value, onChange, onBlur, error, zona }: Igles
       <label htmlFor={id}>
         <ChurchIcon size={14} /> Iglesia de procedencia
       </label>
+      <div className="iglesia-field-control">
       <input
         id={id}
         type="text"
@@ -112,7 +116,12 @@ export function IglesiaField({ id, value, onChange, onBlur, error, zona }: Igles
           setOpen(true);
           setActivo(-1);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={(e) => {
+          setOpen(true);
+          if (window.matchMedia("(pointer: coarse)").matches) {
+            e.currentTarget.scrollIntoView({ block: "start", behavior: "smooth" });
+          }
+        }}
         onBlur={() => {
           setOpen(false);
           onBlur?.();
@@ -148,6 +157,7 @@ export function IglesiaField({ id, value, onChange, onBlur, error, zona }: Igles
           </ul>
         </div>
       )}
+      </div>
 
       {!error && (
         <span className="iglesia-field-ayuda">

@@ -112,6 +112,7 @@
   /* ---- Capas ---- */
   --z-fondo: 0;
   --z-contenido: 1;
+  --z-desplegable: 10;
   --z-navbar: 50;
   --z-drawer: 75;
   --z-modal: 100;

@@ -1,7 +1,21 @@
-/* Lista de sugerencias EN el flujo (no flotante) — ver el comentario de
-   IglesiaField.tsx. */
+/* Lista de sugerencias FLOTANTE, anclada bajo el input — ver el comentario de
+   IglesiaField.tsx. Se superpone al contenido para no empujar el formulario. */
+.iglesia-field-control {
+  position: relative;
+}
+
+/* Al acercar el input al borde superior en táctil, deja libre el navbar fijo. */
+.iglesia-field input {
+  scroll-margin-top: 6rem;
+}
+
 .iglesia-field-lista {
-  margin: 0.4rem 0 0;
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  right: 0;
+  z-index: var(--z-desplegable);
+  box-shadow: var(--sombra-alta);
   /* El padding separa la barra de scroll (que vive en la lista interior) de
      las esquinas redondeadas; overflow: hidden recorta cualquier cosa que
      aún las toque. */
@@ -19,6 +33,12 @@
   max-height: 13rem;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+@media (max-width: 559px) {
+  .iglesia-field-opciones {
+    max-height: 11rem;
+  }
 }
 
 /* Barra delgada y del color del sitio en vez de la clásica del sistema (con
