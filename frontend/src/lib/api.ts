@@ -217,6 +217,13 @@ export interface AlertaOut {
   texto: string;
 }
 
+export interface ChequeoOut {
+  codigo: "LEIDO" | "MONTO" | "FECHA" | "SIN_COPIAS" | string;
+  /** true = comprobado, false = falló, null = no hubo con qué comprobarlo */
+  ok: boolean | null;
+  texto: string;
+}
+
 export interface ComprobanteMiembro {
   id: number;
   folio: string;
@@ -239,7 +246,9 @@ export interface ComprobanteMiembro {
   comp_editado: boolean;
   comp_revisado: boolean;
   comp_revisado_por: string | null;
+  comp_revisado_en: string | null;
   comp_nota: string | null;
+  comp_separado: boolean;
 }
 
 export interface ConciliacionGrupo {
@@ -253,6 +262,9 @@ export interface ConciliacionGrupo {
   cubre: number | null;
   por_que_juntos: string[];
   alertas: AlertaOut[];
+  chequeos: ChequeoOut[];
+  clase: "individual" | "grupal";
+  separado: boolean;
   miembros: ComprobanteMiembro[];
 }
 
@@ -265,6 +277,8 @@ export interface ConciliacionResumen {
   grupos_con_alerta: number;
   grupos_compartidos: number;
   grupos_revisados: number;
+  verificados_individuales: number;
+  verificados_grupales: number;
   dinero_leido_centavos: number;
   dinero_esperado_centavos: number;
   lector: "gemini" | "local";
@@ -273,6 +287,17 @@ export interface ConciliacionResumen {
 export interface ConciliacionResponse {
   resumen: ConciliacionResumen;
   grupos: ConciliacionGrupo[];
+}
+
+export interface ComprobanteEvento {
+  id: number;
+  camper_id: number;
+  folio: string;
+  nombre: string;
+  creado_en: string;
+  usuario: string;
+  accion: string;
+  detalle: Record<string, unknown> | null;
 }
 
 export interface ProcesarEstado {

@@ -5,6 +5,7 @@ Módulo puro (sin FastAPI ni sesión de BD, igual que equipos_balance.py): recib
 objetos con los atributos de `Camper` y devuelve estructuras simples.
 """
 
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
@@ -44,6 +45,15 @@ class Alerta:
 
 
 @dataclass
+class Chequeo:
+    """Una cosa que SÍ se comprobó (o no) de un pago. ok=None: no hubo con qué comprobarlo."""
+
+    codigo: str  # LEIDO | MONTO | FECHA | SIN_COPIAS
+    ok: bool | None
+    texto: str
+
+
+@dataclass
 class Grupo:
     ids: list[int]
     tipo: str | None
@@ -54,7 +64,13 @@ class Grupo:
     cubre: int | None
     por_que_juntos: list[str] = field(default_factory=list)
     alertas: list[Alerta] = field(default_factory=list)
+    chequeos: list[Chequeo] = field(default_factory=list)
     revisado: bool = False
+    separado: bool = False  # alguien lo sacó a mano de un grupo ("no es el mismo pago")
+
+    @property
+    def clase(self) -> str:
+        return "grupal" if len(self.ids) > 1 else "individual"
 
     @property
     def estado(self) -> str:
@@ -133,6 +149,8 @@ def agrupar(campers: list) -> tuple[list[Grupo], dict[int, list[str]]]:
 
     por_clave: dict[tuple, int] = {}
     for i, c in enumerate(con_ticket):
+        if c.comp_separado:
+            continue  # lo sacaron a mano de un grupo: no se vuelve a unir solo
         claves: list[tuple[tuple, str]] = []
         if c.ticket_sha256:
             claves.append((("sha", c.ticket_sha256), "misma imagen"))
@@ -167,6 +185,8 @@ def agrupar(campers: list) -> tuple[list[Grupo], dict[int, list[str]]]:
             if uf.find(i) == uf.find(j):
                 continue
             a, b = con_ticket[i], con_ticket[j]
+            if a.comp_separado or b.comp_separado:
+                continue
             d = distancia_phash(a.ticket_phash, b.ticket_phash)
             if d > PHASH_UMBRAL or _se_contradicen(a, b):
                 continue
@@ -178,11 +198,95 @@ def agrupar(campers: list) -> tuple[list[Grupo], dict[int, list[str]]]:
     for i, c in enumerate(con_ticket):
         buckets.setdefault(uf.find(i), []).append(c)
 
-    grupos = [_evaluar(miembros, motivos) for miembros in buckets.values()]
+    conteos = _contar_huellas([c for c in con_ticket if not c.comp_separado])
+    grupos = [_evaluar(miembros, motivos, conteos) for miembros in buckets.values()]
     return grupos, {k: sorted(v) for k, v in motivos.items()}
 
 
-def _evaluar(miembros: list, motivos: dict[int, set[str]]) -> Grupo:
+def _contar_huellas(campers: list) -> Counter:
+    """Cuántos comprobantes comparten cada imagen / clave de rastreo / referencia."""
+    cuenta: Counter = Counter()
+    for c in campers:
+        if c.ticket_sha256:
+            cuenta[("sha", c.ticket_sha256)] += 1
+        rastreo = _clave_ref(c.comp_clave_rastreo)
+        if len(rastreo) >= 8:
+            cuenta[("rastreo", rastreo)] += 1
+        ref = _clave_ref(c.comp_referencia)
+        if len(ref) >= 4:
+            cuenta[("ref", ref)] += 1
+    return cuenta
+
+
+FUENTES = {"gemini": "con IA", "local": "con el lector local", "manual": "a mano"}
+
+
+def _chequeos(g: Grupo, miembros: list, base, leido: bool, conteos: Counter) -> list[Chequeo]:
+    """Lo que se comprobó de este pago, para ver también lo que está bien y no solo las alertas."""
+    n = len(miembros)
+    out: list[Chequeo] = []
+
+    if leido:
+        out.append(Chequeo("LEIDO", True, f"Comprobante leído {FUENTES.get(base.ocr_fuente or '', '')}".strip()))
+    else:
+        out.append(Chequeo("LEIDO", False, "Aún no se lee el comprobante."))
+
+    if g.tipo in TIPOS_DINERO and g.monto_centavos is not None and g.tarifa is not None:
+        monto = f"${g.monto_centavos/100:,.0f}"
+        if n == 1:
+            out.append(
+                Chequeo("MONTO", g.cubre >= 1, f"{monto} {'alcanza' if g.cubre >= 1 else 'no alcanza'} para la tarifa del {g.fecha:%d/%m} (${g.tarifa}).")
+            )
+        else:
+            out.append(Chequeo("MONTO", g.cubre >= n, f"{monto} {'cubre' if g.cubre >= n else 'solo cubre ' + str(g.cubre) + ' de'} {n} × ${g.tarifa} = ${g.esperado/100:,.0f}."))
+    elif g.tipo == "campamento_gratis":
+        out.append(Chequeo("MONTO", True, "Cupón de campamento gratis (no lleva monto)."))
+    elif g.tipo == "ticket_descuento":
+        out.append(Chequeo("MONTO", None, "Ticket de descuento: confirma el monto a mano."))
+    elif leido and g.tipo in TIPOS_DINERO:
+        out.append(Chequeo("MONTO", False, "No se pudo leer el monto."))
+    elif leido and g.tipo == "otro":
+        out.append(Chequeo("MONTO", False, "No parece una transferencia ni un cupón."))
+
+    declaradas = [m.fecha_pago for m in miembros if m.fecha_pago]
+    if g.tipo in TIPOS_DINERO:
+        if base.comp_fecha and declaradas:
+            cerca = any(abs(base.comp_fecha - d) <= timedelta(days=TOLERANCIA_FECHA_DIAS) for d in declaradas)
+            out.append(
+                Chequeo(
+                    "FECHA",
+                    cerca,
+                    f"La fecha del comprobante ({base.comp_fecha:%d/%m}) {'coincide con' if cerca else 'no coincide con'} la que dijo ({declaradas[0]:%d/%m}).",
+                )
+            )
+        elif not base.comp_fecha:
+            out.append(Chequeo("FECHA", None, "El comprobante no muestra fecha para comparar."))
+
+    if any(m.comp_separado for m in miembros):
+        out.append(Chequeo("SIN_COPIAS", None, "Se separó a mano de otro grupo: una persona confirmó que es otro pago."))
+    elif n > 1:
+        motivos = ", ".join(g.por_que_juntos) or "datos parecidos"
+        # un cupón es canjeable una sola vez; una transferencia repetida solo es sana si alcanza para todos
+        ok = False if g.tipo in TIPOS_CUPON else (None if g.cubre is None else g.cubre >= n)
+        out.append(Chequeo("SIN_COPIAS", ok, f"Estos {n} registros comparten comprobante ({motivos})."))
+    else:
+        m = miembros[0]
+        rastreo, ref = _clave_ref(m.comp_clave_rastreo), _clave_ref(m.comp_referencia)
+        if m.ticket_sha256:
+            unica = conteos[("sha", m.ticket_sha256)] <= 1
+            out.append(Chequeo("SIN_COPIAS", unica, "La imagen no se repite en otro registro." if unica else "Hay otro registro con la misma imagen."))
+        if len(rastreo) >= 8:
+            unica = conteos[("rastreo", rastreo)] <= 1
+            out.append(Chequeo("SIN_COPIAS", unica, "La clave de rastreo no se repite." if unica else "La clave de rastreo aparece en otro registro."))
+        elif g.tipo in TIPOS_DINERO:
+            out.append(Chequeo("SIN_COPIAS", None, "Sin clave de rastreo legible para comparar."))
+        if len(ref) >= 4:
+            unica = conteos[("ref", ref)] <= 1
+            out.append(Chequeo("SIN_COPIAS", unica, "La referencia no se repite." if unica else "La referencia también aparece en otro registro (puede ser un valor fijo del banco)."))
+    return out
+
+
+def _evaluar(miembros: list, motivos: dict[int, set[str]], conteos: Counter | None = None) -> Grupo:
     # el dato "bueno" del grupo es el primero que tenga monto (la captura es la misma)
     base = next((m for m in miembros if m.comp_monto_centavos), miembros[0])
     tipo = base.comp_tipo
@@ -199,6 +303,7 @@ def _evaluar(miembros: list, motivos: dict[int, set[str]]) -> Grupo:
         cubre=None,
         por_que_juntos=sorted({x for m in miembros for x in motivos[m.id]}),
         revisado=all(m.comp_revisado for m in miembros),
+        separado=any(m.comp_separado for m in miembros),
     )
 
     leido = all(m.ocr_estado in ("LEIDO", "INCOMPLETO") or m.comp_editado for m in miembros)
@@ -259,4 +364,5 @@ def _evaluar(miembros: list, motivos: dict[int, set[str]]) -> Grupo:
             )
     if any(m.tiene_promocion for m in miembros):
         g.alertas.append(Alerta("PROMOCION", "info", "Dijo tener promoción: " + "; ".join(m.promocion_detalle or "sí" for m in miembros if m.tiene_promocion)[:120]))
+    g.chequeos = _chequeos(g, miembros, base, leido, conteos if conteos is not None else Counter())
     return g

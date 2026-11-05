@@ -88,6 +88,47 @@
   color: var(--hueso-tenue);
 }
 
+.conc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+
+.conc-chip--aviso {
+  border-color: var(--amarillo);
+  color: var(--amarillo);
+}
+
+.conc-pagos {
+  margin: var(--e-1) 0 0;
+  font-size: var(--t-sm);
+  font-weight: 600;
+}
+
+.conc-pagos.is-ok {
+  color: var(--verde-claro);
+}
+
+.conc-chequeos-toggle {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  padding: var(--e-1) 0;
+  min-height: 32px;
+  color: var(--amarillo-suave);
+  font: inherit;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.conc-historial {
+  padding-top: var(--e-3);
+  border-top: 1px solid var(--tarjeta-borde);
+}
+
 .conc-chip--sm {
   margin-left: var(--e-2);
   padding: 0.05rem 0.5rem;
@@ -285,6 +326,10 @@
 }
 
 @media (pointer: coarse) {
+  .conc-chequeos-toggle {
+    min-height: 44px;
+  }
+
   .conc-nota {
     min-height: 44px;
   }

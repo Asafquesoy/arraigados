@@ -3,6 +3,9 @@ import { AnimatePresence } from "motion/react";
 import type { ComprobanteMiembro, ConciliacionGrupo as Grupo } from "../lib/api";
 import { formatFechaCorta } from "../lib/fecha";
 import { COMPROBANTE_TIPO_LABEL, ComprobanteDatosForm, type ComprobanteDatos } from "./ComprobanteDatosForm";
+import { ComprobanteHistorial } from "./ComprobanteHistorial";
+import { ConciliacionChequeos } from "./ConciliacionChequeos";
+import { ConfirmButton } from "./ConfirmButton";
 import { FieldReveal } from "./FieldReveal";
 import { PencilIcon, ReceiptIcon } from "./icons";
 import { ToggleSwitch } from "./ToggleSwitch";
@@ -22,7 +25,11 @@ interface Props {
   onVerComprobante: (m: ComprobanteMiembro) => void;
   onTogglePago: (m: ComprobanteMiembro, checked: boolean) => void;
   onGuardarDatos: (g: Grupo, datos: ComprobanteDatos) => Promise<boolean>;
+  /** Quita la aprobación (revisado) sin tocar los pagos. */
   onRevisado: (g: Grupo, revisado: boolean, nota: string) => void;
+  /** Aprueba: grupo revisado + pago verificado de todos sus miembros. */
+  onAprobar: (g: Grupo, nota: string) => void;
+  onSeparar: (m: ComprobanteMiembro, separado: boolean) => void;
 }
 
 export function ConciliacionGrupo({
@@ -33,8 +40,12 @@ export function ConciliacionGrupo({
   onTogglePago,
   onGuardarDatos,
   onRevisado,
+  onAprobar,
+  onSeparar,
 }: Props) {
   const [editando, setEditando] = useState(false);
+  const [verHistorial, setVerHistorial] = useState(false);
+  const [verChequeos, setVerChequeos] = useState(grupo.estado !== "revisado");
   const [nota, setNota] = useState("");
   const n = grupo.miembros.length;
   const base = grupo.miembros.find((m) => m.comp_monto_centavos != null) ?? grupo.miembros[0];
@@ -46,8 +57,12 @@ export function ConciliacionGrupo({
   const alertas = [...grupo.alertas].sort((a, b) => (ORDEN_NIVEL[a.nivel] ?? 3) - (ORDEN_NIVEL[b.nivel] ?? 3));
   const problemas = alertas.filter((a) => a.nivel !== "info");
   const notas = alertas.filter((a) => a.nivel === "info");
+  const verificados = grupo.miembros.filter((m) => m.pago_verificado).length;
   const veredicto = revisado
-    ? { clase: "revisado", texto: `Revisado${base.comp_revisado_por ? ` por ${base.comp_revisado_por}` : ""}` }
+    ? {
+        clase: "revisado",
+        texto: `Aprobado${base.comp_revisado_por ? ` por ${base.comp_revisado_por}` : ""}${base.comp_revisado_en ? ` · ${formatFechaCorta(base.comp_revisado_en.slice(0, 10))}` : ""}`,
+      }
     : hayAlta
       ? { clase: "alta", texto: "Hay un problema" }
       : hayMedia
@@ -69,7 +84,11 @@ export function ConciliacionGrupo({
             <span className="conc-veredicto-punto" aria-hidden="true" />
             {veredicto.texto}
           </p>
-          <span className="conc-chip">{grupo.tipo ? COMPROBANTE_TIPO_LABEL[grupo.tipo] : "Sin leer"}</span>
+          <div className="conc-chips">
+            <span className="conc-chip">{grupo.tipo ? COMPROBANTE_TIPO_LABEL[grupo.tipo] : "Sin leer"}</span>
+            <span className="conc-chip">{grupo.clase === "grupal" ? `En grupo · ${n}` : "Individual"}</span>
+            {grupo.separado && <span className="conc-chip conc-chip--aviso">Separado a mano</span>}
+          </div>
           {grupo.monto_centavos != null ? (
             <p className="conc-monto mono">{pesos(grupo.monto_centavos)}</p>
           ) : (
@@ -93,6 +112,9 @@ export function ConciliacionGrupo({
           ) : (
             <p className="muted conc-cubre-det">{n} {n === 1 ? "registro" : "registros"}</p>
           )}
+          <p className={`conc-cubre-det conc-pagos ${verificados === n ? "is-ok" : "muted"}`}>
+            {verificados}/{n} {n === 1 ? "pago verificado" : "pagos verificados"}
+          </p>
         </div>
       </header>
 
@@ -115,6 +137,13 @@ export function ConciliacionGrupo({
           {grupo.por_que_juntos.length > 0 && <li>Se agruparon por: {grupo.por_que_juntos.join(", ")}.</li>}
         </ul>
       )}
+
+      {revisado && (
+        <button type="button" className="conc-chequeos-toggle" aria-expanded={verChequeos} onClick={() => setVerChequeos((v) => !v)}>
+          {verChequeos ? "Ocultar lo que se comprobó" : `Ver lo que se comprobó (${grupo.chequeos.filter((c) => c.ok === true).length} ✓)`}
+        </button>
+      )}
+      {(!revisado || verChequeos) && <ConciliacionChequeos chequeos={grupo.chequeos} />}
 
       <p className="conc-datos">
         {base.comp_referencia && (
@@ -156,6 +185,20 @@ export function ConciliacionGrupo({
                 onChange={(c) => onTogglePago(m, c)}
                 label="Pago verificado"
               />
+              {n > 1 && puedeVerificarPago && (
+                <ConfirmButton
+                  className="btn btn-ghost btn-sm"
+                  label="No es el mismo pago"
+                  confirmLabel="¿Seguro? Separar"
+                  disabled={ocupado}
+                  onConfirm={() => onSeparar(m, true)}
+                />
+              )}
+              {n === 1 && m.comp_separado && puedeVerificarPago && (
+                <button type="button" className="btn btn-ghost btn-sm" disabled={ocupado} onClick={() => onSeparar(m, false)}>
+                  Volver a unir
+                </button>
+              )}
             </div>
           </li>
         ))}
@@ -182,7 +225,7 @@ export function ConciliacionGrupo({
         )}
         {revisado ? (
           <button type="button" className="btn btn-ghost btn-sm" disabled={ocupado} onClick={() => onRevisado(grupo, false, "")}>
-            Quitar revisado
+            Quitar aprobación
           </button>
         ) : (
           <>
@@ -199,14 +242,27 @@ export function ConciliacionGrupo({
               type="button"
               className="btn btn-primary btn-sm"
               disabled={ocupado}
-              onClick={() => onRevisado(grupo, true, nota)}
+              onClick={() => onAprobar(grupo, nota)}
             >
-              Marcar revisado
+              Aprobar pago
             </button>
           </>
         )}
       </div>
       {revisado && base.comp_nota && <p className="muted conc-nota-texto">Nota: {base.comp_nota}</p>}
+
+      <button type="button" className="conc-chequeos-toggle" aria-expanded={verHistorial} onClick={() => setVerHistorial((v) => !v)}>
+        {verHistorial ? "Ocultar historial" : "Ver historial de cambios"}
+      </button>
+      <AnimatePresence initial={false}>
+        {verHistorial && (
+          <FieldReveal key="historial">
+            <div className="conc-historial">
+              <ComprobanteHistorial camperIds={grupo.miembros.map((m) => m.id)} />
+            </div>
+          </FieldReveal>
+        )}
+      </AnimatePresence>
     </article>
   );
 }

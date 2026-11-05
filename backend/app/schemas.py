@@ -273,6 +273,12 @@ class AlertaOut(BaseModel):
     texto: str
 
 
+class ChequeoOut(BaseModel):
+    codigo: str
+    ok: bool | None
+    texto: str
+
+
 class ComprobanteMiembroOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -297,7 +303,9 @@ class ComprobanteMiembroOut(BaseModel):
     comp_editado: bool
     comp_revisado: bool
     comp_revisado_por: str | None
+    comp_revisado_en: datetime | None
     comp_nota: str | None
+    comp_separado: bool
 
 
 class ConciliacionGrupoOut(BaseModel):
@@ -311,6 +319,9 @@ class ConciliacionGrupoOut(BaseModel):
     cubre: int | None
     por_que_juntos: list[str]
     alertas: list[AlertaOut]
+    chequeos: list[ChequeoOut]
+    clase: str  # individual | grupal
+    separado: bool
     miembros: list[ComprobanteMiembroOut]
 
 
@@ -323,6 +334,8 @@ class ConciliacionResumen(BaseModel):
     grupos_con_alerta: int
     grupos_compartidos: int
     grupos_revisados: int
+    verificados_individuales: int
+    verificados_grupales: int
     dinero_leido_centavos: int
     dinero_esperado_centavos: int
     lector: str  # "gemini" | "local"
@@ -346,6 +359,26 @@ class RevisadoUpdate(BaseModel):
     ids: list[int] = Field(min_length=1, max_length=50)
     revisado: bool
     nota: str | None = Field(default=None, max_length=300)
+
+
+class AprobarUpdate(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=50)
+    nota: str | None = Field(default=None, max_length=300)
+
+
+class SepararUpdate(BaseModel):
+    separado: bool
+
+
+class EventoOut(BaseModel):
+    id: int
+    camper_id: int
+    folio: str
+    nombre: str
+    creado_en: datetime
+    usuario: str
+    accion: str
+    detalle: dict | None
 
 
 class ProcesarEstadoOut(BaseModel):

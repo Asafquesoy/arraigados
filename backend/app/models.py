@@ -116,6 +116,8 @@ class Camper(Base):
     comp_revisado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     comp_revisado_por: Mapped[str | None] = mapped_column(String(100), nullable=True)
     comp_nota: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    # El encargado dijo "no es el mismo pago": agrupar() nunca une a este registro.
+    comp_separado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     equipo: Mapped["Equipo | None"] = relationship(back_populates="miembros")
 
@@ -173,3 +175,18 @@ class AppSettings(Base):
     eq_balance_procedencia: Mapped[bool] = mapped_column(Boolean, default=True)
     eq_balance_sexo: Mapped[bool] = mapped_column(Boolean, default=True)
     eq_balance_tamano: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class ComprobanteEvento(Base):
+    """Historial de la conciliación: quién hizo qué sobre el comprobante/pago de un
+    registro y qué se veía en ese momento (`detalle`, JSON). Solo se agrega, nunca
+    se edita; lo escribe `historial.registrar`."""
+
+    __tablename__ = "comprobante_eventos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    camper_id: Mapped[int] = mapped_column(ForeignKey("campers.id", ondelete="CASCADE"), index=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
+    usuario: Mapped[str] = mapped_column(String(100), nullable=False)
+    accion: Mapped[str] = mapped_column(String(30), nullable=False)
+    detalle: Mapped[str | None] = mapped_column(Text, nullable=True)

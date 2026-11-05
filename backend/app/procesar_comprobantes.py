@@ -16,6 +16,7 @@ from .comprobante_lector import leer_con_respaldo
 from .comprobante_ocr import TIPOS, huellas
 from .config import settings
 from .database import SessionLocal
+from .historial import SISTEMA, registrar
 from .models import Camper
 
 log = logging.getLogger("arraigados.comprobantes")
@@ -64,6 +65,17 @@ def procesar_uno(db: Session, camper: Camper, usar_gemini: bool = True) -> bool:
         camper.ocr_estado = "INCOMPLETO"
     else:
         camper.ocr_estado = "ERROR"
+    registrar(
+        db,
+        camper.id,
+        "LEIDO",
+        SISTEMA,
+        fuente=camper.ocr_fuente,
+        estado=camper.ocr_estado,
+        tipo=camper.comp_tipo,
+        monto_centavos=camper.comp_monto_centavos,
+        fecha=camper.comp_fecha,
+    )
     db.commit()
     return usar_gemini
 

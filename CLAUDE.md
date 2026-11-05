@@ -571,6 +571,26 @@ transferencia y avisa si el dinero no alcanza. Roles: Admin y `VERIFICADOR_PAGO`
 - **UI**: `pages/Conciliacion.tsx` (no root motifs, like every admin screen) + `components/ConciliacionGrupo.tsx` + `ComprobanteDatosForm.tsx`;
   filtros y búsqueda se aplican en el cliente sobre `GET /api/admin/conciliacion` (~100–200 grupos).
   Los datos corregidos se aplican a todo el grupo (un PATCH por miembro).
+- **Historial y aprobación** (migración `0015`): tabla `comprobante_eventos` (`models.py::ComprobanteEvento`,
+  solo se agrega) escrita por `app/historial.py::registrar` — no hace commit, lo hace el endpoint que
+  llama, así evento y cambio van juntos. Acciones: `PAGO_VERIFICADO/PAGO_DESMARCADO` (también las del
+  panel y el modal, porque se registran en `admin.py::actualizar_pago`), `REVISADO/REVISION_QUITADA`,
+  `APROBADO`, `DATOS_CORREGIDOS` (antes/después), `LEIDO` (usuario `sistema`), `SEPARADO/UNIDO_DE_NUEVO`.
+  `APROBADO`/`REVISADO` guardan una **foto** de lo que se veía (monto, tarifa, chequeos, alertas) para poder
+  volver a comprobarlo meses después. `POST /api/admin/comprobantes/aprobar` = revisado + pago verificado de
+  todo el grupo en un paso (el botón "Aprobar pago"); `GET .../comprobantes/historial?camper_id=`.
+  Corregir datos de algo ya aprobado, o cambiar la composición de un grupo (separar/unir), **quita el
+  "revisado"** — lo aprobado ya no es lo que hay. Borrar un registro borra su historial a mano
+  (`admin.py::borrar_registro`): SQLite no aplica el `ON DELETE CASCADE`.
+- **Chequeos y separar**: `conciliacion.py::_chequeos` arma "lo que se comprobó" (`LEIDO`, `MONTO`,
+  `FECHA`, `SIN_COPIAS`; `ok` = true/false/null si no hubo con qué comprobar) para mostrar también lo
+  que está bien, no solo las alertas; `Grupo.clase` es `individual`/`grupal`. `campers.comp_separado`
+  ("No es el mismo pago", `PATCH /registros/{id}/comprobante/separar`) hace que `agrupar()` nunca una a
+  ese registro, ni por imagen, clave, referencia ni phash.
+- **UI en pestañas** (`Conciliacion.tsx`): Por revisar / Sin alertas / Verificados / Historial, para que
+  lo que tiene alertas nunca se mezcle con lo ya verificado; dentro, Todos/Individuales/En grupo y, solo
+  en "Por revisar", chips de motivo. Las tarjetas se ordenan en el cliente por urgencia (verificados: por
+  fecha de aprobación). `ConciliacionChequeos.tsx` y `ComprobanteHistorial.tsx` son los dos bloques nuevos.
 - **Despliegue**: el `Dockerfile` instala `tesseract-ocr tesseract-ocr-spa`; `GEMINI_API_KEY` va en el
   `.env` raíz (opcional) y `docker-compose.yml` la pasa al backend. Tras el primer deploy, usar el
   botón "Leer comprobantes pendientes" (o el script) para leer los ya existentes.

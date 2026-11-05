@@ -14,7 +14,8 @@ from sqlalchemy.orm import Session, joinedload
 from ..config import settings
 from ..database import get_db
 from ..iglesias import canonicalizar_iglesia
-from ..models import AdminRole, AdminUser, AppSettings, Camper, Equipo, Sexo, TallaCamisa, TipoParticipante, Zona
+from ..historial import registrar
+from ..models import AdminRole, AdminUser, AppSettings, Camper, ComprobanteEvento, Equipo, Sexo, TallaCamisa, TipoParticipante, Zona
 from ..schemas import (
     AdminUserCreate,
     AdminUserOut,
@@ -117,6 +118,8 @@ def actualizar_pago(
     if not camper:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Registro no encontrado")
 
+    if camper.pago_verificado != payload.verificado:
+        registrar(db, camper.id, "PAGO_VERIFICADO" if payload.verificado else "PAGO_DESMARCADO", admin.username)
     camper.pago_verificado = payload.verificado
     camper.verificado_en = datetime.now(timezone.utc) if payload.verificado else None
     camper.verificado_por = admin.username if payload.verificado else None
@@ -260,6 +263,8 @@ def borrar_registro(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Registro no encontrado")
 
     ticket_path = os.path.join(settings.tickets_dir, camper.ticket_path) if camper.ticket_path else None
+    # SQLite no aplica el ON DELETE CASCADE: el historial se borra a mano para que dev y prod coincidan.
+    db.query(ComprobanteEvento).filter(ComprobanteEvento.camper_id == camper.id).delete()
     db.delete(camper)
     db.commit()
 
