@@ -24,6 +24,7 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN}
       TICKETS_DIR: /data/tickets
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     volumes:
       - tickets:/data/tickets
     depends_on:

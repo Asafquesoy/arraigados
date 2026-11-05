@@ -20,6 +20,7 @@ const AdminPanel = lazy(() => import("./pages/AdminPanel").then((m) => ({ defaul
 const AdminUsers = lazy(() => import("./pages/AdminUsers").then((m) => ({ default: m.AdminUsers })));
 const Recepcion = lazy(() => import("./pages/Recepcion").then((m) => ({ default: m.Recepcion })));
 const Equipos = lazy(() => import("./pages/Equipos").then((m) => ({ default: m.Equipos })));
+const Conciliacion = lazy(() => import("./pages/Conciliacion").then((m) => ({ default: m.Conciliacion })));
 
 function AppRoutes() {
   const location = useLocation();
@@ -42,6 +43,7 @@ function AppRoutes() {
                 <Route path="/admin/usuarios" element={<AdminUsers />} />
                 <Route path="/admin/recepcion" element={<Recepcion />} />
                 <Route path="/admin/equipos" element={<Equipos />} />
+                <Route path="/admin/conciliacion" element={<Conciliacion />} />
               </Routes>
             </Suspense>
           </PageTransition>

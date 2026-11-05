@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -95,6 +95,27 @@ class Camper(Base):
     # equipo (ni al reparto automático ni a "Sin equipo"), pero cuenta igual en
     # pagos, asistencia, camisetas y exportes.
     es_staff: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Conciliación de comprobantes (ver conciliacion.py / comprobante_lector.py).
+    # ticket_sha256/phash: huellas de la imagen para detectar la misma captura
+    # subida varias veces. comp_*: lo leído del comprobante (o corregido a mano:
+    # comp_editado=True impide que una relectura lo pise).
+    ticket_sha256: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
+    ticket_phash: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    ocr_estado: Mapped[str] = mapped_column(String(20), default="PENDIENTE", nullable=False)
+    ocr_fuente: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    ocr_texto: Mapped[str | None] = mapped_column(Text, nullable=True)
+    comp_tipo: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    comp_banco: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    comp_referencia: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    comp_clave_rastreo: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    comp_fecha: Mapped[date | None] = mapped_column(Date, nullable=True)
+    comp_monto_centavos: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    comp_editado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    comp_revisado: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    comp_revisado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    comp_revisado_por: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    comp_nota: Mapped[str | None] = mapped_column(String(300), nullable=True)
 
     equipo: Mapped["Equipo | None"] = relationship(back_populates="miembros")
 

@@ -205,3 +205,80 @@ export interface EquiposConfig {
   eq_balance_sexo: boolean;
   eq_balance_tamano: boolean;
 }
+
+// ---- Conciliación de comprobantes (ver backend/app/conciliacion.py) ----
+
+export type ComprobanteTipo = "transferencia" | "deposito" | "ticket_descuento" | "campamento_gratis" | "otro";
+export type NivelAlerta = "alta" | "media" | "info";
+
+export interface AlertaOut {
+  codigo: string;
+  nivel: NivelAlerta;
+  texto: string;
+}
+
+export interface ComprobanteMiembro {
+  id: number;
+  folio: string;
+  nombre: string;
+  iglesia: string;
+  tipo: TipoParticipante | null;
+  fecha_pago: string | null;
+  created_at: string;
+  pago_verificado: boolean;
+  tiene_promocion: boolean | null;
+  promocion_detalle: string | null;
+  ocr_estado: "PENDIENTE" | "LEIDO" | "INCOMPLETO" | "ERROR";
+  ocr_fuente: string | null;
+  comp_tipo: ComprobanteTipo | null;
+  comp_banco: string | null;
+  comp_referencia: string | null;
+  comp_clave_rastreo: string | null;
+  comp_fecha: string | null;
+  comp_monto_centavos: number | null;
+  comp_editado: boolean;
+  comp_revisado: boolean;
+  comp_revisado_por: string | null;
+  comp_nota: string | null;
+}
+
+export interface ConciliacionGrupo {
+  id: number;
+  estado: "ok" | "alerta" | "revisado";
+  tipo: ComprobanteTipo | null;
+  monto_centavos: number | null;
+  fecha: string | null;
+  tarifa: number | null;
+  esperado_centavos: number | null;
+  cubre: number | null;
+  por_que_juntos: string[];
+  alertas: AlertaOut[];
+  miembros: ComprobanteMiembro[];
+}
+
+export interface ConciliacionResumen {
+  con_comprobante: number;
+  sin_comprobante: number;
+  leidos: number;
+  sin_leer: number;
+  grupos: number;
+  grupos_con_alerta: number;
+  grupos_compartidos: number;
+  grupos_revisados: number;
+  dinero_leido_centavos: number;
+  dinero_esperado_centavos: number;
+  lector: "gemini" | "local";
+}
+
+export interface ConciliacionResponse {
+  resumen: ConciliacionResumen;
+  grupos: ConciliacionGrupo[];
+}
+
+export interface ProcesarEstado {
+  corriendo: boolean;
+  total: number;
+  hechos: number;
+  con_gemini: boolean;
+  error: string | null;
+}

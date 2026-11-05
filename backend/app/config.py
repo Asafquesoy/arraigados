@@ -19,5 +19,12 @@ class Settings(BaseSettings):
 
     camp_name: str = "Arraigados"
 
+    # Lectura automática de comprobantes (conciliacion). Gemini es el lector
+    # principal (plan gratis de Google AI Studio); sin key o sin cuota cae a
+    # Tesseract local. Ambos son opcionales: sin ninguno, el encargado captura a mano.
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-3.5-flash-lite"  # gemini-2.5-flash-lite ya no está disponible (404)
+    tesseract_cmd: str = ""
+
 
 settings = Settings()

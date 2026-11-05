@@ -1,13 +1,14 @@
 import logging
 from datetime import date
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..equipos_balance import Criterios, construir_contexto, elegir_equipo
 from ..iglesias import canonicalizar_iglesia, iglesias_de_zona
 from ..models import AppSettings, Camper, Equipo, Sexo, TallaCamisa, TipoParticipante, Zona
+from ..procesar_comprobantes import procesar_registro_nuevo
 from ..ratelimit import rate_limit
 from ..schemas import CamperCreateResponse
 from ..storage import save_ticket
@@ -54,6 +55,7 @@ async def crear_registro(
     talla_camisa: TallaCamisa | None = Form(default=None),
     talla_otra: str | None = Form(default=None, max_length=50),
     ticket: UploadFile | None = File(default=None),
+    background: BackgroundTasks = BackgroundTasks(),
     db: Session = Depends(get_db),
 ):
     # No confiar en el cliente para decidir si el registro sigue abierto o si
@@ -111,6 +113,11 @@ async def crear_registro(
     db.add(camper)
     db.commit()
     db.refresh(camper)
+
+    # Lectura del comprobante (huellas + monto/fecha/referencia) después de
+    # responder; procesar_registro_nuevo nunca propaga errores.
+    if camper.ticket_path:
+        background.add_task(procesar_registro_nuevo, camper.id)
 
     # Reparto automático a un equipo — nunca debe tumbar el registro en sí
     # (que ya se guardó): un fallo aquí solo deja a la persona en "Sin

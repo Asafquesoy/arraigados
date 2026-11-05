@@ -27,6 +27,12 @@ alembic upgrade head                                 # apply migrations (creates
 uvicorn app.main:app --reload                        # http://localhost:8000
 ```
 
+- Optional, for the payment-receipt reader (see *Conciliación de comprobantes*): put `GEMINI_API_KEY=`
+  in `backend/.env` (free key from aistudio.google.com) and, for the local fallback, install Tesseract
+  (`winget install UB-Mannheim.TesseractOCR`, then `TESSERACT_CMD=C:/Program Files/Tesseract-OCR/tesseract.exe`
+  — use forward slashes, a Windows-style path with backslashes gets its backslash-t read as a tab character). `python -m app.procesar_comprobantes [--todos]`
+  reads receipts from the command line. Without either, everything still runs; receipts are just
+  captured by hand.
 - New migration: `alembic revision -m "description"` (autogenerate is not configured — write
   `upgrade()`/`downgrade()` by hand, following the pattern in `alembic/versions/0001_initial.py`).
 - No test suite exists yet. Ad-hoc verification during development used
@@ -168,9 +174,13 @@ this shape exists to avoid.
   suggestion list **floats** (`position: absolute` under the input, inside `.iglesia-field-control`) —
   it used to be in the page flow, which pushed the form buttons down ~250px, left a blank gap next to
   the neighbouring field and jumped on every keystroke. For it not to be clipped, `.form-card` uses
-  `overflow-x: clip` (only the ±40px step slide needs clipping), never `overflow: hidden`; on touch
-  screens focusing the input scrolls it near the top so the list sits above the keyboard; that's why the form now asks **zona before iglesia**
-  (`FormularioRegistro.tsx` and `EditarCamperModal.tsx`). Typing without picking a suggestion is
+  `overflow-x: clip` (only the ±40px step slide needs clipping), never `overflow: hidden` — don't
+  put it back or the list gets cut off at the card's bottom edge; its stacking comes from the
+  `--z-desplegable` token (`tokens.css`, between content and navbar). On touch screens focusing the
+  input scrolls it near the top so the list sits above the keyboard. Any new dropdown/popover that
+  must overlap form content should follow this same shape (absolute inside a `position: relative`
+  wrapper + `--z-desplegable`), not render in flow. That's why the form now asks **zona before
+  iglesia** (`FormularioRegistro.tsx` and `EditarCamperModal.tsx`). Typing without picking a suggestion is
   still allowed. It does **not** fix typos ("Eliasim") — suggestions are what prevent those. The
   one-time cleanup of the production data was done by hand (backup + mapping in a single
   transaction), not by this code. The suggestion box is deliberately **two layers**
@@ -283,8 +293,12 @@ this shape exists to avoid.
   - `RootGrow`'s `seed` prop defaults to `7` (the Hero's original, unchanged look); `RootDivider`
     requires a `seed` prop with no default — every call site must pick its own, so the divider
     doesn't silently repeat the same pattern everywhere it's used (`Detalles.tsx`, `Pago.tsx`,
-    `AdminPanel.tsx`, `AdminUsers.tsx` each pass a different one; `Confirmacion.tsx` also passes
-    its own `seed` to `RootGrow` so it differs from the Hero's).
+    `Carta.tsx` each pass a different one; `Confirmacion.tsx` also passes its own `seed` to
+    `RootGrow` so it differs from the Hero's).
+  - **Roots are for the public site only.** None of the admin screens (`AdminPanel`, `AdminUsers`,
+    `Recepcion`, `Equipos`, `Conciliacion`) uses `RootDivider`/`RootGrow` — they're work screens and
+    the team wants them uncluttered. Don't add roots to a new admin page; an earlier version of
+    `Conciliacion.tsx` had a divider and it was removed on request.
 
 ### Design system
 
@@ -527,6 +541,54 @@ wrapped in `try/except Exception` that only logs — a balancing failure must ne
 registration itself, which already committed; anyone left unassigned this way just shows up under
 "Sin equipo" in `Equipos.tsx`, recoverable with "Repartir a todos".
 
+### Conciliación de comprobantes (`/admin/conciliacion`)
+
+Lee cada comprobante para sacar monto/fecha/referencia, agrupa los registros que comparten una
+transferencia y avisa si el dinero no alcanza. Roles: Admin y `VERIFICADOR_PAGO` (el resto 403).
+
+- **Lectura** (`app/comprobante_lector.py`): Gemini (`GEMINI_API_KEY`, plan gratis de Google AI Studio,
+  `gemini_model` en `config.py`) con respaldo **Tesseract local** (`comprobante_ocr.py`: `huellas`,
+  `extraer_texto_local`, `parsear`) si no hay key, hay 429 o la respuesta no es JSON. Sin ninguno
+  de los dos el encargado captura a mano. `ocr_fuente` guarda `gemini`/`local`/`manual`. Ojo: la
+  imagen sale a Google solo si hay key (el plan gratis puede usarla para mejorar sus productos).
+- **Datos** (migración `0014`, columnas `campers.ticket_sha256/ticket_phash/ocr_*/comp_*`): lo
+  corregido a mano pone `comp_editado=True` y una relectura ya no lo pisa. `comp_revisado*` marca
+  que el encargado ya aprobó el grupo.
+- **Proceso** (`app/procesar_comprobantes.py`): `procesar_registro_nuevo` corre en `BackgroundTasks` tras
+  `POST /api/registros` (nunca propaga errores); `procesar_lote` lo dispara el botón del panel
+  (`POST /api/admin/comprobantes/procesar`, avance en `.../estado`, estado en memoria como
+  `ratelimit.py`); también `python -m app.procesar_comprobantes [--todos]` desde `backend/`.
+  Gemini gratis ≈ 15 pet/min → pausa de 4.5 s entre llamadas.
+- **Reglas** (`app/conciliacion.py`, puro): `TARIFAS` por fecha de la transferencia (16–31 ago $350,
+  sep $450, oct $500, 1–12 nov $550) — constante a propósito, es historia de la campaña 2026 (la
+  tarifa actual del formulario sigue en `app_settings.precio_mxn`). Se agrupa por imagen idéntica
+  (sha256), clave de rastreo, referencia y phash. **Trampas ya vistas con datos reales:** (1) el
+  phash une capturas *distintas* del mismo banco (misma plantilla), así que nunca une si lo leído se
+  contradice y, si solo coincide el parecido visual, la alerta baja a "posible" (`media`); (2) la
+  referencia SPEI suele ser la fecha (`221026`) o un valor fijo (`2309260` en 8 pagos de semanas
+  distintas), por eso solo une con mismo monto, ±1 día y sin contradicciones; (3) el OCR confunde O/0
+  → las claves se comparan normalizadas; (4) montos < $100 se descartan como error de lectura.
+- **UI**: `pages/Conciliacion.tsx` (no root motifs, like every admin screen) + `components/ConciliacionGrupo.tsx` + `ComprobanteDatosForm.tsx`;
+  filtros y búsqueda se aplican en el cliente sobre `GET /api/admin/conciliacion` (~100–200 grupos).
+  Los datos corregidos se aplican a todo el grupo (un PATCH por miembro).
+- **Despliegue**: el `Dockerfile` instala `tesseract-ocr tesseract-ocr-spa`; `GEMINI_API_KEY` va en el
+  `.env` raíz (opcional) y `docker-compose.yml` la pasa al backend. Tras el primer deploy, usar el
+  botón "Leer comprobantes pendientes" (o el script) para leer los ya existentes.
+- **Precisión medida (112 comprobantes reales, 2026-11-05):** Gemini (`gemini-3.5-flash-lite`) leyó
+  monto en el 100 % de transferencias/depósitos (los 10 sin monto son cupones), referencia en 81 y
+  clave/folio único en 63; la lectura local solo acertó el monto en ~74 % y fallaba con decimales
+  en superíndice. Las 21 sin fecha son capturas cortadas (sin fecha visible), no un fallo: se usa la
+  fecha que escribió la persona. Costó ~112 peticiones por pasada (el plan gratis da ~500/día).
+- **Trampas de Gemini:** `gemini-2.5-flash-lite` ya devuelve 404 (los modelos se retiran: ante un 404
+  listar `GET /v1beta/models`); responde 503 "alta demanda" a ratos (hay 3 reintentos antes de caer a
+  local); a veces invierte día/mes (04/10 → 10 abr), así que el prompt lo exige y
+  `_corregir_dia_mes` lo arregla si la fecha cae fuera de `VENTANA_PAGOS`. El prompt pide
+  `folio_operacion` (único por operación) y se guarda en `comp_clave_rastreo` cuando no hay clave de
+  rastreo: la "referencia numérica" no sirve para distinguir pagos (suele ser fija o la fecha).
+- Solo se afirma "captura repetida" (alerta alta) si hay imagen idéntica, misma clave/folio o mismo
+  n.º de cupón (`MOTIVOS_FUERTES`); si el vínculo es solo referencia o parecido visual, queda como
+  "posible" (media) para que lo confirme una persona.
+
 ## Deployment
 
 Three services in `docker-compose.yml`: `db` (Postgres with healthcheck + `pgdata` volume),
@@ -557,7 +619,14 @@ variants (it's detailed art and the hero shows it large), so it was left as is.
 The Droplet keeps the repo at `/root/arraigados` (SSH as `root`; ask the owner for access — no
 credentials belong in this repo or in any file) and database dumps at `/root/backups/`. Its
 `deploy.sh` shows as modified there only because of the executable bit — `git pull --ff-only`
-still works. Order that has worked every time:
+still works.
+
+Access is by SSH password, not key; the owner gives it for each deploy. From Windows there is no
+`sshpass`/`plink` — use `ssh -o PubkeyAuthentication=no` with `SSH_ASKPASS` pointing at a throwaway
+script that echoes an env var, plus `SSH_ASKPASS_REQUIRE=force` and `DISPLAY=x`; delete the script
+afterwards. Never write the password into the repo, a file or the docs.
+
+Order that has worked every time:
 1. Push to `main`.
 2. On the server: `pg_dump` into `/root/backups/arraigados_pre_deploy_<timestamp>.sql`
    (`docker compose exec -T db pg_dump -U $POSTGRES_USER $POSTGRES_DB`, values from `.env`).

@@ -1,0 +1,105 @@
+.conciliacion-title {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  margin: 0.3rem 0 0.4rem;
+}
+
+.conciliacion-sub {
+  max-width: 62ch;
+}
+
+.conciliacion-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--e-3);
+  margin-top: var(--e-4);
+}
+
+.conciliacion-lector,
+.conciliacion-controles {
+  margin-top: var(--e-4);
+  padding: var(--e-4) var(--e-5);
+}
+
+.conciliacion-lector {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--e-4);
+  flex-wrap: wrap;
+}
+
+.conciliacion-lector-titulo {
+  margin: 0;
+  font-weight: 700;
+}
+
+.conciliacion-lector-sub {
+  margin: var(--e-1) 0 0;
+  font-size: var(--t-sm);
+}
+
+.conciliacion-progreso {
+  margin: var(--e-2) 0 0;
+  color: var(--amarillo);
+  font-weight: 600;
+}
+
+.conciliacion-controles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+}
+
+.conciliacion-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+
+.conciliacion-filtros button {
+  border: 1px solid var(--tarjeta-borde);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--hueso-tenue);
+  border-radius: 999px;
+  padding: 0.5rem 0.95rem;
+  min-height: 40px;
+  font-weight: 700;
+  font-size: var(--t-sm);
+  cursor: pointer;
+  transition: background var(--dur-rapida) ease, color var(--dur-rapida) ease, border-color var(--dur-rapida) ease;
+}
+
+.conciliacion-filtros button:hover {
+  border-color: var(--amarillo);
+}
+
+.conciliacion-filtros button.is-active {
+  background: var(--gradiente-raiz);
+  color: var(--corteza);
+  border-color: transparent;
+}
+
+.conciliacion-lista {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-4);
+  margin-top: var(--e-5);
+}
+
+.conciliacion-vacio {
+  text-align: center;
+  padding: var(--e-7) var(--e-4);
+}
+
+@media (min-width: 1024px) {
+  .conciliacion-lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+@media (pointer: coarse) {
+  .conciliacion-filtros button {
+    min-height: 44px;
+  }
+}

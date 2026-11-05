@@ -7,3 +7,4 @@ __pycache__/
 data/
 backend/dev.db
 *.tsbuildinfo
+.playwright-mcp/

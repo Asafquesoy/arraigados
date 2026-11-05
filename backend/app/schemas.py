@@ -263,3 +263,94 @@ class StaffUpdate(BaseModel):
 
 class RepartirRequest(BaseModel):
     incluir_fijados: bool = False
+
+
+# ---- Conciliación de comprobantes ------------------------------------------
+
+class AlertaOut(BaseModel):
+    codigo: str
+    nivel: str
+    texto: str
+
+
+class ComprobanteMiembroOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    folio: str
+    nombre: str
+    iglesia: str
+    tipo: TipoParticipante | None
+    fecha_pago: date | None
+    created_at: datetime
+    pago_verificado: bool
+    tiene_promocion: bool | None
+    promocion_detalle: str | None
+    ocr_estado: str
+    ocr_fuente: str | None
+    comp_tipo: str | None
+    comp_banco: str | None
+    comp_referencia: str | None
+    comp_clave_rastreo: str | None
+    comp_fecha: date | None
+    comp_monto_centavos: int | None
+    comp_editado: bool
+    comp_revisado: bool
+    comp_revisado_por: str | None
+    comp_nota: str | None
+
+
+class ConciliacionGrupoOut(BaseModel):
+    id: int  # id del primer miembro: identifica al grupo en la UI
+    estado: str  # ok | alerta | revisado
+    tipo: str | None
+    monto_centavos: int | None
+    fecha: date | None
+    tarifa: int | None
+    esperado_centavos: int | None
+    cubre: int | None
+    por_que_juntos: list[str]
+    alertas: list[AlertaOut]
+    miembros: list[ComprobanteMiembroOut]
+
+
+class ConciliacionResumen(BaseModel):
+    con_comprobante: int
+    sin_comprobante: int
+    leidos: int
+    sin_leer: int
+    grupos: int
+    grupos_con_alerta: int
+    grupos_compartidos: int
+    grupos_revisados: int
+    dinero_leido_centavos: int
+    dinero_esperado_centavos: int
+    lector: str  # "gemini" | "local"
+
+
+class ConciliacionResponse(BaseModel):
+    resumen: ConciliacionResumen
+    grupos: list[ConciliacionGrupoOut]
+
+
+class ComprobanteUpdate(BaseModel):
+    comp_tipo: str | None = Field(default=None, max_length=30)
+    comp_banco: str | None = Field(default=None, max_length=60)
+    comp_referencia: str | None = Field(default=None, max_length=80)
+    comp_clave_rastreo: str | None = Field(default=None, max_length=80)
+    comp_fecha: date | None = None
+    monto_pesos: float | None = Field(default=None, ge=0, le=1_000_000)
+
+
+class RevisadoUpdate(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=50)
+    revisado: bool
+    nota: str | None = Field(default=None, max_length=300)
+
+
+class ProcesarEstadoOut(BaseModel):
+    corriendo: bool
+    total: int
+    hechos: int
+    con_gemini: bool
+    error: str | None

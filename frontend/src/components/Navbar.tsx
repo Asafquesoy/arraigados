@@ -87,6 +87,7 @@ export function Navbar() {
         ...(role === "ADMIN" || role === "RECEPCION" ? [{ to: "/admin/recepcion", label: "Recepción" }] : []),
         ...(role !== "RECEPCION" ? [{ to: "/admin/panel", label: "Panel" }] : []),
         { to: "/admin/equipos", label: "Equipos" },
+        ...(role === "ADMIN" || role === "VERIFICADOR_PAGO" ? [{ to: "/admin/conciliacion", label: "Conciliación" }] : []),
         ...(role === "ADMIN" ? [{ to: "/admin/usuarios", label: "Usuarios" }] : []),
       ]
     : [];
