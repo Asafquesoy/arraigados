@@ -8,7 +8,7 @@ import { SkeletonRow } from "../components/Skeleton";
 import { StatTile } from "../components/StatTile";
 import { TicketModal } from "../components/TicketModal";
 import { Toast } from "../components/Toast";
-import { CheckIcon, ReceiptIcon, SearchIcon, ShieldCheckIcon } from "../components/icons";
+import { EquiposIcon, ReceiptIcon, SearchIcon, ShieldCheckIcon } from "../components/icons";
 import { useAdminAuth } from "../lib/AdminAuthContext";
 import {
   apiFetch,
@@ -25,6 +25,14 @@ import "./Conciliacion.css";
 type Filtro = "alerta" | "compartidos" | "dinero" | "sin_leer" | "promocion" | "revisados" | "todos";
 
 const tieneAlerta = (g: Grupo, ...codigos: string[]) => g.alertas.some((a) => codigos.includes(a.codigo));
+
+/** Menor = más urgente: problema → por revisar → sin alertas → ya revisados. */
+function urgencia(g: Grupo): number {
+  if (g.estado === "revisado") return 3;
+  if (g.alertas.some((a) => a.nivel === "alta")) return 0;
+  if (g.alertas.some((a) => a.nivel === "media")) return 1;
+  return 2;
+}
 
 const FILTROS: { id: Filtro; label: string; test: (g: Grupo) => boolean }[] = [
   { id: "alerta", label: "Con alerta", test: (g) => g.estado === "alerta" },
@@ -76,14 +84,16 @@ export function Conciliacion() {
   const visibles = useMemo(() => {
     const test = FILTROS.find((f) => f.id === filtro)!.test;
     const needle = q.trim().toLowerCase();
-    return grupos.filter(
-      (g) =>
-        test(g) &&
-        (!needle ||
-          g.miembros.some((m) =>
-            [m.nombre, m.folio, m.iglesia, m.comp_referencia, m.comp_clave_rastreo].some((v) => v?.toLowerCase().includes(needle))
-          ))
-    );
+    return grupos
+      .filter(
+        (g) =>
+          test(g) &&
+          (!needle ||
+            g.miembros.some((m) =>
+              [m.nombre, m.folio, m.iglesia, m.comp_referencia, m.comp_clave_rastreo].some((v) => v?.toLowerCase().includes(needle))
+            ))
+      )
+      .sort((a, b) => urgencia(a) - urgencia(b) || b.miembros.length - a.miembros.length);
   }, [grupos, filtro, q]);
 
   if (!authLoading && !username) return <Navigate to="/admin" replace />;
@@ -206,7 +216,7 @@ export function Conciliacion() {
             icon={<ReceiptIcon size={18} />}
           />
           <StatTile label="Grupos con alerta" value={r?.grupos_con_alerta ?? "—"} tone="amarillo" icon={<ShieldCheckIcon size={18} />} />
-          <StatTile label="Comparten comprobante" value={r?.grupos_compartidos ?? "—"} icon={<CheckIcon size={18} />} />
+          <StatTile label="Comparten comprobante" value={r?.grupos_compartidos ?? "—"} icon={<EquiposIcon size={18} />} />
           <StatTile
             label={r ? `Dinero leído (esperado ${pesos(r.dinero_esperado_centavos)})` : "Dinero leído"}
             value={r ? pesos(r.dinero_leido_centavos) : "—"}

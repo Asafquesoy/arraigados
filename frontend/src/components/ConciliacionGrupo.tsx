@@ -4,7 +4,7 @@ import type { ComprobanteMiembro, ConciliacionGrupo as Grupo } from "../lib/api"
 import { formatFechaCorta } from "../lib/fecha";
 import { COMPROBANTE_TIPO_LABEL, ComprobanteDatosForm, type ComprobanteDatos } from "./ComprobanteDatosForm";
 import { FieldReveal } from "./FieldReveal";
-import { PencilIcon, ReceiptIcon, ShieldCheckIcon } from "./icons";
+import { PencilIcon, ReceiptIcon } from "./icons";
 import { ToggleSwitch } from "./ToggleSwitch";
 import "./ConciliacionGrupo.css";
 
@@ -41,7 +41,18 @@ export function ConciliacionGrupo({
   const esDinero = grupo.tipo === "transferencia" || grupo.tipo === "deposito";
   const hayAlta = grupo.alertas.some((a) => a.nivel === "alta");
   const revisado = grupo.estado === "revisado";
-  const alertas = grupo.alertas;
+  const hayMedia = grupo.alertas.some((a) => a.nivel === "media");
+  const ORDEN_NIVEL: Record<string, number> = { alta: 0, media: 1, info: 2 };
+  const alertas = [...grupo.alertas].sort((a, b) => (ORDEN_NIVEL[a.nivel] ?? 3) - (ORDEN_NIVEL[b.nivel] ?? 3));
+  const problemas = alertas.filter((a) => a.nivel !== "info");
+  const notas = alertas.filter((a) => a.nivel === "info");
+  const veredicto = revisado
+    ? { clase: "revisado", texto: `Revisado${base.comp_revisado_por ? ` por ${base.comp_revisado_por}` : ""}` }
+    : hayAlta
+      ? { clase: "alta", texto: "Hay un problema" }
+      : hayMedia
+        ? { clase: "media", texto: "Conviene revisar" }
+        : { clase: "ok", texto: "Todo cuadra" };
 
   async function guardar(datos: ComprobanteDatos) {
     if (await onGuardarDatos(grupo, datos)) setEditando(false);
@@ -54,8 +65,16 @@ export function ConciliacionGrupo({
     >
       <header className="conc-grupo-head">
         <div className="conc-grupo-resumen">
+          <p className={`conc-veredicto conc-veredicto--${veredicto.clase}`}>
+            <span className="conc-veredicto-punto" aria-hidden="true" />
+            {veredicto.texto}
+          </p>
           <span className="conc-chip">{grupo.tipo ? COMPROBANTE_TIPO_LABEL[grupo.tipo] : "Sin leer"}</span>
-          <p className="conc-monto mono">{pesos(grupo.monto_centavos)}</p>
+          {grupo.monto_centavos != null ? (
+            <p className="conc-monto mono">{pesos(grupo.monto_centavos)}</p>
+          ) : (
+            <p className="muted conc-sin-monto">Sin monto</p>
+          )}
           <p className="muted conc-fecha">
             {grupo.fecha ? formatFechaCorta(grupo.fecha) : "Sin fecha"}
             {base.comp_banco ? ` · ${base.comp_banco}` : ""}
@@ -74,32 +93,41 @@ export function ConciliacionGrupo({
           ) : (
             <p className="muted conc-cubre-det">{n} {n === 1 ? "registro" : "registros"}</p>
           )}
-          {revisado && (
-            <p className="conc-revisado">
-              <ShieldCheckIcon size={14} /> Revisado{base.comp_revisado_por ? ` por ${base.comp_revisado_por}` : ""}
-            </p>
-          )}
         </div>
       </header>
 
-      {alertas.length > 0 && (
-        <ul className="conc-alertas" aria-label="Alertas">
-          {alertas.map((a) => (
+      {problemas.length > 0 && (
+        <ul className="conc-alertas" aria-label="Problemas detectados">
+          {problemas.map((a) => (
             <li key={a.codigo} className={`conc-alerta conc-alerta--${a.nivel}`}>
+              <span className="conc-alerta-nivel">{a.nivel === "alta" ? "Problema" : "Revisar"}</span>
               {a.texto}
             </li>
           ))}
         </ul>
       )}
 
-      {grupo.por_que_juntos.length > 0 && (
-        <p className="muted conc-juntos">Agrupados por: {grupo.por_que_juntos.join(", ")}.</p>
+      {(notas.length > 0 || grupo.por_que_juntos.length > 0) && (
+        <ul className="conc-notas muted" aria-label="Notas">
+          {notas.map((a) => (
+            <li key={a.codigo}>{a.texto}</li>
+          ))}
+          {grupo.por_que_juntos.length > 0 && <li>Se agruparon por: {grupo.por_que_juntos.join(", ")}.</li>}
+        </ul>
       )}
 
-      <p className="conc-datos mono">
-        {base.comp_referencia && <span>Ref. {base.comp_referencia}</span>}
-        {base.comp_clave_rastreo && <span>Rastreo {base.comp_clave_rastreo}</span>}
-        {base.ocr_fuente && <span className="conc-fuente">{FUENTE_LABEL[base.ocr_fuente] ?? base.ocr_fuente}</span>}
+      <p className="conc-datos">
+        {base.comp_referencia && (
+          <span className="conc-dato">
+            <em>Ref.</em> <span className="mono">{base.comp_referencia}</span>
+          </span>
+        )}
+        {base.comp_clave_rastreo && (
+          <span className="conc-dato">
+            <em>Rastreo</em> <span className="mono">{base.comp_clave_rastreo}</span>
+          </span>
+        )}
+        {base.ocr_fuente && <span className="conc-dato conc-fuente">{FUENTE_LABEL[base.ocr_fuente] ?? base.ocr_fuente}</span>}
       </p>
 
       <ul className="conc-miembros">

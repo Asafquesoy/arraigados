@@ -49,6 +49,12 @@
   line-height: 1.1;
 }
 
+.conc-sin-monto {
+  margin: var(--e-1) 0 0;
+  font-size: var(--t-lg);
+  font-weight: 700;
+}
+
 .conc-fecha,
 .conc-cubre-det,
 .conc-juntos,
@@ -69,16 +75,6 @@
 
 .conc-cubre-num.is-mal {
   color: var(--coral-error);
-}
-
-.conc-revisado {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--e-1);
-  margin: var(--e-2) 0 0;
-  color: var(--verde-claro);
-  font-size: var(--t-sm);
-  font-weight: 600;
 }
 
 .conc-chip {
@@ -125,18 +121,88 @@
   background: rgba(255, 200, 0, 0.09);
 }
 
+.conc-alerta-nivel {
+  display: block;
+  margin-bottom: 2px;
+  font-size: var(--t-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.conc-alerta--alta .conc-alerta-nivel {
+  color: var(--coral-error);
+}
+
+.conc-alerta--media .conc-alerta-nivel {
+  color: var(--amarillo);
+}
+
+.conc-notas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-1);
+  font-size: var(--t-sm);
+}
+
+.conc-notas li::before {
+  content: "· ";
+}
+
+.conc-veredicto {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin: 0 0 var(--e-2);
+  font-size: var(--t-sm);
+  font-weight: 800;
+}
+
+.conc-veredicto-punto {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.conc-veredicto--alta {
+  color: var(--coral-error);
+}
+
+.conc-veredicto--media {
+  color: var(--amarillo);
+}
+
+.conc-veredicto--ok,
+.conc-veredicto--revisado {
+  color: var(--verde-claro);
+}
+
 .conc-datos {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--e-2) var(--e-4);
+  gap: var(--e-2);
   margin: 0;
   font-size: var(--t-xs);
   color: var(--hueso-apagado);
-  overflow-wrap: anywhere;
 }
 
-.conc-fuente {
-  margin-left: auto;
+.conc-dato {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.conc-dato em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--hueso-tenue);
 }
 
 .conc-miembros {
@@ -227,5 +293,19 @@
 @media (max-width: 640px) {
   .conc-cubre {
     text-align: left;
+  }
+
+  .conc-miembro-acciones {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .conc-acciones > .conc-nota {
+    flex-basis: 100%;
+  }
+
+  .conc-acciones > .btn {
+    flex: 1 1 100%;
+    justify-content: center;
   }
 }
