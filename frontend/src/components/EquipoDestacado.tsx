@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { EquipoBrief, TipoParticipante } from "../lib/api";
+import { textoSobre } from "../lib/colorEquipo";
 import "./EquipoDestacado.css";
 
 interface EquipoDestacadoProps {
@@ -8,18 +9,6 @@ interface EquipoDestacadoProps {
   tipo?: TipoParticipante | null;
   /** "bloque" = mosaico grande (tarjeta de Recepción); "pastilla" = en línea, para listas. */
   variante?: "bloque" | "pastilla";
-}
-
-/** Texto oscuro o claro según el brillo del color del equipo, para que el nombre
- *  se lea sobre cualquier color (el amarillo y el azul oscuro piden textos opuestos). */
-function textoSobre(hex: string): string {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return "var(--hueso)";
-  const n = parseInt(m[1], 16);
-  const r = (n >> 16) & 255;
-  const g = (n >> 8) & 255;
-  const b = n & 255;
-  return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? "var(--corteza)" : "var(--hueso)";
 }
 
 /**

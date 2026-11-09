@@ -336,104 +336,19 @@
 }
 
 /* ---- Tarjetas (móvil / tablet) ----
-   Reestructuradas con cabecera (nombre/folio/chips) siempre visible, el
-   estado de pago, y el resto de los datos en un detalle plegable — mismo
-   patrón etiqueta/valor que .admin-table-detail-grid del escritorio, para
-   que ambas vistas nunca vuelvan a mostrar campos distintos. */
-.admin-row {
-  padding: 1.1rem 1.4rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-
-.admin-row-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  min-width: 0;
-}
-
-.admin-row-name {
-  font-weight: 700;
-  font-size: 1.05rem;
-}
-
-.admin-row-folio {
-  font-size: var(--t-xs);
-}
-
-.admin-row-chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.admin-row-iglesia {
-  font-size: 0.85rem;
-}
-
-.admin-ticket-btn {
-  white-space: nowrap;
-  padding: 0.6rem 1.1rem;
-  font-size: 0.85rem;
-}
-
-.admin-row-status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e-3);
-  flex-shrink: 0;
-}
-
-.admin-row-sin-recibo {
-  font-size: var(--t-sm);
-}
-
-.admin-row-detalle-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  width: 100%;
-  min-height: 2.75rem;
-  padding: 0.6rem 1rem;
-  border: 1px solid var(--tarjeta-borde);
-  border-radius: var(--radio-s);
-  background: transparent;
-  color: var(--hueso-tenue);
-  font-size: var(--t-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background var(--dur-rapida) ease, color var(--dur-rapida) ease;
-}
-
-.admin-row-detalle-toggle:hover {
-  background: var(--tarjeta-fondo-alta);
-  color: var(--hueso);
-}
-
-.admin-row-detalle-toggle svg {
-  transition: transform var(--dur-rapida) var(--ease-suave);
-}
-
-.admin-row-detalle-toggle svg.is-open {
-  transform: rotate(180deg);
-}
-
-.admin-row-detalle {
-  overflow: hidden;
-}
-
-.admin-row-detalle .admin-table-detail-grid {
-  padding: 0.2rem 0 1.1rem;
-}
-
-.admin-row-detalle .admin-row-actions {
-  padding-bottom: 0.2rem;
+   Viven en components/AdminCamperCard.css. Aquí solo queda la rejilla de la
+   lista: una columna en teléfono, dos en tablet (la tabla toma el relevo a
+   partir de 1024px). `align-items: start` para que abrir el detalle de una
+   tarjeta no estire a su vecina. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .admin-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .admin-list > .admin-empty {
+    grid-column: 1 / -1;
+  }
 }
 
 .admin-pagination {

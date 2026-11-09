@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react
 import { Navigate } from "react-router-dom";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { AdminAjustes } from "../components/AdminAjustes";
+import { AdminCamperCard } from "../components/AdminCamperCard";
 import { AdminComprobanteStats } from "../components/AdminComprobanteStats";
 import { AdminRegistroToggle } from "../components/AdminRegistroToggle";
 import { AdminResumen } from "../components/AdminResumen";
@@ -542,105 +543,24 @@ export function AdminPanel() {
 
         {!loading &&
           !isDesktop &&
-          data?.items.map((camper) => {
-            const abierto = expandido === camper.id;
-            return (
-              <div className="glass-card admin-row" key={camper.id}>
-                <div className="admin-row-header">
-                  <p className="admin-row-name">{camper.nombre}</p>
-                  <p className="muted mono admin-row-folio">{camper.folio}</p>
-                  <div className="admin-row-chips">
-                    <span className="admin-chip-tipo">{camper.tipo ? TIPO_LABEL[camper.tipo] : "—"}</span>
-                    {camper.zona && <span className="admin-chip-tipo">{ZONA_LABEL[camper.zona]}</span>}
-                    {camper.equipo ? (
-                      <span className="admin-equipo-chip">
-                        <span className="admin-equipo-dot" style={{ background: camper.equipo.color }} />
-                        {camper.equipo.nombre}
-                      </span>
-                    ) : camper.es_staff ? (
-                      <span className="admin-chip-tipo">Staff</span>
-                    ) : (
-                      <span className="muted">Sin equipo</span>
-                    )}
-                    {camper.asistio && <span className="admin-asistio-si">✓ Llegó</span>}
-                  </div>
-                  <p className="muted admin-row-iglesia">{camper.iglesia}</p>
-                </div>
-
-                <div className="admin-row-status">
-                  <ToggleSwitch
-                    checked={camper.pago_verificado}
-                    disabled={!puedeVerificarPago}
-                    onChange={(checked) => togglePago(camper, checked)}
-                    label={camper.pago_verificado ? "Pagado / Verificado" : "Pendiente"}
-                  />
-                  {camper.tiene_comprobante ? (
-                    <button
-                      className="btn btn-ghost admin-ticket-btn"
-                      onClick={() => setTicketModal({ id: camper.id, nombre: camper.nombre })}
-                    >
-                      <ReceiptIcon size={16} /> Ver comprobante
-                    </button>
-                  ) : (
-                    <span className="muted admin-row-sin-recibo">Sin comprobante</span>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  className="admin-row-detalle-toggle"
-                  aria-expanded={abierto}
-                  onClick={() => toggleDetalle(camper.id)}
-                >
-                  {abierto ? "Ocultar detalle" : "Ver detalle"}
-                  <ChevronDownIcon size={16} className={abierto ? "is-open" : ""} />
-                </button>
-
-                <AnimatePresence initial={false}>
-                  {abierto && (
-                    <m.div
-                      className="admin-row-detalle"
-                      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
-                      animate={
-                        reduceMotion
-                          ? { opacity: 1, transition: { duration: 0.15 } }
-                          : { opacity: 1, height: "auto", transition: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }
-                      }
-                      exit={
-                        reduceMotion
-                          ? { opacity: 0, transition: { duration: 0.15 } }
-                          : { opacity: 0, height: 0, transition: { duration: 0.2, ease: [0.7, 0, 0.84, 0] } }
-                      }
-                    >
-                      <CamperDetalle camper={camper} showShirtSize={showShirtSize} />
-                      {(puedeEditar || puedeBorrar) && (
-                        <div className="admin-row-actions">
-                          {puedeEditar && (
-                            <button className="btn btn-ghost admin-ticket-btn" onClick={() => setEditando(camper)}>
-                              <PencilIcon size={16} /> Editar
-                            </button>
-                          )}
-                          {puedeEditar && (
-                            <button className="btn btn-ghost admin-ticket-btn" onClick={() => toggleStaff(camper)}>
-                              {camper.es_staff ? "Quitar de staff" : "Marcar como staff"}
-                            </button>
-                          )}
-                          {puedeBorrar && (
-                            <ConfirmButton
-                              label="Borrar registro"
-                              confirmLabel="¿Seguro? Sí, borrar"
-                              className="admin-delete-btn"
-                              onConfirm={() => borrarRegistro(camper)}
-                            />
-                          )}
-                        </div>
-                      )}
-                    </m.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
+          data?.items.map((camper) => (
+            <AdminCamperCard
+              key={camper.id}
+              camper={camper}
+              abierto={expandido === camper.id}
+              reduceMotion={reduceMotion}
+              showShirtSize={showShirtSize}
+              puedeVerificarPago={puedeVerificarPago}
+              puedeEditar={puedeEditar}
+              puedeBorrar={puedeBorrar}
+              onToggleDetalle={() => toggleDetalle(camper.id)}
+              onTogglePago={(checked) => togglePago(camper, checked)}
+              onVerComprobante={() => setTicketModal({ id: camper.id, nombre: camper.nombre })}
+              onEditar={() => setEditando(camper)}
+              onToggleStaff={() => toggleStaff(camper)}
+              onBorrar={() => borrarRegistro(camper)}
+            />
+          ))}
       </div>
 
       {data && totalPages > 1 && (

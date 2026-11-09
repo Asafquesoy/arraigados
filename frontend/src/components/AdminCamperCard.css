@@ -1,0 +1,241 @@
+/* Tarjeta de campero (<1024px). La franja izquierda y el avatar toman el color del
+   equipo (--color-equipo); lo más importante —quién es, de qué equipo, si pagó—
+   se lee de un vistazo sin abrir el detalle. */
+.admin-row {
+  position: relative;
+  /* Recorta con la forma redondeada de la tarjeta: así la franja de color de la
+     izquierda sigue la curva de las esquinas en vez de asomarse fuera de ella. */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.1rem 1.25rem 1.1rem 1.5rem;
+}
+
+.admin-row::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: var(--color-equipo);
+}
+
+.admin-row-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+.admin-row-avatar {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--gradiente-raiz);
+  color: var(--corteza);
+  font-family: var(--fuente-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 0 0 2px rgba(247, 243, 227, 0.3);
+}
+
+.admin-row-id {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-row-name {
+  margin: 0;
+  font-size: var(--t-lg);
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.admin-row-iglesia {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0;
+  font-size: var(--t-sm);
+  color: var(--hueso-tenue);
+}
+
+.admin-row-iglesia svg {
+  flex-shrink: 0;
+  margin-top: 0.2em;
+  color: var(--amarillo);
+}
+
+.admin-row-folio {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  font-size: var(--t-xs);
+  color: var(--hueso-apagado);
+}
+
+.admin-row-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.admin-row-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: var(--tarjeta-fondo-alta);
+  border: 1px solid var(--tarjeta-borde);
+  color: var(--hueso-tenue);
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+
+/* El equipo es lo que se busca primero: más grande y con borde del color. */
+.admin-row-pill--equipo {
+  padding: 0.35rem 0.8rem;
+  border-color: var(--color-equipo);
+  color: var(--hueso);
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
+
+.admin-row-pill-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(247, 243, 227, 0.25);
+}
+
+.admin-row-pill--vacio {
+  border-style: dashed;
+  color: var(--hueso-apagado);
+}
+
+.admin-row-pill--llego {
+  background: rgba(127, 181, 57, 0.16);
+  border-color: rgba(127, 181, 57, 0.45);
+  color: var(--verde-claro);
+}
+
+/* Estado de pago: verde si está verificado, ámbar si falta — con el interruptor
+   a la derecha para quien puede verificar. */
+.admin-row-pago {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radio-m);
+  border: 1px solid transparent;
+}
+
+.admin-row-pago.is-ok {
+  background: rgba(127, 181, 57, 0.12);
+  border-color: rgba(127, 181, 57, 0.35);
+}
+
+.admin-row-pago.is-pendiente {
+  background: rgba(245, 166, 35, 0.12);
+  border-color: rgba(245, 166, 35, 0.4);
+}
+
+.admin-row-pago-icono {
+  flex-shrink: 0;
+}
+
+.admin-row-pago.is-ok .admin-row-pago-icono {
+  color: var(--verde-claro);
+}
+
+.admin-row-pago.is-pendiente .admin-row-pago-icono {
+  color: var(--ambar);
+}
+
+.admin-row-pago-texto {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.admin-row-pago-texto strong {
+  font-size: var(--t-base);
+}
+
+.admin-row-pago-texto span {
+  font-size: var(--t-xs);
+  color: var(--hueso-tenue);
+}
+
+/* El texto del interruptor es solo para lectores de pantalla: la tarjeta ya dice el estado. */
+.admin-row-pago .toggle-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.admin-row-acciones {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+}
+
+.admin-row-btn,
+.admin-row-sin-recibo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.8rem;
+  font-size: var(--t-sm);
+}
+
+.admin-row-btn {
+  padding-inline: 1.2rem;
+}
+
+.admin-row-sin-recibo {
+  color: var(--hueso-apagado);
+  border: 1px dashed var(--tarjeta-borde);
+  border-radius: 999px;
+}
+
+.admin-row-btn svg.is-open {
+  transform: rotate(180deg);
+}
+
+.admin-row-btn svg {
+  transition: transform var(--dur-rapida) var(--ease-suave);
+}
+
+.admin-row-detalle {
+  overflow: hidden;
+}
+
+/* Dos columnas en la tarjeta (la rejilla de escritorio es auto-fit y en teléfono
+   caía a una sola columna larga). */
+.admin-row-detalle .admin-table-detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1rem;
+  padding: 0.4rem 0 1.1rem;
+  border-top: 1px solid var(--tarjeta-borde);
+  margin-top: 0.2rem;
+  padding-top: 1rem;
+}
+
+.admin-row-detalle .admin-row-actions {
+  padding-bottom: 0.2rem;
+}

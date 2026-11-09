@@ -219,7 +219,9 @@ this shape exists to avoid.
   `expandido` state, `AnimatePresence`/`m.div` height animation respecting `useReducedMotion()`)
   instead of adding columns — adding a field back as a column is what caused the horizontal-scroll
   bug this pattern replaced. That detail's contents are `components/CamperDetalle.tsx`, shared with
-  the sub-1024px card view's own collapsible detail (`admin-row-detalle` in `AdminPanel.tsx`) so the
+  the sub-1024px card view's own collapsible detail (`components/AdminCamperCard.tsx` — avatar with
+  initials, side stripe and team pill in the team's color, a green/amber payment strip with the
+  verification toggle, comprobante/detalle buttons; 2 columns of cards from 640px) so the
   two layouts can never again show different fields for the same registro — which fields it shows
   depends on `tipo`: teléfono only for `CONSEJERO`, bautismo only for `CAMPERO` (mirroring the same
   rule in `lib/camperForm.ts::fieldError`, the registration form's source of truth for which fields
