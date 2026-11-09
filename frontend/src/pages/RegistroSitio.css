@@ -8,6 +8,13 @@
 }
 
 .registro-sitio-card {
+  /* Cada .glass-card tiene backdrop-filter, o sea su propio contexto de apilado:
+     el z-index de la lista flotante de iglesias (IglesiaField) solo vale DENTRO
+     de esta tarjeta, y las tarjetas de "Registrados ahora", que vienen después,
+     se pintaban encima de ella. Con position + z-index la tarjeta entera queda
+     por encima de las siguientes (mismo token que usa la lista). */
+  position: relative;
+  z-index: var(--z-desplegable);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
