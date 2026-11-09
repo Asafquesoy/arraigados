@@ -1,0 +1,78 @@
+.equipo-destacado {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  border-radius: var(--radio-m);
+  /* Borde sutil para que un color muy oscuro o muy claro no se pierda en el fondo. */
+  box-shadow: inset 0 0 0 2px rgba(247, 243, 227, 0.35);
+}
+
+.equipo-destacado-etiqueta {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.equipo-destacado-nombre {
+  font-family: var(--fuente-display);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.equipo-destacado-motivo {
+  margin-top: 0.3rem;
+  font-size: var(--t-xs);
+  line-height: 1.25;
+  opacity: 0.85;
+}
+
+/* Mosaico de la tarjeta de Recepción: en celular una franja a todo lo ancho
+   arriba de la tarjeta, en escritorio un mosaico fijo a la izquierda. */
+.equipo-destacado--bloque {
+  align-items: center;
+  text-align: center;
+  padding: 0.9rem 1rem;
+}
+
+.equipo-destacado--bloque .equipo-destacado-nombre {
+  font-size: clamp(1.7rem, 1.2rem + 2vw, 2.3rem);
+}
+
+@media (min-width: 768px) {
+  .equipo-destacado--bloque {
+    width: 190px;
+    flex-shrink: 0;
+    align-self: stretch;
+  }
+}
+
+/* En línea, para filas de lista (Registrados ahora). */
+.equipo-destacado--pastilla {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+}
+
+.equipo-destacado--pastilla .equipo-destacado-nombre {
+  font-size: var(--t-lg);
+}
+
+.equipo-destacado--vacio {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--hueso-tenue);
+  box-shadow: inset 0 0 0 2px var(--tarjeta-borde);
+  border: 0;
+}
+
+.equipo-destacado--vacio .equipo-destacado-nombre {
+  font-size: var(--t-lg);
+}
+
+.equipo-destacado--bloque.equipo-destacado--vacio .equipo-destacado-nombre {
+  font-size: var(--t-lg);
+}

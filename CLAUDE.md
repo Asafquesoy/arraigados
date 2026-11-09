@@ -425,7 +425,11 @@ and read `stats/*` (router-level auth only) but get 403 on `/pago`, `DELETE`, `/
 non-technical staff at the entrance table — one big search box (name/iglesia/ciudad/teléfono/folio,
 the same broadened `_apply_filters` search used by the admin panel), three segmented filter
 buttons instead of a `<select>`, and large touch-friendly cards with a single "Marcar llegada"
-button (`ConfirmButton` for the undo) — no table view, unlike `AdminPanel.tsx`.
+button (`ConfirmButton` for the undo) — no table view, unlike `AdminPanel.tsx`. The camper's
+**team goes first and big** (`components/EquipoDestacado.tsx`: a tile filled with the team's color and the name in
+the display font, text dark/light chosen by the color's brightness) because the name-badge (gafete) is picked from
+it; without a team it says why (Staff / consejero / "Avisa al admin"). The same component, `variante="pastilla"`,
+is the team label in `RegistroSitio.tsx`'s "Registrados ahora" list.
 `AdminPanel.tsx` guards `RECEPCION` accounts straight back to `/admin/recepcion` and, for every
 other role, surfaces attendance read-only (a "Llegó" column/chip and an asistencia filter) since
 marking arrivals is recepción's job, not the organizing panel's.

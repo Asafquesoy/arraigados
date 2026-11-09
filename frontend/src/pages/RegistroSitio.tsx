@@ -3,6 +3,7 @@ import { AnimatePresence } from "motion/react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { BautismoFechaField } from "../components/BautismoFechaField";
 import { ConfirmButton } from "../components/ConfirmButton";
+import { EquipoDestacado } from "../components/EquipoDestacado";
 import { FieldReveal } from "../components/FieldReveal";
 import { IglesiaField } from "../components/IglesiaField";
 import { Reveal } from "../components/Reveal";
@@ -627,13 +628,11 @@ export function RegistroSitio() {
                   <span className="mono">{r.folio}</span> · {r.iglesia}
                 </p>
               </div>
-              {r.equipoNombre ? (
-                <span className="registro-sitio-chip" style={{ borderColor: r.equipoColor ?? undefined }}>
-                  {r.equipoNombre}
-                </span>
-              ) : (
-                <span className="registro-sitio-chip">{r.tipo === "CONSEJERO" ? "Consejero" : "Sin equipo"}</span>
-              )}
+              <EquipoDestacado
+                variante="pastilla"
+                equipo={r.equipoNombre && r.equipoColor ? { id: r.id, nombre: r.equipoNombre, color: r.equipoColor } : null}
+                tipo={r.tipo}
+              />
               <ConfirmButton label="Deshacer" confirmLabel="¿Seguro?" className="btn-sm" onConfirm={() => void deshacer(r)} />
             </div>
           ))}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { ConfirmButton } from "../components/ConfirmButton";
+import { EquipoDestacado } from "../components/EquipoDestacado";
 import { Reveal } from "../components/Reveal";
 import { SkeletonRow } from "../components/Skeleton";
 import { StatTile } from "../components/StatTile";
@@ -225,6 +226,8 @@ export function Recepcion() {
                 key={camper.id}
                 className={`glass-card recepcion-card ${camper.asistio ? "recepcion-card--llego" : ""}`}
               >
+                <EquipoDestacado equipo={camper.equipo} esStaff={camper.es_staff} tipo={camper.tipo} />
+
                 <div className="recepcion-card-info">
                   <p className="recepcion-card-name">{camper.nombre}</p>
                   <p className="mono muted recepcion-card-folio">{camper.folio}</p>
@@ -243,11 +246,6 @@ export function Recepcion() {
                     {showShirtSize && camper.talla_camisa && (
                       <span className="recepcion-chip">
                         Talla {camper.talla_camisa === "OTRA" ? camper.talla_otra || "Otra" : camper.talla_camisa}
-                      </span>
-                    )}
-                    {camper.equipo && (
-                      <span className="recepcion-chip" style={{ borderColor: camper.equipo.color }}>
-                        {camper.equipo.nombre}
                       </span>
                     )}
                     <span className={`recepcion-chip ${camper.pago_verificado ? "recepcion-chip--verde" : "recepcion-chip--ambar"}`}>
