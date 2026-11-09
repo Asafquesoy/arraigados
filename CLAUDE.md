@@ -541,6 +541,67 @@ wrapped in `try/except Exception` that only logs — a balancing failure must ne
 registration itself, which already committed; anyone left unassigned this way just shows up under
 "Sin equipo" in `Equipos.tsx`, recoverable with "Repartir a todos".
 
+### Registro en el campamento (`/admin/registro-sitio`) y concurrencia
+
+Para quien llega sin haberse registrado (se captura por iglesia completa, 2–3 personas a la vez).
+Roles: Admin y `RECEPCION`.
+
+- **Endpoint**: `POST /api/admin/registros` (`admin.py::crear_registro_sitio`, JSON `RegistroSitioCreate`). La
+  persona queda con llegada marcada (`asistio*`) y **pago verificado** (más un evento `PAGO_VERIFICADO` con
+  `origen: registro_en_sitio`), sin comprobante, y `campers.registrado_por` (migración `0016`, null = se registró
+  sola por el formulario público) guarda quién la dio de alta. Ignora `registro_abierto`/`pedir_comprobante` y no
+  tiene rate limit. La fecha de bautismo es **opcional** (`validar_datos_camper(exigir_fecha_bautismo=False)`;
+  mes sin año o al revés sigue siendo 422). La pantalla no pide promoción ni fecha de pago (se manda la de hoy).
+- **Duplicados**: sin `forzar`, un nombre igual (`registro_sitio.py::clave_nombre`: sin acentos/mayúsculas/orden)
+  responde 409 con `detail = {codigo: "POSIBLE_DUPLICADO", mensaje, existentes: [CamperOut]}` (`ApiError.detail`
+  lo conserva en el frontend). `GET /api/admin/registros/similares?nombre=` alimenta el aviso "¿Ya está
+  registrado?" mientras se escribe. "Deshacer" = `DELETE /registros/{id}`, que Recepción solo puede usar sobre lo
+  que registró su propia cuenta.
+- **Candado de equipos** (`concurrencia.py::candado_equipos`): `RLock` + `pg_advisory_xact_lock` en Postgres. Lo toman
+  `asignar_equipo_auto` (`routers/equipos.py`, usado por el alta pública y la de sitio), `repartir_equipos` y todo el
+  alta en sitio (chequeo de duplicados + insert + equipo). Sin él, dos altas simultáneas decidían equipo con la misma
+  foto. Asume **un solo worker** de uvicorn (como `ratelimit.py`); el advisory lock cubre el caso de varios, pero el
+  rate limit en memoria no. `guardar_con_folio_unico` reintenta si el folio aleatorio choca.
+- **Marcar llegada es idempotente**: si dos recepcionistas marcan a la misma persona, la primera marca manda
+  (`asistio_en/por` no se pisan).
+- **Proxy headers**: el `Dockerfile` arranca uvicorn con `--proxy-headers --forwarded-allow-ips=*`. Antes
+  `request.client.host` era siempre la IP del Nginx del contenedor, así que "10 registros / 10 min" y "8 logins / 5
+  min" eran globales para todo el sitio (en el campamento, con wifi compartido, se bloquean entre sí). Ojo: ahora se
+  confía en `X-Forwarded-For`; el nginx del host debe mandarlo.
+- **Medido (2026-11-08, copia de datos reales, Postgres 16 real, 1 worker)**: 25 de una misma iglesia → 2–3 por
+  equipo en los 10 equipos, tamaños de equipo con rango 2; 3 operadores × 30 + 2 marcando llegadas + "Repartir a
+  todos" a mitad → 0 errores 5xx, nombres solapados creados una sola vez (409), todos con equipo, equipos de 18–19.
+  `repartir()` con ~200 personas ≈ 1 s (3.7 s con otros registrando a la vez).
+- **El tamaño es una regla dura, no solo un costo** (`equipos_balance.py`, `HOLGURA_TAMANO = 0`): con
+  `Criterios.tamano` encendido `elegir_equipo` solo considera los equipos de **menor tamaño** en ese momento, así que
+  ningún equipo queda con más de 1 persona de diferencia aunque lleguen muchas de una en una (a quien se registra en
+  sitio se le dice su equipo al instante, no se puede "arreglar" con un reparto general después). `_refinar` tampoco
+  acepta movimientos que ensanchen esa diferencia. Medido con 40 secuencias de ~110 altas sobre los 113 reales:
+  rango de tamaños **2.0 de media y hasta 3** con la política anterior → **0–1 siempre**. Costo: iglesias y sexo se
+  mezclan algo peor (exceso de iglesia 0.05 → 2.8 en total por secuencia; spread de % mujeres 9 → 16 puntos), porque
+  la última persona de cada "ronda" solo puede ir a los equipos que quedan. `HOLGURA_TAMANO = 1` mezcla casi igual
+  que antes (exceso 0.6, % mujeres 11) pero permite diferencia de hasta 2. Con el interruptor de tamaño apagado en
+  /admin/equipos no se aplica nada de esto.
+  **Plan del campamento: "Repartir a todos" el día antes y ese día solo altas una por una.** Arrancando de un reparto
+  general recién hecho (rango inicial 0–1), 40 secuencias de ~110 altas: tamaños siempre 0–1 (la política anterior,
+  sin regla dura, se disparaba hasta 7 de diferencia). La mezcla por iglesia depende de cuántos registradores
+  capturan a la vez: **1 → perfecta** (exceso 0), 2 → 2.6, 3 → 3.8 en total por secuencia. Edad (≈2.9 años entre el
+  equipo más joven y el más grande vs 1.7 de un reparto general), % mujeres (≈4 personas vs 2.6) y bautismo quedan
+  peores que con un reparto general completo: es el costo de decidir en línea con el tamaño parejo como prioridad.
+- **Pool de conexiones** (`database.py`): 20 + 30 (Postgres). Con el de fábrica (5 + 10) una ráfaga de ~25 clientes
+  lo agotaba (`QueuePool timeout`, 500 y esperas de 30 s) porque cada petición retiene su conexión mientras espera el
+  candado. Simulación del estrés (20 registradores + 4 marcadores + 3 observadores sin pausas, ~280 registrados):
+  0 errores, 30 conexiones máx., alta p50 1.3 s; día normal (3 + 2 + 1 con pausas): alta p50 40–70 ms, máx. 0.9 s
+  mientras corre "Repartir a todos" (≈3 s).
+- **Aviso de datos sin guardar** (`lib/useAvisoSalida.ts`): `beforeunload` + un `click` en captura que pregunta con
+  `confirm` antes de seguir un enlace interno (`BrowserRouter` no tiene `useBlocker`); anclas a la misma ruta y
+  enlaces externos pasan. Lo usan `RegistroSitio.tsx` (cuenta solo los campos de la persona; tipo/zona/iglesia se
+  conservan) y `FormularioRegistro.tsx`. El botón "atrás" no se puede interceptar: por eso `RegistroSitio.tsx`
+  guarda y restaura un borrador en `sessionStorage` (`arraigados-registro-sitio-borrador`).
+- `Recepcion.tsx` refresca cifras/lista cada 20 s y al volver a la pestaña; `Equipos.tsx` recarga la distribución al
+  volver a la pestaña. `camperForm.ts::HOY` ya es fecha local (antes UTC: tras las 6 pm en México "hoy" se rechazaba
+  como futuro).
+
 ### Conciliación de comprobantes (`/admin/conciliacion`)
 
 Lee cada comprobante para sacar monto/fecha/referencia, agrupa los registros que comparten una
@@ -662,6 +723,27 @@ Order that has worked every time:
    right before "Application startup complete" is just the old process shutting down.
 The registration form is open to the public, so a deploy means a few seconds of downtime; prefer
 quiet moments.
+
+**Lo aprendido al subir la conciliación (2026-11-05, migraciones `0014`+`0015`):**
+- **No subir la base de datos local a producción.** Primero se compara (por SSH, solo lectura: `count(*)`,
+  `max(created_at)`, pagos verificados, `alembic_version`) y se sube solo el código. La copia local
+  solo traía lecturas de la IA, que se reproducen gratis; subirla pisaría registros, pagos verificados y
+  cuentas que entren después de la copia. Las migraciones solo agregan columnas/tablas, no tocan datos.
+- **`GEMINI_API_KEY` debe estar en el `.env` del Droplet** (el del servidor, no solo el local): `deploy.sh`
+  reinicia el backend y ahí la toma. Sin ella la lectura cae al Tesseract (~74 % de acierto en monto).
+  Pasarla por `stdin` (`printf ... | ssh ... 'cat >> .env'`), con copia previa del `.env`, para no
+  imprimirla ni dejarla en la línea de comandos.
+- **Leer los comprobantes tras el deploy** sin contraseña de admin:
+  `docker compose exec -T backend python -m app.procesar_comprobantes` (solo pendientes/ERROR; `--todos` relee
+  todo). Son ~15 min para 112 (Gemini devuelve 503 a ratos y se reintenta); un registro que cayó al lector local
+  se reintenta solo con `procesar_uno` sobre ese folio. Correrlo y `deploy.sh` en segundo plano con
+  `setsid nohup ... > /root/log 2>&1 < /dev/null &` y sondear el log aparte — **no** encadenar
+  `a && b && c &`, porque el `&` toma toda la cadena y el `ssh` se cuelga hasta el timeout.
+- **Cotejar** la lectura de producción con la local por folio (tipo, monto, fecha, estado) para confirmar que
+  la IA leyó lo mismo; las diferencias pequeñas (una fecha que antes no se leyó) son normales.
+- **Producción ya tiene historial real** (`comprobante_eventos`): el equipo usa `/admin/conciliacion` a los
+  pocos minutos del deploy, así que no asumir que la tabla está vacía ni borrarla al probar.
+- Las credenciales SSH viven en el `.env` raíz local (gitignored); nunca van al repo ni a este archivo.
 
 ### Copying production data into the dev database (for realistic tests)
 

@@ -16,6 +16,7 @@ import { ApiError } from "../../lib/api";
 import type { Sexo, Zona } from "../../lib/api";
 import { fieldError, HOY, INITIAL_STATE, type FieldKey, type FormState } from "../../lib/camperForm";
 import { useSettings } from "../../lib/SettingsContext";
+import { useAvisoSalida } from "../../lib/useAvisoSalida";
 import "./FormularioRegistro.css";
 
 const STEPS = ["Quién eres", "De dónde vienes", "Tu pago"];
@@ -48,6 +49,11 @@ export function FormularioRegistro() {
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
+
+  // Datos a medias: avisa antes de cerrar/recargar o de tocar un enlace del menú.
+  // Tras enviar con éxito se navega por código (navigate), que no pasa por el aviso.
+  const hayCambios = ticket !== null || (Object.keys(INITIAL_STATE) as (keyof FormState)[]).some((k) => form[k] !== INITIAL_STATE[k]);
+  useAvisoSalida(hayCambios && !submitting);
 
   function validateStep(index: number): boolean {
     const fields = STEP_FIELDS[index];

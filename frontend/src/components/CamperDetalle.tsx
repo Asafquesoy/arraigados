@@ -83,6 +83,12 @@ export function CamperDetalle({ camper, showShirtSize }: CamperDetalleProps) {
           </span>
         </div>
       )}
+      {camper.registrado_por && (
+        <div className="admin-table-detail-item">
+          <span className="admin-table-detail-label">Registrado en el campamento por</span>
+          <span>{camper.registrado_por}</span>
+        </div>
+      )}
       <div className="admin-table-detail-item">
         <span className="admin-table-detail-label">Registrado el</span>
         <span className="mono">{formatFechaHora(camper.created_at)}</span>

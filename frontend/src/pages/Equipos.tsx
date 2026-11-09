@@ -115,6 +115,22 @@ export function Equipos() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, username]);
 
+  // Mientras esta pantalla está abierta otras personas registran y reparten:
+  // al volver a la pestaña se recarga la distribución para no mirar equipos viejos.
+  useEffect(() => {
+    if (authLoading || !username) return;
+    function alVolver() {
+      if (document.visibilityState === "visible" && movingId === null && busyId === null && !repartiendo) {
+        fetchDistribucion().catch(() => {
+          /* se conserva lo que ya estaba en pantalla */
+        });
+      }
+    }
+    document.addEventListener("visibilitychange", alVolver);
+    return () => document.removeEventListener("visibilitychange", alVolver);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, username, movingId, busyId, repartiendo]);
+
   const equipos = useMemo(() => dist?.equipos ?? [], [dist]);
 
   // Si el equipo seleccionado se borró (o se acaba de cargar), regresa a Resumen.

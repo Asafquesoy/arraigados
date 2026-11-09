@@ -2,18 +2,19 @@ import logging
 from datetime import date
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..equipos_balance import Criterios, construir_contexto, elegir_equipo
 from ..iglesias import canonicalizar_iglesia, iglesias_de_zona
-from ..models import AppSettings, Camper, Equipo, Sexo, TallaCamisa, TipoParticipante, Zona
+from ..models import AppSettings, Camper, Sexo, TallaCamisa, TipoParticipante, Zona
 from ..procesar_comprobantes import procesar_registro_nuevo
 from ..ratelimit import rate_limit
+from ..registro_sitio import guardar_con_folio_unico
 from ..schemas import CamperCreateResponse
 from ..storage import save_ticket
 from ..validacion_camper import normalizar_datos_camper, validar_datos_camper
-from .equipos import criterios_desde_settings
+from .equipos import asignar_equipo_auto
 
 logger = logging.getLogger("arraigados")
 
@@ -110,8 +111,7 @@ async def crear_registro(
         ticket_path=filename,
         ticket_mime=mime,
     )
-    db.add(camper)
-    db.commit()
+    await run_in_threadpool(guardar_con_folio_unico, db, camper)
     db.refresh(camper)
 
     # Lectura del comprobante (huellas + monto/fecha/referencia) después de
@@ -124,20 +124,10 @@ async def crear_registro(
     # equipo", recogible después con el botón "Repartir a todos". Los
     # consejeros quedan siempre fuera de esto: solo entran a un equipo si un
     # admin los mueve a mano (mismo criterio que equipos_balance.repartir()).
+    # Va en el threadpool porque puede esperar el candado de equipos (otro alta
+    # o un reparto en curso) y eso no debe parar el event loop.
     try:
-        if tipo == TipoParticipante.CAMPERO and (settings_row.equipos_auto if settings_row else True):
-            equipos = db.query(Equipo).order_by(Equipo.orden.asc(), Equipo.id.asc()).all()
-            if equipos:
-                criterios = criterios_desde_settings(settings_row) if settings_row else Criterios()
-                participantes = db.query(Camper).filter(Camper.es_staff.is_(False)).all()
-                equipos_miembros: dict[int, list[Camper]] = {e.id: [] for e in equipos}
-                for c in participantes:
-                    if c.equipo_id in equipos_miembros:
-                        equipos_miembros[c.equipo_id].append(c)
-                contexto = construir_contexto(participantes, date.today())
-                elegido = elegir_equipo(camper, equipos, equipos_miembros, contexto, criterios)
-                camper.equipo_id = elegido.id
-                db.commit()
+        await run_in_threadpool(asignar_equipo_auto, db, camper, settings_row)
     except Exception:
         db.rollback()
         logger.exception("No se pudo asignar equipo automáticamente al folio %s", camper.folio)

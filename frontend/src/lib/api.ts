@@ -2,19 +2,27 @@ const BASE = "/api";
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  /** `detail` tal cual lo mandó el backend cuando no es un texto (p. ej. el 409
+   *  de posible duplicado, que trae la lista de quienes ya existen). */
+  detail?: unknown;
+  constructor(message: string, status: number, detail?: unknown) {
     super(message);
     this.status = status;
+    this.detail = detail;
   }
 }
 
-async function parseErrorMessage(res: Response): Promise<string> {
+async function parseError(res: Response): Promise<{ message: string; detail?: unknown }> {
+  const generico = "Ocurrió un error inesperado.";
   try {
     const data = await res.json();
-    if (typeof data.detail === "string") return data.detail;
-    return "Ocurrió un error inesperado.";
+    if (typeof data.detail === "string") return { message: data.detail };
+    if (data.detail && typeof data.detail === "object" && typeof data.detail.mensaje === "string") {
+      return { message: data.detail.mensaje, detail: data.detail };
+    }
+    return { message: generico };
   } catch {
-    return "Ocurrió un error inesperado.";
+    return { message: generico };
   }
 }
 
@@ -29,7 +37,8 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   });
 
   if (!res.ok) {
-    throw new ApiError(await parseErrorMessage(res), res.status);
+    const { message, detail } = await parseError(res);
+    throw new ApiError(message, res.status, detail);
   }
 
   if (res.status === 204) return undefined as T;
@@ -77,6 +86,8 @@ export interface CamperOut {
   equipo: EquipoBrief | null;
   equipo_fijado: boolean;
   es_staff: boolean;
+  /** Cuenta que lo dio de alta en el campamento; null si se registró solo. */
+  registrado_por: string | null;
 }
 
 export interface CamperUpdate {
@@ -95,6 +106,19 @@ export interface CamperUpdate {
   promocion_detalle?: string | null;
   talla_camisa?: TallaCamisa | null;
   talla_otra?: string | null;
+}
+
+/** POST /api/admin/registros — alta en el campamento (ver RegistroSitio.tsx). */
+export interface RegistroSitioCreate extends Omit<CamperUpdate, "tiene_promocion"> {
+  tiene_promocion?: boolean;
+  /** true = "es otra persona, registrar igual" tras el aviso de duplicado. */
+  forzar?: boolean;
+}
+
+export interface PosibleDuplicadoDetalle {
+  codigo: "POSIBLE_DUPLICADO";
+  mensaje: string;
+  existentes: CamperOut[];
 }
 
 export interface CamperListResponse {

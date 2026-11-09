@@ -11,6 +11,15 @@ uno solo aporta a la suma de costo si está encendido, así que apagarlos todos
 hace que el reparto elija siempre el equipo más chico (queda igual de
 "parejo" en tamaño nada más).
 
+El tamaño (`Criterios.tamano`) es además una REGLA DURA, no solo un costo: si
+está encendido, `elegir_equipo` solo considera los equipos con el menor número
+de gente en ese momento. Así ningún equipo puede quedar con más de 1 persona de
+diferencia respecto al más chico, aunque lleguen muchas a la vez y se asignen de
+una en una (el día del campamento a cada quien se le dice su equipo al
+registrarlo, así que no se puede "arreglar" después con un reparto general).
+Edad, bautismo, iglesia y sexo se balancean entre esos equipos. `_refinar`
+tampoco acepta movimientos que ensanchen la diferencia de tamaños.
+
 Los consejeros (`TipoParticipante.CONSEJERO`) nunca entran a un equipo por sí
 solos — ni al registrarse ni con "Repartir a todos" — solo si un admin los
 mueve a mano desde `/admin/equipos` (lo que marca `equipo_fijado=True`,
@@ -24,6 +33,15 @@ from dataclasses import dataclass
 from datetime import date
 
 from .models import Camper, Equipo, Sexo, TipoParticipante
+
+
+# Cuántas personas MÁS que el equipo más chico puede tener un equipo para seguir
+# compitiendo en `elegir_equipo` cuando `Criterios.tamano` está encendido. 0 =
+# regla estricta (diferencia de tamaños ≤ 1, lo que se eligió para el campamento).
+# Subirlo a 1 mezcla un poco mejor iglesias y sexos a cambio de que los equipos
+# puedan diferir hasta 2 personas (medido con 40 secuencias simuladas: iglesias
+# casi perfectas con 1, ver CLAUDE.md).
+HOLGURA_TAMANO = 0
 
 
 @dataclass(frozen=True)
@@ -148,9 +166,17 @@ def elegir_equipo(
 ) -> Equipo:
     """El equipo que menos desequilibra al agregar a `candidato`. Desempate:
     menor costo → equipo más chico → `orden` → `id` (los últimos dos ya los
-    da el orden de iteración de `equipos_ordenados`)."""
+    da el orden de iteración de `equipos_ordenados`).
+
+    Con `criterios.tamano` encendido solo compiten los equipos de menor tamaño
+    (ver el docstring del módulo): el costo decide entre ellos."""
     hoy = hoy or date.today()
     equipos_ordenados = sorted(equipos, key=lambda e: (e.orden, e.id))
+    if criterios.tamano and equipos_ordenados:
+        menor = min(len(equipos_miembros.get(e.id, [])) for e in equipos_ordenados)
+        equipos_ordenados = [
+            e for e in equipos_ordenados if len(equipos_miembros.get(e.id, [])) <= menor + HOLGURA_TAMANO
+        ]
 
     mejor: Equipo | None = None
     mejor_costo = float("inf")
@@ -184,6 +210,16 @@ def _contribucion(
     return costo_agregar(c, miembros_sin_c, equipos_miembros, contexto, criterios, hoy)
 
 
+def _rango_tamanos(equipos_miembros: dict[int, list[Camper]], origen: int | None = None, destino: int | None = None) -> int:
+    """Diferencia máx−mín de tamaños entre equipos, opcionalmente tras mover a
+    una persona de `origen` a `destino` (sin hacer el movimiento)."""
+    tam = {k: len(v) for k, v in equipos_miembros.items()}
+    if origen is not None and destino is not None:
+        tam[origen] -= 1
+        tam[destino] += 1
+    return max(tam.values()) - min(tam.values()) if tam else 0
+
+
 def _refinar(
     equipos_miembros: dict[int, list[Camper]],
     contexto: _Contexto,
@@ -196,7 +232,9 @@ def _refinar(
     """Hasta `max_barridos` pasadas de: para cada persona movible, ¿existe un
     equipo donde su contribución de costo sería menor? Si sí, la mueve. Se
     corta en la primera pasada sin mejoras. Nunca mueve a alguien fuera de
-    `movibles_ids` (los fijados a mano quedan intactos)."""
+    `movibles_ids` (los fijados a mano quedan intactos). Con `criterios.tamano`
+    encendido, un movimiento solo se acepta si no ensancha la diferencia de
+    tamaños entre equipos."""
     equipo_ids = list(equipos_miembros.keys())
     for _ in range(max_barridos):
         hubo_mejora = False
@@ -209,6 +247,10 @@ def _refinar(
                 mejor_costo = costo_actual
                 for destino_id in equipo_ids:
                     if destino_id == origen_id:
+                        continue
+                    if criterios.tamano and _rango_tamanos(
+                        equipos_miembros, origen_id, destino_id
+                    ) > _rango_tamanos(equipos_miembros):
                         continue
                     costo_destino = costo_agregar(
                         c, equipos_miembros[destino_id], equipos_miembros, contexto, criterios, hoy

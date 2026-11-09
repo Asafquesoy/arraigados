@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { ConfirmButton } from "../components/ConfirmButton";
 import { Reveal } from "../components/Reveal";
 import { SkeletonRow } from "../components/Skeleton";
@@ -48,6 +48,15 @@ export function Recepcion() {
     }
   }
 
+  // Igual que fetchData pero sin el estado de carga: no parpadea la lista.
+  async function fetchDataSilencioso() {
+    try {
+      setData(await apiFetch<CamperListResponse>(`/admin/registros?${buildQuery()}`));
+    } catch {
+      /* se queda lo que ya había */
+    }
+  }
+
   async function fetchStats() {
     try {
       const res = await apiFetch<AsistenciaStats>("/admin/stats/asistencia");
@@ -64,6 +73,24 @@ export function Recepcion() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, username, page]);
+
+  // Varias personas marcan llegadas a la vez: se refrescan las cifras (y la
+  // lista, si no se está escribiendo) cada 20 s y al volver a la pestaña.
+  useEffect(() => {
+    if (authLoading || !username) return;
+    function refrescar() {
+      if (document.visibilityState !== "visible") return;
+      fetchStats();
+      if (!q) fetchDataSilencioso();
+    }
+    const id = setInterval(refrescar, 20_000);
+    document.addEventListener("visibilitychange", refrescar);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", refrescar);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, username, q, filtro, page]);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -116,6 +143,12 @@ export function Recepcion() {
         <p className="eyebrow">Panel administrativo</p>
         <h1 className="display-title recepcion-title">Recepción</h1>
         <p className="muted recepcion-sub">Busca al campero y marca su llegada.</p>
+      </Reveal>
+
+      <Reveal delay={0.03}>
+        <Link to="/admin/registro-sitio" className="btn btn-ghost recepcion-nuevo">
+          + Registrar a alguien nuevo
+        </Link>
       </Reveal>
 
       <Reveal delay={0.06}>
@@ -180,6 +213,9 @@ export function Recepcion() {
             <p className="muted">
               No encontramos a nadie con «{q}». Revisa cómo se escribe el nombre o busca por iglesia.
             </p>
+            <Link to={`/admin/registro-sitio?nombre=${encodeURIComponent(q)}`} className="btn btn-primary">
+              Registrarlo ahora
+            </Link>
           </div>
         )}
 

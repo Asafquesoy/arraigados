@@ -15,4 +15,9 @@ RUN mkdir -p /data/tickets
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# --proxy-headers/--forwarded-allow-ips: sin esto request.client.host es siempre
+# la IP del contenedor de Nginx y el rate limit (registro: 10 / 10 min, login: 8 /
+# 5 min) es global para todo el sitio en vez de por persona. El backend solo es
+# alcanzable por la red de compose (Nginx del contenedor frontend), así que
+# confiar en X-Forwarded-For es seguro.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"]

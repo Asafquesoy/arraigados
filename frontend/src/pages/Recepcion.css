@@ -210,3 +210,12 @@
   font-weight: 700;
   margin: 0;
 }
+
+.recepcion-nuevo {
+  margin-bottom: 1rem;
+  min-height: 48px;
+}
+
+.recepcion-empty .btn {
+  margin-top: 1rem;
+}

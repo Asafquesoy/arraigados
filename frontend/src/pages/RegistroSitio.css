@@ -1,0 +1,213 @@
+.registro-sitio-title {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  margin: 0.3rem 0 0.4rem;
+}
+
+.registro-sitio-sub {
+  margin-bottom: 1.25rem;
+}
+
+.registro-sitio-card {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.registro-sitio-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--t-lg);
+  margin: 0;
+}
+
+/* Barra "Iglesia X · zona" que queda fija mientras se captura a cada persona. */
+.registro-sitio-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  border-color: rgba(245, 166, 35, 0.4);
+}
+
+.registro-sitio-barra-info {
+  min-width: 0;
+}
+
+.registro-sitio-barra-iglesia {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--t-lg);
+  color: var(--amarillo-suave);
+}
+
+.registro-sitio-barra-meta {
+  margin: 0.15rem 0 0;
+  font-size: var(--t-sm);
+}
+
+.registro-sitio-nombre {
+  font-size: var(--t-lg);
+}
+
+.registro-sitio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--hueso-tenue);
+  margin-bottom: 0.4rem;
+}
+
+/* Botones grandes en lugar de un <select>: se aciertan de un toque en celular. */
+.registro-sitio-segmentado {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.registro-sitio-segmentado button {
+  border: 1px solid var(--tarjeta-borde);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--hueso-tenue);
+  border-radius: var(--radio-m);
+  padding: 0.75rem 0.5rem;
+  font-weight: 700;
+  font-size: var(--t-base);
+  cursor: pointer;
+  min-height: 48px;
+  transition: background var(--dur-rapida) ease, color var(--dur-rapida) ease, border-color var(--dur-rapida) ease;
+}
+
+.registro-sitio-segmentado button:hover {
+  border-color: var(--amarillo);
+}
+
+.registro-sitio-segmentado button.is-active {
+  background: var(--gradiente-raiz);
+  color: var(--corteza);
+  border-color: transparent;
+}
+
+.registro-sitio-opcional {
+  margin: 0 0 0.5rem;
+  font-size: var(--t-sm);
+}
+
+.registro-sitio-aviso {
+  border: 1px solid rgba(245, 166, 35, 0.45);
+  background: rgba(245, 166, 35, 0.1);
+  border-radius: var(--radio-m);
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.registro-sitio-aviso.is-exacto {
+  border-color: var(--coral-error);
+  background: rgba(255, 157, 138, 0.1);
+}
+
+.registro-sitio-aviso-titulo {
+  margin: 0;
+  font-weight: 700;
+}
+
+.registro-sitio-aviso-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.registro-sitio-aviso-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.registro-sitio-aviso-datos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--t-sm);
+}
+
+.registro-sitio-error {
+  margin: 0;
+}
+
+.registro-sitio-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.registro-sitio-big {
+  width: 100%;
+  min-height: 56px;
+  font-size: var(--t-lg);
+}
+
+@media (min-width: 768px) {
+  .registro-sitio-big {
+    width: auto;
+    min-width: 280px;
+  }
+}
+
+.registro-sitio-lista {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.registro-sitio-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 1.1rem;
+  border-color: rgba(127, 181, 57, 0.4);
+}
+
+.registro-sitio-fila-info {
+  flex: 1;
+  min-width: 160px;
+}
+
+.registro-sitio-fila-nombre {
+  margin: 0;
+  font-weight: 700;
+}
+
+.registro-sitio-fila-meta {
+  margin: 0.1rem 0 0;
+  font-size: var(--t-xs);
+}
+
+.registro-sitio-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--tarjeta-borde);
+  color: var(--hueso-tenue);
+  font-size: var(--t-xs);
+}

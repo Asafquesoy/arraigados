@@ -24,13 +24,24 @@ def validar_datos_camper(
     promocion_detalle: str | None,
     talla_camisa: TallaCamisa | None,
     talla_otra: str | None,
+    exigir_fecha_bautismo: bool = True,
 ) -> None:
+    """`exigir_fecha_bautismo=False` solo lo usa el registro en el campamento,
+    donde "sí está bautizado" basta aunque no recuerden el mes/año (el reparto
+    ya maneja "sin dato"). Si traen mes o año, igual se validan."""
     if tipo == TipoParticipante.CAMPERO and bautizado is None:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Indica si estás bautizado.")
     if tipo == TipoParticipante.CONSEJERO and not (telefono or "").strip():
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Indica tu número de teléfono.")
-    if tipo == TipoParticipante.CAMPERO and bautizado and (bautismo_mes is None or bautismo_anio is None):
+    if (
+        exigir_fecha_bautismo
+        and tipo == TipoParticipante.CAMPERO
+        and bautizado
+        and (bautismo_mes is None or bautismo_anio is None)
+    ):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Indica la fecha de tu bautismo.")
+    if tipo == TipoParticipante.CAMPERO and bautizado and (bautismo_mes is None) != (bautismo_anio is None):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Indica mes y año del bautismo, o deja ambos vacíos.")
     if tipo == TipoParticipante.CAMPERO and bautizado and bautismo_mes is not None and bautismo_anio is not None:
         hoy = date.today()
         if (bautismo_anio, bautismo_mes) > (hoy.year, hoy.month):

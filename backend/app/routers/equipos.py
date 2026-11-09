@@ -1,9 +1,12 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
+from ..concurrencia import candado_equipos
 from ..database import get_db
-from ..equipos_balance import Criterios, repartir, resumen_equipo
-from ..models import AdminRole, AdminUser, AppSettings, Camper, Equipo
+from ..equipos_balance import Criterios, construir_contexto, elegir_equipo, repartir, resumen_equipo
+from ..models import AdminRole, AdminUser, AppSettings, Camper, Equipo, TipoParticipante
 from ..schemas import (
     DistribucionOut,
     EquipoAsignacion,
@@ -50,6 +53,38 @@ def criterios_desde_settings(row: AppSettings) -> Criterios:
         sexo=row.eq_balance_sexo,
         tamano=row.eq_balance_tamano,
     )
+
+
+def asignar_equipo_auto(db: Session, camper: Camper, settings_row: AppSettings | None) -> Equipo | None:
+    """Mete a `camper` (ya guardado) en el equipo que menos desequilibra, y hace
+    commit. Devuelve el equipo, o None si no aplica (consejero, staff,
+    `equipos_auto` apagado o no hay equipos). Lo usan el alta pública y el alta
+    en sitio.
+
+    Entra al candado de equipos: lee los miembros actuales, decide y escribe sin
+    que otro alta o un "Repartir a todos" se cuele en medio. El candado es
+    reentrante, así que el alta en sitio puede tomarlo antes para cubrir también
+    su chequeo de duplicados."""
+    if camper.tipo != TipoParticipante.CAMPERO or camper.es_staff:
+        return None
+    if settings_row is not None and not settings_row.equipos_auto:
+        return None
+
+    with candado_equipos(db):
+        equipos = db.query(Equipo).order_by(Equipo.orden.asc(), Equipo.id.asc()).all()
+        if not equipos:
+            return None
+        criterios = criterios_desde_settings(settings_row) if settings_row else Criterios()
+        participantes = db.query(Camper).filter(Camper.es_staff.is_(False)).all()
+        equipos_miembros: dict[int, list[Camper]] = {e.id: [] for e in equipos}
+        for c in participantes:
+            if c.equipo_id in equipos_miembros:
+                equipos_miembros[c.equipo_id].append(c)
+        contexto = construir_contexto(participantes, date.today())
+        elegido = elegir_equipo(camper, equipos, equipos_miembros, contexto, criterios)
+        camper.equipo_id = elegido.id
+        db.commit()
+        return elegido
 
 
 def _equipo_out(equipo: Equipo) -> EquipoOut:
@@ -182,19 +217,22 @@ def repartir_equipos(
     if not equipos:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Crea al menos un equipo antes de repartir.")
 
-    settings_row = _get_or_create_settings(db)
-    criterios = criterios_desde_settings(settings_row)
-    # El staff no entra al reparto ni cuenta para los promedios de los equipos.
-    participantes = db.query(Camper).filter(Camper.es_staff.is_(False)).all()
+    # Mismo candado que las altas: mientras se reparte a todos, un registro
+    # nuevo espera (unos segundos) en vez de decidir con la foto vieja.
+    with candado_equipos(db):
+        settings_row = _get_or_create_settings(db)
+        criterios = criterios_desde_settings(settings_row)
+        # El staff no entra al reparto ni cuenta para los promedios de los equipos.
+        participantes = db.query(Camper).filter(Camper.es_staff.is_(False)).all()
 
-    asignaciones = repartir(participantes, equipos, criterios, incluir_fijados=payload.incluir_fijados)
-    campers_por_id = {c.id: c for c in participantes}
-    for camper_id, equipo_id in asignaciones.items():
-        campers_por_id[camper_id].equipo_id = equipo_id
-        if payload.incluir_fijados:
-            # Un reparto que sí tocó a los fijados les quita esa marca — ya
-            # no refleja una decisión manual vigente.
-            campers_por_id[camper_id].equipo_fijado = False
-    db.commit()
+        asignaciones = repartir(participantes, equipos, criterios, incluir_fijados=payload.incluir_fijados)
+        campers_por_id = {c.id: c for c in participantes}
+        for camper_id, equipo_id in asignaciones.items():
+            campers_por_id[camper_id].equipo_id = equipo_id
+            if payload.incluir_fijados:
+                # Un reparto que sí tocó a los fijados les quita esa marca — ya
+                # no refleja una decisión manual vigente.
+                campers_por_id[camper_id].equipo_fijado = False
+        db.commit()
 
     return obtener_distribucion(db)

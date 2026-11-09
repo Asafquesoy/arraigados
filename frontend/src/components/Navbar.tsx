@@ -85,6 +85,7 @@ export function Navbar() {
   const adminLinks: NavLinkItem[] = isAdminArea && username
     ? [
         ...(role === "ADMIN" || role === "RECEPCION" ? [{ to: "/admin/recepcion", label: "Recepción" }] : []),
+        ...(role === "ADMIN" || role === "RECEPCION" ? [{ to: "/admin/registro-sitio", label: "Registrar" }] : []),
         ...(role !== "RECEPCION" ? [{ to: "/admin/panel", label: "Panel" }] : []),
         { to: "/admin/equipos", label: "Equipos" },
         ...(role === "ADMIN" || role === "VERIFICADOR_PAGO" ? [{ to: "/admin/conciliacion", label: "Conciliación" }] : []),

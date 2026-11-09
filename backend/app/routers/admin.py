@@ -1,5 +1,6 @@
 import csv
 import io
+import logging
 import os
 from datetime import datetime, timezone
 
@@ -11,6 +12,7 @@ from openpyxl.utils import get_column_letter
 from sqlalchemy import case, func, or_
 from sqlalchemy.orm import Session, joinedload
 
+from ..concurrencia import candado_equipos
 from ..config import settings
 from ..database import get_db
 from ..iglesias import canonicalizar_iglesia
@@ -30,12 +32,17 @@ from ..schemas import (
     ComprobanteStatsResponse,
     EquipoAsignacion,
     PagoUpdate,
+    RegistroSitioCreate,
     StaffUpdate,
     TallaStatsItem,
     TallaStatsResponse,
 )
+from ..registro_sitio import buscar_similares, guardar_con_folio_unico
 from ..security import get_current_admin, hash_password, require_role
 from ..validacion_camper import normalizar_datos_camper, validar_datos_camper
+from .equipos import asignar_equipo_auto
+
+logger = logging.getLogger("arraigados")
 
 router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(get_current_admin)])
 
@@ -107,6 +114,100 @@ def listar_registros(
     return CamperListResponse(items=items, total=total, page=page, page_size=page_size)
 
 
+@router.get("/registros/similares", response_model=list[CamperOut])
+def registros_similares(nombre: str = Query(min_length=2, max_length=150), db: Session = Depends(get_db)):
+    """Posibles duplicados mientras se escribe un nombre en el registro en
+    sitio (cualquier rol con sesión: recepción lo necesita para no registrar
+    dos veces a quien ya estaba)."""
+    return buscar_similares(db, nombre, limite=5)
+
+
+@router.post("/registros", response_model=CamperOut, status_code=status.HTTP_201_CREATED)
+def crear_registro_sitio(
+    payload: RegistroSitioCreate,
+    admin: AdminUser = Depends(require_role(AdminRole.ADMIN, AdminRole.RECEPCION)),
+    db: Session = Depends(get_db),
+):
+    """Alta de alguien que llegó al campamento sin registrarse. Queda con la
+    llegada marcada y el pago verificado (pagó ahí mismo), sin comprobante, y
+    entra al reparto automático de equipos como cualquier registro.
+
+    Todo va dentro del candado de equipos: así el chequeo de duplicados, el
+    insert y la asignación de equipo no se mezclan con otra alta simultánea
+    (dos personas registrando al mismo tiempo, o un reintento por internet
+    lento, no producen el mismo registro dos veces). Ignora `registro_abierto`
+    y `pedir_comprobante`: son del formulario público."""
+    validar_datos_camper(
+        tipo=payload.tipo,
+        telefono=payload.telefono,
+        bautizado=payload.bautizado,
+        bautismo_mes=payload.bautismo_mes,
+        bautismo_anio=payload.bautismo_anio,
+        tiene_promocion=payload.tiene_promocion,
+        promocion_detalle=payload.promocion_detalle,
+        talla_camisa=payload.talla_camisa,
+        talla_otra=payload.talla_otra,
+        exigir_fecha_bautismo=False,
+    )
+
+    with candado_equipos(db):
+        if not payload.forzar:
+            existentes = buscar_similares(db, payload.nombre, solo_exactos=True)
+            if existentes:
+                raise HTTPException(
+                    status.HTTP_409_CONFLICT,
+                    detail={
+                        "codigo": "POSIBLE_DUPLICADO",
+                        "mensaje": "Ya hay alguien registrado con ese nombre.",
+                        "existentes": [CamperOut.model_validate(c).model_dump(mode="json") for c in existentes],
+                    },
+                )
+
+        ahora = datetime.now(timezone.utc)
+        camper = Camper(
+            **normalizar_datos_camper(
+                nombre=payload.nombre,
+                iglesia=canonicalizar_iglesia(db, payload.iglesia, payload.zona),
+                edad=payload.edad,
+                sexo=payload.sexo,
+                zona=payload.zona,
+                tipo=payload.tipo,
+                telefono=payload.telefono,
+                bautizado=payload.bautizado,
+                bautismo_mes=payload.bautismo_mes,
+                bautismo_anio=payload.bautismo_anio,
+                fecha_pago=payload.fecha_pago,
+                tiene_promocion=payload.tiene_promocion,
+                promocion_detalle=payload.promocion_detalle,
+                talla_camisa=payload.talla_camisa,
+                talla_otra=payload.talla_otra,
+            ),
+            registrado_por=admin.username,
+            asistio=True,
+            asistio_en=ahora,
+            asistio_por=admin.username,
+            pago_verificado=True,
+            verificado_en=ahora,
+            verificado_por=admin.username,
+        )
+        guardar_con_folio_unico(
+            db,
+            camper,
+            antes_de_commit=lambda c: registrar(db, c.id, "PAGO_VERIFICADO", admin.username, origen="registro_en_sitio"),
+        )
+
+        # Igual que en el alta pública: un fallo del reparto nunca tumba el
+        # registro (ya está guardado); la persona queda en "Sin equipo".
+        try:
+            asignar_equipo_auto(db, camper, db.get(AppSettings, 1))
+        except Exception:
+            db.rollback()
+            logger.exception("No se pudo asignar equipo automáticamente al folio %s", camper.folio)
+
+        db.refresh(camper)
+        return camper
+
+
 @router.patch("/registros/{camper_id}/pago", response_model=CamperOut)
 def actualizar_pago(
     camper_id: int,
@@ -139,9 +240,12 @@ def marcar_asistencia(
     if not camper:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Registro no encontrado")
 
-    camper.asistio = payload.asistio
-    camper.asistio_en = datetime.now(timezone.utc) if payload.asistio else None
-    camper.asistio_por = admin.username if payload.asistio else None
+    # Dos recepcionistas pueden marcar a la misma persona casi al mismo tiempo:
+    # la primera marca manda, la segunda no le pisa la hora ni quién la registró.
+    if not (payload.asistio and camper.asistio):
+        camper.asistio = payload.asistio
+        camper.asistio_en = datetime.now(timezone.utc) if payload.asistio else None
+        camper.asistio_por = admin.username if payload.asistio else None
     db.commit()
     db.refresh(camper)
     return camper
@@ -255,12 +359,16 @@ def actualizar_registro(
 @router.delete("/registros/{camper_id}", status_code=status.HTTP_204_NO_CONTENT)
 def borrar_registro(
     camper_id: int,
-    _admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+    admin: AdminUser = Depends(require_role(AdminRole.ADMIN, AdminRole.RECEPCION)),
     db: Session = Depends(get_db),
 ):
+    """Admin borra lo que sea. Recepción solo puede deshacer un alta en sitio
+    que hizo su propia cuenta (el "Deshacer" de /admin/registro-sitio)."""
     camper = db.get(Camper, camper_id)
     if not camper:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Registro no encontrado")
+    if admin.role != AdminRole.ADMIN and camper.registrado_por != admin.username:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Solo puedes deshacer los registros que hiciste tú.")
 
     ticket_path = os.path.join(settings.tickets_dir, camper.ticket_path) if camper.ticket_path else None
     # SQLite no aplica el ON DELETE CASCADE: el historial se borra a mano para que dev y prod coincidan.
@@ -320,6 +428,7 @@ _EXPORT_HEADERS = [
     "Asistió en",
     "Fecha registro",
     "Equipo",
+    "Registrado en sitio por",
 ]
 
 
@@ -354,6 +463,7 @@ def _export_row(c: Camper) -> list:
         c.asistio_en.strftime("%Y-%m-%d %H:%M") if c.asistio_en else "",
         c.created_at.strftime("%Y-%m-%d %H:%M"),
         _sanitizar_celda(c.equipo.nombre) if c.equipo else ("Staff" if c.es_staff else "Sin equipo"),
+        _sanitizar_celda(c.registrado_por or ""),
     ]
 
 

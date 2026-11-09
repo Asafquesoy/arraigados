@@ -95,6 +95,9 @@ class Camper(Base):
     # equipo (ni al reparto automático ni a "Sin equipo"), pero cuenta igual en
     # pagos, asistencia, camisetas y exportes.
     es_staff: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Usuario admin/recepción que la dio de alta en el campamento
+    # (/admin/registro-sitio). Null cuando se registró por el formulario público.
+    registrado_por: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Conciliación de comprobantes (ver conciliacion.py / comprobante_lector.py).
     # ticket_sha256/phash: huellas de la imagen para detectar la misma captura

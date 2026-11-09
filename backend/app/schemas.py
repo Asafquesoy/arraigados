@@ -53,6 +53,7 @@ class CamperOut(BaseModel):
     equipo: EquipoBrief | None
     equipo_fijado: bool
     es_staff: bool
+    registrado_por: str | None
 
     @computed_field
     @property
@@ -89,6 +90,30 @@ class CamperUpdate(BaseModel):
     promocion_detalle: str | None = Field(default=None, max_length=200)
     talla_camisa: TallaCamisa | None = None
     talla_otra: str | None = Field(default=None, max_length=50)
+
+
+class RegistroSitioCreate(BaseModel):
+    """Payload de POST /api/admin/registros — alta en el campamento. Mismos
+    campos que CamperUpdate, pero la fecha de pago y la promoción son opcionales
+    (quien paga ahí no tiene transferencia ni promoción) y `forzar` salta el
+    aviso de posible duplicado."""
+
+    nombre: str = Field(min_length=2, max_length=150)
+    iglesia: str = Field(min_length=2, max_length=150)
+    edad: int = Field(ge=5, le=99)
+    sexo: Sexo
+    zona: Zona
+    tipo: TipoParticipante
+    fecha_pago: date
+    tiene_promocion: bool = False
+    telefono: str | None = Field(default=None, max_length=30)
+    bautizado: bool | None = None
+    bautismo_mes: int | None = Field(default=None, ge=1, le=12)
+    bautismo_anio: int | None = Field(default=None, ge=1960)
+    promocion_detalle: str | None = Field(default=None, max_length=200)
+    talla_camisa: TallaCamisa | None = None
+    talla_otra: str | None = Field(default=None, max_length=50)
+    forzar: bool = False
 
 
 class PagoUpdate(BaseModel):

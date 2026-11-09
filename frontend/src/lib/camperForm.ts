@@ -43,14 +43,22 @@ export const INITIAL_STATE: FormState = {
   promocion_tipo: "",
 };
 
-export const HOY = new Date().toISOString().slice(0, 10);
+// Fecha LOCAL (no toISOString, que es UTC): en México, después de las 6 pm UTC ya
+// es "mañana" y una fecha de pago de hoy se rechazaba como futura.
+export function fechaLocalISO(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export const HOY = fechaLocalISO();
 
 export function fieldError(
   key: FieldKey,
   form: FormState,
   ticket: File | null,
   showShirtSize: boolean,
-  pedirComprobante: boolean
+  pedirComprobante: boolean,
+  /** Registro en el campamento: "sí está bautizado" basta sin mes/año. */
+  bautismoFechaOpcional = false
 ): string | null {
   switch (key) {
     case "tipo":
@@ -71,12 +79,19 @@ export function fieldError(
     case "bautizado":
       return form.tipo === "CAMPERO" && form.bautizado === "" ? "Selecciona una opción." : null;
     case "bautismo_mes":
+      if (bautismoFechaOpcional) {
+        return form.tipo === "CAMPERO" && form.bautizado === true && form.bautismo_mes === "" && form.bautismo_anio !== ""
+          ? "Indica el mes, o deja ambos vacíos."
+          : null;
+      }
       return form.tipo === "CAMPERO" && form.bautizado === true && form.bautismo_mes === ""
         ? "Indica el mes de tu bautismo."
         : null;
     case "bautismo_anio": {
       if (form.tipo !== "CAMPERO" || form.bautizado !== true) return null;
-      if (form.bautismo_anio === "") return "Indica el año de tu bautismo.";
+      if (form.bautismo_anio === "") {
+        return bautismoFechaOpcional && form.bautismo_mes === "" ? null : "Indica el año de tu bautismo.";
+      }
       const hoy = new Date();
       if (
         form.bautismo_mes !== "" &&
