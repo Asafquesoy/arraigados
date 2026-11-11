@@ -16,7 +16,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(fu
         {...props}
         ref={ref}
         type={visible ? "text" : "password"}
-        className={className}
+        className={["password-input-field", className].filter(Boolean).join(" ")}
       />
       <button
         type="button"
@@ -25,7 +25,6 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(fu
         aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
         title={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
         aria-pressed={visible}
-        tabIndex={0}
       >
         {visible ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
       </button>

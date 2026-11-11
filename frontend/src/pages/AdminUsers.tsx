@@ -22,6 +22,7 @@ export function AdminUsers() {
   const [formError, setFormError] = useState<string | null>(null);
   const [resetTarget, setResetTarget] = useState<number | null>(null);
   const [resetPassword, setResetPassword] = useState("");
+  const [resetError, setResetError] = useState<string | null>(null);
 
   async function fetchUsers() {
     setLoading(true);
@@ -86,9 +87,10 @@ export function AdminUsers() {
 
   async function handleResetPassword(user: AdminUserOut) {
     if (resetPassword.length < 8) {
-      setToast("La nueva contraseña debe tener al menos 8 caracteres.");
+      setResetError("La nueva contraseña debe tener al menos 8 caracteres.");
       return;
     }
+    setResetError(null);
     try {
       await apiFetch(`/admin/usuarios/${user.id}`, {
         method: "PATCH",
@@ -206,36 +208,58 @@ export function AdminUsers() {
                     </select>
 
                     {resetTarget === user.id ? (
-                      <div className="admin-users-reset">
-                        <PasswordInput
-                          value={resetPassword}
-                          onChange={(e) => setResetPassword(e.target.value)}
-                          placeholder="nueva contraseña"
-                          autoFocus
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => handleResetPassword(user)}
-                        >
-                          Guardar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => {
-                            setResetTarget(null);
-                            setResetPassword("");
-                          }}
-                        >
-                          Cancelar
-                        </button>
-                      </div>
+                      <form
+                        className="admin-users-reset"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleResetPassword(user);
+                        }}
+                      >
+                        <div className="admin-users-reset-campo">
+                          <PasswordInput
+                            value={resetPassword}
+                            onChange={(e) => {
+                              setResetPassword(e.target.value);
+                              setResetError(null);
+                            }}
+                            placeholder="nueva contraseña"
+                            aria-label={`Nueva contraseña para ${user.username}`}
+                            aria-invalid={resetError ? true : undefined}
+                            autoComplete="new-password"
+                            autoFocus
+                          />
+                          {resetError && (
+                            <p className="field-error admin-users-reset-error" role="alert">
+                              {resetError}
+                            </p>
+                          )}
+                        </div>
+                        <div className="admin-users-reset-botones">
+                          <button type="submit" className="btn btn-ghost btn-sm">
+                            Guardar
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => {
+                              setResetTarget(null);
+                              setResetPassword("");
+                              setResetError(null);
+                            }}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </form>
                     ) : (
                       <button
                         type="button"
                         className="btn btn-ghost btn-sm"
-                        onClick={() => setResetTarget(user.id)}
+                        onClick={() => {
+                          setResetTarget(user.id);
+                          setResetPassword("");
+                          setResetError(null);
+                        }}
                       >
                         Restablecer contraseña
                       </button>

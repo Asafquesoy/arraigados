@@ -375,6 +375,14 @@ inside this direction rather than introducing an unrelated palette or mood.
   phones ≤375px and, once the iglesia input was focused with long text, scrolled the whole
   `overflow: hidden` card sideways ("se ve cortado"). Don't revert those two rules; selects also
   get `text-overflow: ellipsis` so a long chosen option truncates instead of overflowing.
+- **Password fields — always `components/PasswordInput.tsx`, never a bare `<input type="password">`:**
+  it draws its own eye button, so `PasswordInput.css` hides Edge/Windows' native one
+  (`::-ms-reveal`/`::-ms-clear`) — without that Edge showed two eyes (Chromium/Playwright can't
+  reproduce it). The input's right padding (room for the eye, `--ojo-ancho`) is set by
+  `.password-input > input.password-input-field[type]`, deliberately more specific than
+  `.field input[type="password"|"text"]` (global.css) and any screen-level `.x input` rule — the field
+  flips to `type=text` when the password is shown, so don't anchor it to `[type=password]`, and in a
+  screen's own CSS never use the `padding` shorthand on it (use `padding-block`/`padding-left`).
 - **Touch targets:** interactive elements should be ≥44px under `@media (pointer: coarse)` —
   see the block in `global.css` for the pattern (`.btn-sm`, chip buttons, icon-only buttons).
 - Full context and the original audit trail (design direction rationale, responsive-audit
