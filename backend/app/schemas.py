@@ -412,3 +412,78 @@ class ProcesarEstadoOut(BaseModel):
     hechos: int
     con_gemini: bool
     error: str | None
+
+
+# ---- Juegos (calificaciones de los jueces) ----------------------------------
+class CriterioOut(BaseModel):
+    clave: str
+    nombre: str
+    descripcion: str
+    tipo: str  # "escala" | "si_no"
+    puntos: int
+    escala_max: int
+
+
+class JuegoOut(BaseModel):
+    clave: str
+    nombre: str
+    descripcion: str
+    puntos_max: int
+    criterios: list[CriterioOut]
+
+
+class HojaCreate(BaseModel):
+    equipo_id: int
+    juez: str = Field(min_length=1, max_length=80)
+    # {criterio: 0..100 (escala) | true/false (si_no)}; juegos.validar_valores lo revisa a fondo.
+    valores: dict[str, int | bool]
+
+
+class HojaUpdate(BaseModel):
+    equipo_id: int | None = None
+    juez: str | None = Field(default=None, min_length=1, max_length=80)
+    valores: dict[str, int | bool] | None = None
+
+
+class HojaOut(BaseModel):
+    id: int
+    juego: str
+    equipo_id: int
+    juez: str
+    valores: dict[str, int | bool]
+    puntos: dict[str, float]
+    total: float
+    creado_en: datetime
+    creado_por: str
+    actualizado_en: datetime | None
+    actualizado_por: str | None
+
+
+class ResultadoEquipoOut(BaseModel):
+    equipo_id: int
+    nombre: str
+    color: str
+    hojas: int
+    por_criterio: dict[str, float]
+    total: float
+    posicion: int | None
+
+
+class JuegoDetalleOut(BaseModel):
+    juego: JuegoOut
+    equipos: list[ResultadoEquipoOut]
+    hojas: list[HojaOut]
+
+
+class PosicionOut(BaseModel):
+    equipo_id: int
+    nombre: str
+    color: str
+    por_juego: dict[str, float | None]
+    total: float
+    posicion: int | None
+
+
+class PosicionesOut(BaseModel):
+    juegos: list[JuegoOut]
+    equipos: list[PosicionOut]

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 from ..concurrencia import candado_equipos
 from ..database import get_db
 from ..equipos_balance import Criterios, construir_contexto, elegir_equipo, repartir, resumen_equipo
-from ..models import AdminRole, AdminUser, AppSettings, Camper, Equipo, TipoParticipante
+from ..models import AdminRole, AdminUser, AppSettings, Calificacion, Camper, Equipo, TipoParticipante
 from ..schemas import (
     DistribucionOut,
     EquipoAsignacion,
@@ -203,6 +203,9 @@ def borrar_equipo(
     db.query(Camper).filter(Camper.equipo_id == equipo_id).update(
         {Camper.equipo_id: None, Camper.equipo_fijado: False}
     )
+    # Sus calificaciones de juegos se van con él: ON DELETE CASCADE en Postgres, y este
+    # DELETE explícito para SQLite (que no aplica la FK).
+    db.query(Calificacion).filter(Calificacion.equipo_id == equipo_id).delete()
     db.delete(equipo)
     db.commit()
 

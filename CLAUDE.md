@@ -616,6 +616,36 @@ Roles: Admin y `RECEPCION`.
   volver a la pestaña. `camperForm.ts::HOY` ya es fecha local (antes UTC: tras las 6 pm en México "hoy" se rechazaba
   como futuro).
 
+### Juegos (`/admin/juegos`) — calificaciones por equipo
+
+Para sumar las hojas de los jueces de los juegos del campamento (Sketch, Búsqueda del tesoro, Rally
+sucio, Voleibol gigante) en vez de llevarlas en un Excel aparte. Todos los roles del panel ven (menos
+`RECEPCION`, que se redirige a `/admin/recepcion`); **solo Admin captura/edita/borra** (`canEdit`).
+
+- **Los juegos son datos, no código**: `backend/app/juegos.py` (módulo puro, como `equipos_balance.py`) es el
+  catálogo `JUEGOS` — cada `Juego` con sus `Criterio` (`tipo` `escala` = el juez pone 0–100 y se convierte
+  proporcional, o `si_no` = todo o nada, más los `puntos` que vale). El formulario y las tablas del frontend se
+  dibujan a partir de `GET /api/admin/juegos`, así que **agregar un juego = agregar/llenar una entrada en
+  `JUEGOS`** (los otros tres existen con `criterios=()` y salen como "Reglas pendientes"); sin migración ni
+  cambios de UI. Sketch (600 pts): Historia 200 y Originalidad 200 y Adaptación 100 (escala), Inclusión 50 y
+  Tiempo 50 (sí/no).
+- **Se guarda lo que puso el juez, no los puntos**: `calificaciones.valores` (JSON: `{"historia": 80,
+  "tiempo": true}`), una fila por juez+equipo+juego (`UniqueConstraint`, y el chequeo case-insensitive del router
+  responde 409 — se edita la hoja, no se duplica). Si cambia lo que vale un criterio todo se recalcula solo.
+  `validar_valores` es estricto (todos los criterios, ninguno de más, enteros 0–100, booleanos de verdad);
+  `puntos_hoja` es tolerante (criterio faltante = 0) para no romper hojas viejas si el catálogo crece.
+- **Puntaje del equipo = promedio de sus hojas** criterio por criterio (`resultados()`), redondeado a 1 decimal; las
+  posiciones se calculan sobre ese total redondeado (empates comparten lugar: 1, 1, 3) y un equipo sin hojas no
+  tiene posición. `tabla_general()` suma los juegos (`GET /posiciones`).
+- Borrar un equipo borra sus calificaciones explícitamente (`equipos.py::borrar_equipo`; SQLite no aplica el
+  `ON DELETE CASCADE`). Migración `0017`: **hay que correr `alembic upgrade head`** — sin la tabla, borrar un equipo
+  y toda la pantalla dan 500.
+- UI: `pages/Juegos.tsx` (pestañas Posiciones + una por juego; tabla desde 1024px, tarjetas debajo, vía
+  `useMediaQuery`; sin raíces, como toda pantalla admin) + `components/HojaCalificacion.tsx` (formulario
+  genérico: Sí/No de 44px, subtotal en vivo, conserva el juez al guardar y deshabilita los equipos que ese juez ya
+  calificó). Trampa ya vista: `flex: 1 1 14rem` en un contenedor `flex-direction: column` es **alto** (dejó 224px de
+  hueco por criterio en celular) — esa base solo va en el diseño en fila.
+
 ### Conciliación de comprobantes (`/admin/conciliacion`)
 
 Lee cada comprobante para sacar monto/fecha/referencia, agrupa los registros que comparten una

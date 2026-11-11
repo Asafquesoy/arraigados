@@ -331,3 +331,76 @@ export interface ProcesarEstado {
   con_gemini: boolean;
   error: string | null;
 }
+
+// ---- Juegos (calificaciones de los jueces) ----
+export type TipoCriterio = "escala" | "si_no";
+
+export interface CriterioJuego {
+  clave: string;
+  nombre: string;
+  descripcion: string;
+  tipo: TipoCriterio;
+  puntos: number;
+  escala_max: number;
+}
+
+export interface JuegoInfo {
+  clave: string;
+  nombre: string;
+  descripcion: string;
+  puntos_max: number;
+  criterios: CriterioJuego[];
+}
+
+/** Lo que puso el juez: número de 0 a `escala_max` (escala) o true/false (si_no). */
+export type ValoresHoja = Record<string, number | boolean>;
+
+export interface HojaCreate {
+  equipo_id: number;
+  juez: string;
+  valores: ValoresHoja;
+}
+
+export interface HojaOut {
+  id: number;
+  juego: string;
+  equipo_id: number;
+  juez: string;
+  valores: ValoresHoja;
+  puntos: Record<string, number>;
+  total: number;
+  creado_en: string;
+  creado_por: string;
+  actualizado_en: string | null;
+  actualizado_por: string | null;
+}
+
+export interface ResultadoEquipoJuego {
+  equipo_id: number;
+  nombre: string;
+  color: string;
+  hojas: number;
+  por_criterio: Record<string, number>;
+  total: number;
+  posicion: number | null;
+}
+
+export interface JuegoDetalle {
+  juego: JuegoInfo;
+  equipos: ResultadoEquipoJuego[];
+  hojas: HojaOut[];
+}
+
+export interface PosicionEquipo {
+  equipo_id: number;
+  nombre: string;
+  color: string;
+  por_juego: Record<string, number | null>;
+  total: number;
+  posicion: number | null;
+}
+
+export interface Posiciones {
+  juegos: JuegoInfo[];
+  equipos: PosicionEquipo[];
+}

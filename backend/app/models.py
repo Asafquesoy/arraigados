@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Date, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -193,3 +193,23 @@ class ComprobanteEvento(Base):
     usuario: Mapped[str] = mapped_column(String(100), nullable=False)
     accion: Mapped[str] = mapped_column(String(30), nullable=False)
     detalle: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class Calificacion(Base):
+    """Una hoja de un juez para un equipo en un juego (ver `juegos.py`). `valores` guarda
+    lo que el juez puso, criterio por criterio (`{"historia": 80, "tiempo": true}`), no los
+    puntos ya convertidos. Un mismo juez no puede calificar dos veces el mismo juego a un
+    mismo equipo (se edita la hoja)."""
+
+    __tablename__ = "calificaciones"
+    __table_args__ = (UniqueConstraint("juego", "equipo_id", "juez", name="uq_calificaciones_juego_equipo_juez"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    juego: Mapped[str] = mapped_column(String(40), index=True)
+    equipo_id: Mapped[int] = mapped_column(ForeignKey("equipos.id", ondelete="CASCADE"), index=True)
+    juez: Mapped[str] = mapped_column(String(80))
+    valores: Mapped[dict] = mapped_column(JSON)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
+    creado_por: Mapped[str] = mapped_column(String(100), nullable=False)
+    actualizado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    actualizado_por: Mapped[str | None] = mapped_column(String(100), nullable=True)

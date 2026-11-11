@@ -22,6 +22,7 @@ const Recepcion = lazy(() => import("./pages/Recepcion").then((m) => ({ default:
 const RegistroSitio = lazy(() => import("./pages/RegistroSitio").then((m) => ({ default: m.RegistroSitio })));
 const Equipos = lazy(() => import("./pages/Equipos").then((m) => ({ default: m.Equipos })));
 const Conciliacion = lazy(() => import("./pages/Conciliacion").then((m) => ({ default: m.Conciliacion })));
+const Juegos = lazy(() => import("./pages/Juegos").then((m) => ({ default: m.Juegos })));
 
 function AppRoutes() {
   const location = useLocation();
@@ -46,6 +47,7 @@ function AppRoutes() {
                 <Route path="/admin/registro-sitio" element={<RegistroSitio />} />
                 <Route path="/admin/equipos" element={<Equipos />} />
                 <Route path="/admin/conciliacion" element={<Conciliacion />} />
+                <Route path="/admin/juegos" element={<Juegos />} />
               </Routes>
             </Suspense>
           </PageTransition>

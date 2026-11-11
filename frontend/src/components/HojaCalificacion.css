@@ -1,0 +1,185 @@
+.hoja-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+}
+
+/* Equipo + juez: una columna en celular, dos desde tablet. */
+.hoja-form-cabecera {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-3);
+}
+
+@media (min-width: 640px) {
+  .hoja-form-cabecera {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.hoja-criterios {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.hoja-criterio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  padding: var(--e-3) var(--e-4);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.hoja-criterio.has-error {
+  border-color: var(--coral-error);
+}
+
+@media (min-width: 640px) {
+  .hoja-criterio {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  /* El mensaje de error ocupa su propia línea debajo de nombre y control. */
+  .hoja-criterio-error {
+    flex-basis: 100%;
+  }
+}
+
+.hoja-criterio-texto {
+  min-width: 0;
+}
+
+/* Solo en fila: en la columna de celular, `flex-basis: 14rem` se lee como ALTO y dejaba un hueco
+   de ~224px entre la descripción y el campo. */
+@media (min-width: 640px) {
+  .hoja-criterio-texto {
+    flex: 1 1 14rem;
+  }
+}
+
+.hoja-criterio-nombre {
+  font-weight: 700;
+  font-size: var(--t-base);
+}
+
+.hoja-criterio-vale {
+  margin-left: 0.4rem;
+  font-size: var(--t-xs);
+  font-weight: 400;
+  color: var(--amarillo-suave);
+}
+
+.hoja-criterio-desc {
+  font-size: var(--t-sm);
+  margin-top: 0.15rem;
+}
+
+.hoja-criterio-control {
+  flex: 0 0 auto;
+}
+
+.hoja-escala {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+}
+
+/* El selector es más específico que `.field input[type="number"]` (global.css) a propósito:
+   ese pone width: 100% y aquí el campo es corto. */
+.hoja-form .hoja-escala-campo input[type="number"] {
+  width: 6rem;
+  text-align: center;
+  font-family: var(--fuente-mono);
+}
+
+.hoja-escala-de {
+  font-size: var(--t-sm);
+}
+
+.hoja-criterio-pts {
+  min-width: 5.5rem;
+  text-align: right;
+  font-size: var(--t-sm);
+  color: var(--amarillo);
+}
+
+.hoja-sino {
+  display: flex;
+  gap: var(--e-2);
+}
+
+.hoja-sino-btn {
+  min-height: 44px;
+  min-width: 6.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--tarjeta-borde);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--hueso);
+  font-size: var(--t-base);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--dur-rapida) ease, border-color var(--dur-rapida) ease, color var(--dur-rapida) ease;
+}
+
+.hoja-sino-btn:hover {
+  border-color: var(--amarillo);
+}
+
+.hoja-sino-btn:focus-visible {
+  outline: 2px solid var(--amarillo);
+  outline-offset: 2px;
+}
+
+.hoja-sino-btn .mono {
+  font-size: var(--t-xs);
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.hoja-sino-btn.is-si {
+  background: var(--verde-claro);
+  border-color: transparent;
+  color: var(--corteza);
+}
+
+.hoja-sino-btn.is-no {
+  background: var(--coral-error);
+  border-color: transparent;
+  color: var(--corteza);
+}
+
+.hoja-total {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--e-2) var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border-radius: var(--radio-m);
+  background: var(--corteza-alta);
+}
+
+.hoja-total strong {
+  font-size: var(--t-xl);
+  color: var(--amarillo);
+}
+
+.hoja-total-faltan {
+  font-size: var(--t-sm);
+}
+
+.hoja-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}

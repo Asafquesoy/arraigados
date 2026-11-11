@@ -1,0 +1,308 @@
+.juegos-titulo {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  margin: 0.3rem 0 0.4rem;
+}
+
+/* Pastillas de navegación (Posiciones + un juego por pastilla). Se envuelven en celular. */
+.juegos-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  margin-top: var(--e-5);
+}
+
+.juegos-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--tarjeta-borde);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--hueso-tenue);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--dur-rapida) ease, color var(--dur-rapida) ease, background var(--dur-rapida) ease;
+}
+
+.juegos-tab:hover {
+  border-color: var(--amarillo);
+}
+
+.juegos-tab:focus-visible {
+  outline: 2px solid var(--amarillo);
+  outline-offset: 2px;
+}
+
+.juegos-tab.is-active {
+  background: var(--gradiente-raiz);
+  color: var(--corteza);
+  border-color: transparent;
+}
+
+.juegos-tab-pronto {
+  font-size: var(--t-xs);
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+@media (pointer: coarse) {
+  .juegos-tab {
+    min-height: 44px;
+  }
+}
+
+.juegos-contenido {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+  margin-top: var(--e-4);
+}
+
+.juegos-tarjeta {
+  padding: var(--e-5);
+  min-width: 0;
+}
+
+.juegos-skeleton {
+  margin-top: var(--e-3);
+}
+
+.juegos-subtitulo {
+  margin: 0 0 var(--e-3);
+  font-size: var(--t-lg);
+  color: var(--amarillo-suave);
+}
+
+.juegos-nota {
+  margin: 0 0 var(--e-3);
+  font-size: var(--t-sm);
+}
+
+.juegos-aviso {
+  padding: var(--e-5);
+}
+
+.juegos-aviso-titulo {
+  font-weight: 700;
+  font-size: var(--t-lg);
+  color: var(--amarillo-suave);
+  margin-bottom: var(--e-2);
+}
+
+.juegos-aviso a {
+  color: var(--amarillo);
+}
+
+/* Equipo: pastilla con su color y texto claro/oscuro según el brillo. */
+.juegos-equipo {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.25rem 0.8rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: var(--t-sm);
+  overflow-wrap: anywhere;
+  box-shadow: inset 0 0 0 2px rgba(247, 243, 227, 0.35);
+}
+
+.juegos-pos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--tarjeta-borde);
+  font-size: var(--t-sm);
+  color: var(--hueso-tenue);
+}
+
+.juegos-pos.is-primero {
+  background: var(--gradiente-raiz);
+  border-color: transparent;
+  color: var(--corteza);
+  font-weight: 700;
+}
+
+/* Tabla (≥1024px). Los encabezados pueden partir en dos líneas, así que nunca desborda. */
+.juegos-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.juegos-tabla th,
+.juegos-tabla td {
+  padding: 0.7rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--tarjeta-borde);
+}
+
+.juegos-tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.juegos-tabla th {
+  vertical-align: bottom;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hueso-tenue);
+}
+
+.juegos-tabla th small {
+  display: block;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--amarillo-suave);
+}
+
+.juegos-tabla .num {
+  text-align: right;
+  font-family: var(--fuente-mono);
+}
+
+/* Los encabezados numéricos quedan en la fuente normal (solo las cifras van en mono). */
+.juegos-tabla th.num {
+  font-family: var(--fuente-texto);
+}
+
+/* El nombre del equipo nunca se parte a media palabra en la tabla ("Amarill/os"): la columna se
+   ensancha y son los encabezados de los criterios los que reparten el resto del ancho. */
+.juegos-tabla .juegos-equipo {
+  white-space: nowrap;
+}
+
+.juegos-tabla .juegos-col-pos {
+  width: 3rem;
+}
+
+.juegos-total {
+  font-weight: 700;
+  color: var(--amarillo);
+}
+
+/* Tarjetas (<1024px). */
+.juegos-lista-tarjetas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-3);
+}
+
+@media (min-width: 640px) {
+  .juegos-lista-tarjetas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.juegos-equipo-card {
+  padding: var(--e-3) var(--e-4);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+  min-width: 0;
+}
+
+.juegos-equipo-card-cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin-bottom: var(--e-2);
+}
+
+.juegos-equipo-card-cabecera .juegos-total {
+  margin-left: auto;
+  font-size: var(--t-xl);
+}
+
+.juegos-desglose {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.juegos-desglose > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--e-3);
+  font-size: var(--t-sm);
+}
+
+.juegos-desglose dt small {
+  opacity: 0.8;
+}
+
+.juegos-desglose dd {
+  margin: 0;
+}
+
+/* Hojas capturadas, agrupadas por equipo. */
+.juegos-hojas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-5);
+}
+
+.juegos-hojas-equipo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e-2);
+}
+
+.juegos-hojas-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.juegos-hoja {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--e-2) var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.juegos-hoja.is-editando {
+  border-color: var(--amarillo);
+}
+
+.juegos-hoja-info {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.juegos-hoja-juez {
+  font-weight: 700;
+}
+
+.juegos-hoja-desglose {
+  font-size: var(--t-xs);
+  margin-top: 0.15rem;
+}
+
+.juegos-hoja-total {
+  font-size: var(--t-lg);
+  font-weight: 700;
+  color: var(--amarillo);
+}
+
+.juegos-hoja-acciones {
+  display: flex;
+  gap: var(--e-2);
+}
