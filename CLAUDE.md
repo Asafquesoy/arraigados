@@ -659,18 +659,38 @@ sucio, Voleibol gigante) en vez de llevarlas en un Excel aparte. Todos los roles
     si dos personas chocan al crear la misma fila. La capilla además exige lugares distintos (1.º/2.º/3.º) y no
     acepta huecos en la pantalla. `POST /hojas` y `PATCH /hojas/{id}` responden 422 para estos juegos.
   - **UI**: `components/EstacionesCaptura.tsx` (fichas de estaciones con «n/10» y ✔ al completarse; al guardar pasa sola
-    a la siguiente sin capturar; pregunta antes de cambiar de estación con datos sin guardar) → `HojaEstacion.tsx`
-    (rally/búsqueda: **un renglón por equipo, en el orden del papel**, con las mismas marcas ✔/✖, F/D y «min : seg»;
-    un renglón sin tocar no se guarda, uno a medias marca en rojo qué falta; puntos en vivo) o `HojaCapilla.tsx` (aquí el
-    renglón es el *lugar* y se elige el equipo); controles en `ControlesHoja.tsx` (`MarcaSiNo`, `OpcionesChip`,
-    `CampoTiempo`); toda la lógica de borradores/validación/cuentas del lado del cliente en `lib/estaciones.ts`
-    (**espejo de `juegos.py`**: si cambia una regla hay que tocar los dos; la cuenta de verdad la hace el servidor);
-    resultados por estación en `ResultadosEstaciones.tsx` (tabla de columnas fijas desde 1024px — las 10 estaciones caben
-    a ~70px cada una —, tarjetas debajo). Rally en tabla desde 1024px; **la búsqueda solo desde 1280px con mouse**
-    (`pointer: fine`): son 7 pares ✔/✖ y con marcas de 44px (tableta) no caben, ahí se queda en tarjetas. El tiempo se
-    captura en dos casillas «min : seg» como el papel (no un campo «2:15», que en el teclado numérico del celular no
-    tiene dos puntos). Trampa ya vista: el botón «×» de vaciar renglón dentro de la celda del equipo truncaba «Ahuehuetes»;
-    vive en la columna de puntos.
+    a la siguiente estación sin capturar *hacia adelante*; pregunta antes de cambiar de estación con datos sin guardar) →
+    `HojaEstacion.tsx` (rally/búsqueda) o `HojaCapilla.tsx` (aquí el renglón es el *lugar* y se elige el equipo). Un renglón
+    sin tocar no se guarda, uno a medias dice qué falta; puntos en vivo. **Se pensó para capturar desde el teléfono**:
+    - **Dos presentaciones del mismo DOM**, elegidas con `useMediaQuery` (clase `es-tabla`/`es-acordeon` del `<form>`):
+      *tabla* (rally desde 1024px; **búsqueda solo desde 1280px con mouse**, `pointer: fine` — son 7 pares ✔/✖ y con marcas
+      de 44px no caben) con líneas verticales entre columnas, encabezados ámbar y columnas alternas tintadas; y *acordeón*
+      (teléfono y tableta, incluida una tableta ancha) con **un equipo abierto a la vez**: cabecera tocable con el estado
+      («Vacío» / «Falta: Unidad, Palabra» / «Listo» + puntos) y, abierto, un botón grande «Siguiente: <equipo> →» que abre el
+      siguiente **en el orden del papel**. En tabla se ven los 10 abiertos.
+    - **Cada campo es un bloque propio** (`SeccionHoja.tsx`: `Seccion` = caja con franja de título como en el papel —
+      UNIDAD, PREGUNTA, PALABRA, ¿FRUTO O CARNE?, TIEMPO; rally: PRUEBA DE RAÍZ, RESULTADO — y puntito de estado hueco/verde/
+      rojo; `Campo` = etiqueta a la izquierda y control a la derecha con `flex-wrap`). Era el problema: con solo etiquetas
+      chicas no se veía dónde acababa un campo y empezaba otro. En tabla el CSS convierte cada `Seccion` en una celda.
+      La pista del título **nunca** se corta con «…» (a <390px baja a su propia línea) ni tampoco el estado del equipo.
+    - **Tiempo en UNA casilla** (`CampoTiempo`, `lib/estaciones.ts`): se escriben los números seguidos y las dos últimas
+      cifras son los segundos (`250` → 2:50, `45` → 0:45, `1030` → 10:30); `Borrador.tiempo` son solo dígitos y
+      `fmtDigitos` lo muestra. El teclado numérico del celular no trae «:». Segundos >59 se pinta en rojo al instante.
+    - **Barra de guardado fija abajo** (`BarraGuardar.tsx`, `position: sticky`, a ancho completo en <640px): total en vivo,
+      «n de 10 equipos», avisos y el botón. Como el navegador no mueve una casilla enfocada que está *medio* detrás de una
+      barra `sticky`, `lib/enfocarVisible.ts::mantenerVisibleSobreBarra` (en el `onFocus` del `<form>`) la centra si choca
+      con la barra o con el menú; `scroll-margin-bottom` solo no basta. **Enter dentro de una casilla no guarda** (el
+      `onKeyDown` del form lo frena; sin eso el submit implícito guardaba la estación a medias).
+    - Resto: marcas ✔/✖ y chips de 44px solo con `pointer: coarse`; relleno de la tarjeta reducido en <640px (a 320px el
+      ancho útil de un renglón era ~200px); en la tabla de resultados las 10 estaciones caben a ~70px cada una
+      (`ResultadosEstaciones.tsx`). Trampas ya vistas: `flex-basis` de `.estacion-grupo.is-ancho` solo en contenedores
+      **en fila**; el botón «×» de vaciar vive en la columna de puntos (dentro de la celda del equipo truncaba «Ahuehuetes»).
+    - **Cómo se probó (y cómo repetirlo)**: `browser.newContext({ viewport, deviceScaleFactor, isMobile: true, hasTouch: true })`
+      desde `browser_run_code_unsafe` — **no vale `setViewportSize`**: deja el puntero en `fine` y las marcas salen de 32px,
+      no de 44px como en un teléfono real. Matriz: 320×568, 360×640, 360×800, 375×667, 390×844, 412×915, 430×932, horizontales
+      667×375 y 844×390, tabletas 768×1024, 820×1180 y 1024×768, y escritorio 1280×800 y 1440×900; por cada una se midió
+      desborde horizontal, controles <44px, texto recortado y que la barra no tape la casilla enfocada. La página tiene
+      `scroll-behavior: smooth`: al medir hay que desplazar con `behavior: 'instant'` o se mide a mitad de un scroll.
 - Borrar un equipo borra sus calificaciones explícitamente (`equipos.py::borrar_equipo`; SQLite no aplica el
   `ON DELETE CASCADE`). Migración `0017`: **hay que correr `alembic upgrade head`** — sin la tabla, borrar un equipo
   y toda la pantalla dan 500.

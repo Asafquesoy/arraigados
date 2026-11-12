@@ -1,4 +1,7 @@
-/* ---- Captura de hojas por estación (Rally sucio / Búsqueda del tesoro) ---- */
+/* ---- Captura de hojas por estación (Rally sucio / Búsqueda del tesoro / Capilla) ----
+   Dos presentaciones del mismo contenido, elegidas por `HojaEstacion.tsx` (clase del <form>):
+   - .es-tabla     escritorio: los 10 renglones abiertos, con líneas entre columnas.
+   - .es-acordeon  teléfono/tableta: un equipo abierto a la vez; cada campo es un bloque con su título. */
 
 /* Tamaño de las marcas ✔/✖ y de los chips: compacto con mouse, ≥44px al tacto. */
 .estacion-hoja {
@@ -11,7 +14,7 @@
   }
 }
 
-/* Fichas de estaciones: de un vistazo cuáles ya se capturaron. */
+/* ---- Fichas de estaciones: de un vistazo cuáles ya se capturaron ---- */
 .estaciones-selector {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
@@ -88,15 +91,11 @@
 }
 
 .estacion-encabezado .juegos-subtitulo {
-  margin-bottom: var(--e-1, 0.25rem);
+  margin-bottom: var(--e-1);
 }
 
 .estacion-info {
   font-size: var(--t-sm);
-}
-
-.estacion-cabecera {
-  display: none;
 }
 
 .estacion-filas {
@@ -106,32 +105,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--e-2);
-}
-
-/* Celular / tablet: cada equipo es una tarjeta (equipo + puntos arriba, marcas debajo). */
-.estacion-fila {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--e-2) var(--e-3);
-  padding: var(--e-3) var(--e-4);
-  border: 1px solid var(--tarjeta-borde);
-  border-radius: var(--radio-m);
-  background: rgba(255, 255, 255, 0.03);
-  min-width: 0;
-}
-
-.estacion-fila.has-error {
-  border-color: var(--coral-error);
-}
-
-.estacion-celda-equipo {
-  grid-column: 1;
-  grid-row: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--e-2);
-  min-width: 0;
 }
 
 .estacion-num {
@@ -154,96 +127,162 @@
   box-shadow: inset 0 0 0 2px rgba(247, 243, 227, 0.35);
 }
 
-.estacion-vaciar {
-  flex: 0 0 auto;
-  width: 1.6rem;
-  height: 1.6rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border-radius: 50%;
-  border: 1px solid var(--tarjeta-borde);
-  background: transparent;
-  color: var(--hueso-tenue);
-  font-size: 1.1rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.estacion-vaciar:hover {
-  border-color: var(--coral-error);
-  color: var(--coral-error);
-}
-
-.estacion-vaciar:focus-visible {
-  outline: 2px solid var(--amarillo);
-  outline-offset: 2px;
-}
-
-@media (pointer: coarse) {
-  .estacion-vaciar {
-    width: 2.75rem;
-    height: 2.75rem;
-  }
-}
-
-.estacion-pts {
-  grid-column: 2;
-  grid-row: 1;
-  min-width: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  text-align: right;
-  font-size: var(--t-lg);
-  font-weight: 700;
-  color: var(--amarillo);
-}
-
-.estacion-grupos {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--e-3) var(--e-5);
-}
-
-.estacion-grupo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  min-width: 0;
-}
-
-/* Solo dentro de contenedores EN FILA: en uno en columna (`.capilla-lugar`) `flex-basis` se lee como alto. */
-.estacion-grupos > .estacion-grupo.is-ancho,
-.capilla-fila-2 > .estacion-grupo.is-ancho {
-  flex: 1 1 16rem;
-}
-
-.estacion-etiqueta {
-  font-size: var(--t-xs);
-  font-weight: 600;
-  color: var(--hueso-tenue);
-}
-
-.estacion-grupo-control {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--e-2) var(--e-3);
-  min-width: 0;
-}
-
 .estacion-error {
   grid-column: 1 / -1;
   margin: 0;
 }
 
-.estacion-sin-tiempo {
-  padding-inline: 0.5rem;
+/* ---- Bloques: cada campo de la hoja (Unidad, Pregunta, Palabra…) es una caja con su título ---- */
+.estacion-secciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  min-width: 0;
+}
+
+@media (min-width: 600px) {
+  .es-acordeon .estacion-secciones {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.estacion-seccion {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+/* Al enfocar una casilla (o tocar un botón) el navegador la lleva a la vista: este margen deja libre la barra
+   de guardado fija de abajo para que no quede tapada. */
+.estacion-hoja input,
+.estacion-hoja button {
+  scroll-margin-bottom: 7rem;
+}
+
+.estacion-seccion.is-falta {
+  border-color: var(--coral-error);
+}
+
+/* Franja de título: el nombre como en la hoja de papel, en ámbar y mayúsculas. */
+.estacion-seccion-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.1rem 0.5rem;
+  padding: 0.45rem 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--amarillo) 13%, transparent);
+  border-bottom: 1px solid var(--tarjeta-borde);
+}
+
+.estacion-seccion.is-falta .estacion-seccion-titulo {
+  background: color-mix(in srgb, var(--coral-error) 18%, transparent);
+}
+
+.estacion-seccion-nombre {
+  flex: 0 0 auto;
+  font-size: var(--t-xs);
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--amarillo);
+}
+
+/* La pista nunca se corta con «…»: si no cabe junto al título, baja a su propia línea. */
+.estacion-seccion-pista {
+  flex: 1 1 8rem;
+  min-width: 0;
+  font-size: var(--t-xs);
+  color: var(--hueso-tenue);
+}
+
+/* En teléfonos angostos la pista baja a su propia línea y el puntito se queda arriba, junto al título. */
+@media (max-width: 389px) {
+  .estacion-punto {
+    order: 2;
+  }
+
+  .estacion-seccion-pista {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
+
+/* Puntito de estado: hueco = pendiente, verde = completo, rojo = falta (tras intentar guardar). */
+.estacion-punto {
+  flex: 0 0 auto;
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-left: auto;
+  border-radius: 50%;
+  border: 2px solid var(--hueso-apagado);
+}
+
+.is-completa .estacion-punto {
+  background: var(--verde-claro);
+  border-color: transparent;
+}
+
+.is-falta .estacion-punto {
+  background: var(--coral-error);
+  border-color: transparent;
+}
+
+.estacion-seccion-cuerpo {
+  display: flex;
+  flex-direction: column;
+  padding: 0.25rem 0.75rem;
+}
+
+/* Una línea del bloque: etiqueta a la izquierda y control a la derecha; si no caben juntos, el control
+   baja debajo de su etiqueta (nunca se sale en un teléfono angosto). */
+.estacion-campo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  min-height: 3.25rem;
+  padding: 0.35rem 0;
+}
+
+.estacion-campo + .estacion-campo {
+  border-top: 1px dashed var(--tarjeta-borde);
+}
+
+.estacion-campo-etiqueta {
+  flex: 1 1 7rem;
+  min-width: 0;
+  font-size: var(--t-sm);
+  font-weight: 600;
+}
+
+.estacion-campo-corta {
+  display: none;
+}
+
+.estacion-campo-control {
+  flex: 0 0 auto;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--e-2);
+}
+
+/* Control de ancho completo (Terminó / No terminó, «Lo que lograron»): en su propia línea, bajo la etiqueta. */
+.estacion-campo.is-bloque .estacion-campo-etiqueta {
+  flex-basis: 100%;
+}
+
+.estacion-campo.is-bloque .estacion-campo-control {
+  flex: 1 1 100%;
+  justify-content: flex-start;
 }
 
 /* ---- Marcas ✔ / ✖ ---- */
@@ -288,11 +327,22 @@
   color: var(--corteza);
 }
 
-/* ---- Chips de opción (¼ ½ ¾, 0–4, F/D, recitación) ---- */
+/* ---- Chips de opción (¼ ½ ¾, 0–4, F/D, Terminó/No terminó, recitación) ---- */
 .opciones-chip {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 0.3rem;
+}
+
+/* Segmentado: los botones se reparten todo el ancho. */
+.opciones-chip.is-ancho {
+  display: flex;
+  width: 100%;
+}
+
+.opciones-chip.is-ancho .opcion-chip {
+  flex: 1 1 0;
+  min-height: 3rem;
 }
 
 .opcion-chip {
@@ -333,36 +383,35 @@
   cursor: not-allowed;
 }
 
-/* ---- Campos numéricos: tiempo «__ : __» y «__ de __» ---- */
-.campo-tiempo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
+.opcion-larga {
+  font-weight: 600;
 }
 
-.campo-tiempo-sep {
-  font-weight: 700;
-  color: var(--hueso-tenue);
+/* ---- Campos numéricos: tiempo en UNA casilla («250» → 2:50) y «__ de __» ---- */
+.estacion-hoja .campo-tiempo {
+  width: 6rem;
 }
 
-/* Más específicos que `.field input[type="number"]` (global.css): ese pone width: 100% y aquí los campos
-   son cortos. Sin las flechitas del navegador, que se comen medio campo. */
-.estacion-hoja .campo-tiempo .field,
 .estacion-hoja .campo-numero {
-  width: 3.9rem;
+  width: 4.2rem;
 }
 
-.estacion-hoja .campo-tiempo .field input[type="number"],
+/* Más específicos que `.field input[type="text"|"number"]` (global.css): ese pone width: 100% y aquí los campos
+   son cortos. Sin las flechitas del navegador, que se comen medio campo. */
+.estacion-hoja .campo-tiempo input[type="text"],
 .estacion-hoja .campo-numero input[type="number"] {
   padding: 0.5rem 0.3rem;
   text-align: center;
   font-family: var(--fuente-mono);
+  font-weight: 700;
   appearance: textfield;
   -moz-appearance: textfield;
 }
 
-.estacion-hoja .campo-tiempo .field input::-webkit-outer-spin-button,
-.estacion-hoja .campo-tiempo .field input::-webkit-inner-spin-button,
+.estacion-hoja .campo-tiempo input[type="text"] {
+  font-size: max(1.15rem, 16px);
+}
+
 .estacion-hoja .campo-numero input::-webkit-outer-spin-button,
 .estacion-hoja .campo-numero input::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -370,7 +419,7 @@
 }
 
 @media (pointer: coarse) {
-  .estacion-hoja .campo-tiempo .field input[type="number"],
+  .estacion-hoja .campo-tiempo input[type="text"],
   .estacion-hoja .campo-numero input[type="number"] {
     min-height: 2.75rem;
   }
@@ -381,24 +430,7 @@
   border-color: var(--coral-error);
 }
 
-/* ---- Rally ---- */
-.estacion-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: var(--marca);
-  font-size: var(--t-sm);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.estacion-check input {
-  width: 1.15rem;
-  height: 1.15rem;
-  accent-color: var(--amarillo);
-  cursor: pointer;
-}
-
+/* ---- Rally: lo que lograron si no terminaron ---- */
 .estacion-avance {
   display: inline-flex;
   flex-wrap: wrap;
@@ -411,143 +443,375 @@
   color: var(--hueso-tenue);
 }
 
-/* ---- Búsqueda ---- */
-.estacion-pregunta {
+/* «Son [__]», «[__] de [__]»: casilla y su palabra siempre juntas (si falta lugar baja el par entero, no a la mitad). */
+.estacion-avance-par {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.5rem;
 }
 
-.estacion-fruto {
+/* ============================================================
+   Acordeón (teléfono / tableta): un equipo abierto a la vez
+   ============================================================ */
+.estacion-acordeon {
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+  /* Al abrirlo se lleva a la vista; el margen deja libre la barra del sitio (sticky, ~76px). */
+  scroll-margin-top: 5.5rem;
+}
+
+.estacion-acordeon.is-abierto {
+  border-color: var(--amarillo-suave);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.estacion-acordeon.has-error {
+  border-color: var(--coral-error);
+}
+
+.estacion-acordeon-cabecera {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  border-radius: var(--radio-m);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.estacion-acordeon-cabecera:focus-visible {
+  outline: 2px solid var(--amarillo);
+  outline-offset: -2px;
+}
+
+.estacion-acordeon-titulo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.estacion-estado {
+  max-width: 100%;
+  font-size: var(--t-xs);
+  line-height: 1.25;
+  color: var(--hueso-apagado);
+  overflow-wrap: anywhere;
+}
+
+.es-listo .estacion-estado {
+  color: var(--verde-claro);
+  font-weight: 600;
+}
+
+.es-medias .estacion-estado {
+  color: var(--amarillo);
+}
+
+.estacion-acordeon.has-error .estacion-estado {
+  color: var(--coral-error);
+}
+
+.estacion-pts-simple {
+  min-width: 2.2rem;
+  text-align: right;
+  font-size: var(--t-lg);
+  font-weight: 700;
+  color: var(--amarillo);
+}
+
+.estacion-chevron {
+  color: var(--hueso-tenue);
+  transition: transform var(--dur-rapida) ease;
+}
+
+.estacion-acordeon.is-abierto .estacion-chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .estacion-chevron {
+    transition: none;
+  }
+}
+
+.estacion-acordeon-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  padding: var(--e-3);
+  border-top: 1px solid var(--tarjeta-borde);
+}
+
+.estacion-acordeon-pie {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem 0.9rem;
+  gap: var(--e-2);
 }
 
-.estacion-fruto-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
+/* El padre es una fila que envuelve: `flex-basis` aquí es ANCHO (no alto), a diferencia de una columna. */
+.estacion-siguiente {
+  flex: 1 1 12rem;
+  min-height: 3rem;
 }
 
-.estacion-fruto-n {
+.estacion-vaciar-equipo {
+  min-height: 3rem;
+}
+
+/* ============================================================
+   Tabla (escritorio): una fila por equipo, líneas entre columnas
+   ============================================================ */
+.estacion-hoja--rally.es-tabla {
+  --cols: 10.6rem 7rem minmax(0, 1fr) 5rem;
+}
+
+.estacion-hoja--busqueda.es-tabla {
+  --cols: 10.4rem 5.5rem 10.8rem 5.5rem minmax(17.5rem, 1fr) 6.7rem 4.6rem;
+}
+
+.estacion-cabecera {
+  display: grid;
+  grid-template-columns: var(--cols);
+  border-bottom: 2px solid var(--amarillo);
   font-size: var(--t-xs);
-  color: var(--hueso-apagado);
-}
-
-/* ---- Escritorio: la hoja como tabla, igual que la de papel (una fila por equipo) ---- */
-.estacion-hoja--rally .estacion-cabecera,
-.estacion-hoja--busqueda .estacion-cabecera {
-  font-size: var(--t-xs);
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--hueso-tenue);
+  color: var(--amarillo);
+}
+
+.estacion-cabecera > span {
+  padding: 0.5rem 0.6rem;
+  border-left: 1px solid var(--tarjeta-borde);
+}
+
+.estacion-cabecera > span:first-child {
+  border-left: 0;
 }
 
 .estacion-cabecera-pts {
   text-align: right;
 }
 
-@media (min-width: 1024px) {
-  .estacion-hoja--rally .estacion-cabecera,
-  .estacion-hoja--rally .estacion-fila {
-    display: grid;
-    grid-template-columns: 9.5rem 5rem 8.4rem minmax(0, 1fr) 5rem;
-    column-gap: 0.75rem;
-    align-items: center;
-  }
+.estacion-fila {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+  min-width: 0;
+}
 
-  .estacion-hoja--rally .estacion-cabecera {
-    padding: 0 var(--e-3);
-  }
+.estacion-fila.has-error {
+  border-color: var(--coral-error);
+}
 
-  .estacion-hoja--rally .estacion-fila {
-    padding: 0.4rem var(--e-3);
-  }
+.estacion-celda-equipo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.4rem 0.6rem;
+}
 
-  .estacion-hoja--rally .estacion-celda-equipo,
-  .estacion-hoja--rally .estacion-pts {
-    grid-column: auto;
-    grid-row: auto;
-  }
+.estacion-fila .estacion-secciones {
+  display: contents;
+}
 
-  .estacion-hoja--rally .estacion-grupos {
-    display: contents;
-  }
+/* Cada bloque pasa a ser una celda: sin caja ni título (los da el encabezado) y con una línea a la izquierda;
+   las columnas alternas llevan un tinte sutil para seguir el renglón con la vista. */
+.estacion-fila .estacion-seccion {
+  display: flex;
+  align-items: center;
+  overflow: visible;
+  border: 0;
+  border-left: 1px solid var(--tarjeta-borde);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.4rem 0.6rem;
+}
 
-  .estacion-hoja--rally .estacion-etiqueta {
-    display: none;
+.estacion-fila .estacion-seccion:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.estacion-fila .estacion-seccion-titulo,
+.estacion-fila .estacion-campo-etiqueta {
+  display: none;
+}
+
+.estacion-fila .estacion-seccion-cuerpo {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+  padding: 0;
+}
+
+.estacion-fila .estacion-campo {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 0.3rem;
+  min-height: 0;
+  padding: 0;
+  border-top: 0;
+}
+
+.estacion-fila .estacion-campo-corta {
+  display: inline;
+  font-size: var(--t-xs);
+  color: var(--hueso-apagado);
+}
+
+.estacion-fila .estacion-campo-control {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.estacion-fila .estacion-campo.is-bloque .estacion-campo-control {
+  flex: 0 0 auto;
+}
+
+.estacion-fila .opciones-chip.is-ancho {
+  display: inline-flex;
+  width: auto;
+}
+
+.estacion-fila .opciones-chip.is-ancho .opcion-chip {
+  flex: 0 0 auto;
+  min-height: var(--marca);
+}
+
+.estacion-fila .opcion-larga {
+  display: none;
+}
+
+.estacion-hoja--busqueda .estacion-fila .campo-tiempo {
+  width: 5rem;
+}
+
+.estacion-pts {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-left: 1px solid var(--tarjeta-borde);
+  font-size: var(--t-lg);
+  font-weight: 700;
+  color: var(--amarillo);
+}
+
+.estacion-vaciar {
+  flex: 0 0 auto;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--tarjeta-borde);
+  background: transparent;
+  color: var(--hueso-tenue);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.estacion-vaciar:hover {
+  border-color: var(--coral-error);
+  color: var(--coral-error);
+}
+
+.estacion-vaciar:focus-visible {
+  outline: 2px solid var(--amarillo);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .estacion-vaciar {
+    width: 2.75rem;
+    height: 2.75rem;
   }
 }
 
-/* La búsqueda tiene 7 columnas con 7 pares ✔/✖: solo cabe como tabla con mouse y pantalla ancha;
-   en tabletas (aunque sean anchas) se queda en tarjetas con marcas de 44px. */
-@media (min-width: 1280px) and (pointer: fine) {
-  .estacion-hoja--busqueda .estacion-cabecera,
-  .estacion-hoja--busqueda .estacion-fila {
-    display: grid;
-    grid-template-columns: 8.8rem 4.6rem 9.6rem 4.6rem minmax(15.5rem, 1fr) 7.9rem 4.6rem;
-    column-gap: 0.75rem;
-    align-items: center;
-  }
-
-  .estacion-hoja--busqueda .estacion-cabecera {
-    padding: 0 var(--e-3);
-  }
-
-  .estacion-hoja--busqueda .estacion-fila {
-    padding: 0.4rem var(--e-3);
-  }
-
-  .estacion-hoja--busqueda .estacion-celda-equipo,
-  .estacion-hoja--busqueda .estacion-pts {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .estacion-hoja--busqueda .estacion-grupos {
-    display: contents;
-  }
-
-  .estacion-hoja--busqueda .estacion-etiqueta {
-    display: none;
-  }
-
-  /* El nombre más largo («Ahuehuetes») tiene que caber sin «…» en una columna angosta. */
-  .estacion-hoja--busqueda .estacion-equipo {
-    padding-inline: 0.55rem;
-  }
-
-  .estacion-hoja--busqueda .estacion-celda-equipo {
-    gap: 0.4rem;
-  }
+/* ============================================================
+   Barra de guardado fija al pie
+   ============================================================ */
+.estacion-barra {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-desplegable);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  padding: 0.65rem 0.9rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+  /* Fondo opaco: el .glass-card es translúcido y dejaría ver los renglones pasando por debajo. */
+  background: var(--corteza-alta);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-m);
+  box-shadow: 0 -10px 22px rgba(0, 0, 0, 0.35);
 }
 
-/* En tabla el renglón no necesita aire entre las marcas de un mismo grupo. */
-@media (min-width: 1024px) {
-  .estacion-hoja--rally .estacion-grupo,
-  .estacion-hoja--rally .estacion-grupo-control {
-    gap: 0.25rem 0.5rem;
-  }
+.estacion-barra-error {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
-/* ---- Capilla ---- */
+.estacion-barra-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.estacion-barra-total {
+  font-size: var(--t-xl);
+  line-height: 1.1;
+  color: var(--amarillo);
+}
+
+.estacion-barra-resumen {
+  font-size: var(--t-xs);
+  white-space: nowrap;
+}
+
+.estacion-barra-boton {
+  min-height: 3rem;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Capilla
+   ============================================================ */
 .capilla-lugares {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--e-3);
+  gap: var(--e-4);
 }
 
 .capilla-lugar {
   display: flex;
   flex-direction: column;
   gap: var(--e-3);
-  padding: var(--e-3) var(--e-4);
+  padding: var(--e-3);
   border: 1px solid var(--tarjeta-borde);
   border-radius: var(--radio-m);
   background: rgba(255, 255, 255, 0.03);
@@ -564,8 +828,8 @@
 }
 
 .capilla-lugar-n {
+  font-family: var(--fuente-display);
   font-size: var(--t-xl);
-  font-weight: 700;
   color: var(--amarillo);
 }
 
@@ -573,14 +837,11 @@
   font-size: var(--t-sm);
 }
 
-.capilla-lugar .capilla-lugar-pts {
+.capilla-lugar-pts {
   margin-left: auto;
-  grid-column: auto;
-  grid-row: auto;
-}
-
-.capilla-etiqueta {
-  display: block;
+  font-size: var(--t-lg);
+  font-weight: 700;
+  color: var(--amarillo);
 }
 
 .capilla-equipos,
@@ -588,12 +849,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
-}
-
-.capilla-fila-2 {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--e-3) var(--e-5);
+  width: 100%;
 }
 
 .capilla-op-pts {
@@ -607,7 +863,42 @@
   font-size: var(--t-sm);
 }
 
-/* ---- Resultados por estación ---- */
+/* ============================================================
+   Pantallas angostas (teléfonos): más ancho útil
+   ============================================================ */
+@media (max-width: 639px) {
+  /* Más específico que `.juegos-tarjeta` (Juegos.css), que pone el relleno grande de la tarjeta. */
+  .glass-card.juegos-captura {
+    padding: var(--e-3);
+  }
+
+  .estacion-hoja {
+    margin-top: var(--e-4);
+  }
+
+  .estaciones-selector {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .estacion-acordeon-cuerpo {
+    padding: var(--e-2);
+  }
+
+  .estacion-seccion-cuerpo {
+    padding: 0.2rem 0.6rem;
+  }
+
+  /* La barra de guardado ocupa todo el ancho de la pantalla, como una barra nativa. */
+  .estacion-barra {
+    margin-inline: calc(-1 * (var(--e-3) + 1.25rem + 1px));
+    border-radius: 0;
+    border-inline: 0;
+  }
+}
+
+/* ============================================================
+   Resultados por estación
+   ============================================================ */
 .juegos-tabla.juegos-tabla-estaciones {
   table-layout: fixed;
 }

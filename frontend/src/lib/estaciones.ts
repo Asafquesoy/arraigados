@@ -19,9 +19,9 @@ export interface Borrador {
   son: string;
   logro: string;
   lados: number | null;
-  // Tiempo (rally si terminó, búsqueda, capilla opcional)
-  min: string;
-  seg: string;
+  // Tiempo (rally si terminó, búsqueda, capilla opcional): solo dígitos, las dos últimas son los segundos
+  // («250» = 2:50). Se muestra con `fmtDigitos`.
+  tiempo: string;
   // Búsqueda
   unidad: Tri;
   pregunta: "F" | "D" | null;
@@ -43,8 +43,7 @@ export function borradorVacio(est: EstacionInfo): Borrador {
     son: "",
     logro: "",
     lados: null,
-    min: "",
-    seg: "",
+    tiempo: "",
     unidad: null,
     pregunta: null,
     preguntaOk: null,
@@ -60,10 +59,7 @@ export function borradorDesde(est: EstacionInfo, v?: ValoresFila | null): Borrad
   const b = borradorVacio(est);
   if (!v) return b;
   const t = typeof v.tiempo === "number" ? v.tiempo : null;
-  if (t !== null) {
-    b.min = String(Math.floor(t / 60));
-    b.seg = String(t % 60).padStart(2, "0");
-  }
+  if (t !== null) b.tiempo = String(Math.floor(t / 60) * 100 + (t % 60));
   if (est.tipo === "rally") {
     b.prueba = typeof v.prueba === "boolean" ? v.prueba : null;
     b.noTermino = v.termino === false;
@@ -98,8 +94,7 @@ export function esVacio(est: EstacionInfo, b: Borrador): boolean {
     b.son === v.son &&
     b.logro === v.logro &&
     b.lados === v.lados &&
-    b.min === v.min &&
-    b.seg === v.seg &&
+    b.tiempo === v.tiempo &&
     b.unidad === v.unidad &&
     b.pregunta === v.pregunta &&
     b.preguntaOk === v.preguntaOk &&
@@ -113,15 +108,31 @@ export function fmtTiempo(seg: number): string {
   return `${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, "0")}`;
 }
 
-/** Minutos + segundos de los dos campos → segundos. `null` = sin escribir; `error` = algo no cuadra. */
-export function leerTiempo(min: string, seg: string): { seg: number | null; error?: string } {
-  if (min.trim() === "" && seg.trim() === "") return { seg: null };
-  const m = min.trim() === "" ? 0 : Number(min);
-  const s = seg.trim() === "" ? 0 : Number(seg);
-  if (!Number.isInteger(m) || !Number.isInteger(s) || m < 0 || s < 0) return { seg: null, error: "El tiempo son minutos y segundos enteros." };
-  if (s > 59) return { seg: null, error: "Los segundos van de 0 a 59." };
-  if (m * 60 + s === 0) return { seg: null, error: "El tiempo no puede ser 0:00." };
-  return { seg: m * 60 + s };
+/** Lo que se escribe en la casilla de tiempo → solo dígitos, máximo 4 (hasta 99:59). */
+export function soloDigitos(texto: string): string {
+  return texto.replace(/\D/g, "").slice(0, 4);
+}
+
+/** Dígitos → como se ve: «250» → «2:50», «45» → «0:45», «1030» → «10:30». Vacío = vacío. */
+export function fmtDigitos(digitos: string): string {
+  if (digitos === "") return "";
+  const p = digitos.padStart(3, "0");
+  return `${Number(p.slice(0, -2))}:${p.slice(-2)}`;
+}
+
+/** ¿Los segundos escritos pasan de 59? (se pinta en rojo al instante, antes de guardar). */
+export function segundosInvalidos(digitos: string): boolean {
+  return digitos !== "" && Number(digitos.padStart(3, "0").slice(-2)) > 59;
+}
+
+/** Dígitos de la casilla de tiempo → segundos. `null` = sin escribir; `error` = algo no cuadra. */
+export function leerTiempo(digitos: string): { seg: number | null; error?: string } {
+  if (digitos === "") return { seg: null };
+  if (segundosInvalidos(digitos)) return { seg: null, error: "Los segundos van de 0 a 59." };
+  const p = digitos.padStart(3, "0");
+  const seg = Number(p.slice(0, -2)) * 60 + Number(p.slice(-2));
+  if (seg === 0) return { seg: null, error: "El tiempo no puede ser 0:00." };
+  return { seg };
 }
 
 function entero(texto: string, min: number, max: number): number | null {
@@ -142,7 +153,7 @@ export function valoresDesde(est: EstacionInfo, b: Borrador): ResultadoValores {
 function valoresRally(est: EstacionInfo, b: Borrador): ResultadoValores {
   if (b.prueba === null) return { error: "Marca la Prueba de raíz (✔ o ✖)." };
   if (!b.noTermino) {
-    const t = leerTiempo(b.min, b.seg);
+    const t = leerTiempo(b.tiempo);
     if (t.error) return { error: t.error };
     if (t.seg === null) return { error: "Escribe en cuánto tiempo terminó o marca «No terminó»." };
     if (t.seg > est.limite_seg) {
@@ -180,7 +191,7 @@ function valoresBusqueda(b: Borrador): ResultadoValores {
   if (b.preguntaOk === null) return { error: "Marca si respondieron bien la pregunta (✔ o ✖)." };
   if (b.palabra === null) return { error: "Marca Palabra (✔ o ✖)." };
   if (b.fruto.some((x) => x === null)) return { error: "Marca ✔ o ✖ en las 3 situaciones de «¿Fruto o carne?»." };
-  const t = leerTiempo(b.min, b.seg);
+  const t = leerTiempo(b.tiempo);
   if (t.error) return { error: t.error };
   if (t.seg === null) return { error: "Escribe el tiempo del cronómetro." };
   return {
@@ -193,6 +204,36 @@ function valoresBusqueda(b: Borrador): ResultadoValores {
       tiempo: t.seg,
     },
   };
+}
+
+/** Un bloque de la hoja (Unidad, Pregunta…): su clave, su título como en el papel y si ya está completo. */
+export interface EstadoSeccion {
+  clave: string;
+  titulo: string;
+  completa: boolean;
+}
+
+/**
+ * Qué bloques de un renglón ya están llenos. Sirve para los puntitos de estado de cada bloque y para decir
+ * qué falta en la cabecera de un equipo («Falta: Unidad, Palabra»).
+ */
+export function seccionesEstado(est: EstacionInfo, b: Borrador): EstadoSeccion[] {
+  if (est.tipo === "rally") {
+    // «Resultado» = terminó con tiempo válido, o no terminó con lo que lograron completo.
+    const resultado = valoresRally(est, { ...b, prueba: true });
+    return [
+      { clave: "prueba", titulo: "Prueba de raíz", completa: b.prueba !== null },
+      { clave: "resultado", titulo: "Resultado", completa: !("error" in resultado) },
+    ];
+  }
+  const t = leerTiempo(b.tiempo);
+  return [
+    { clave: "unidad", titulo: "Unidad", completa: b.unidad !== null },
+    { clave: "pregunta", titulo: "Pregunta", completa: b.pregunta !== null && b.preguntaOk !== null },
+    { clave: "palabra", titulo: "Palabra", completa: b.palabra !== null },
+    { clave: "fruto", titulo: "¿Fruto o carne?", completa: b.fruto.every((x) => x !== null) },
+    { clave: "tiempo", titulo: "Tiempo", completa: t.seg !== null && !t.error },
+  ];
 }
 
 // ---- Espejo de las cuentas (backend/app/juegos.py) ----
