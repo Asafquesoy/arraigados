@@ -392,12 +392,13 @@ inside this direction rather than introducing an unrelated palette or mood.
 
 ### Data model
 
-Four tables (`backend/app/models.py`): `campers` (registration + `folio` unique short code +
+Six tables (`backend/app/models.py`): `campers` (registration + `folio` unique short code +
 `pago_verificado`/`verificado_en`/`verificado_por` audit fields, plus the matching
 `asistio`/`asistio_en`/`asistio_por` trio for camp-day check-in, plus `equipo_id`/`equipo_fijado`/
 `es_staff` — see Equipos below), `admin_users` (username/bcrypt hash/`role`), `equipos` (id/nombre/color/
-orden — see below), and `app_settings` (single row, `id=1` — runtime-editable flags, see the
-Runtime settings pattern above). `Sexo`, `TallaCamisa`, and `AdminRole`
+orden — see below), `app_settings` (single row, `id=1` — runtime-editable flags, see the
+Runtime settings pattern above), `comprobante_eventos` (append-only receipt/payment history, see
+*Conciliación*), and `calificaciones` (game scores per team, migration `0017`, see *Juegos*). `Sexo`, `TallaCamisa`, and `AdminRole`
 (`ADMIN`/`VERIFICADOR_PAGO`/`VISUALIZADOR`/`RECEPCION`) are Python/DB enums defined in `models.py`
 and reused in `schemas.py`. `campers.ticket_path`/`ticket_mime` are nullable — a registration can
 exist without a receipt when the `pedir_comprobante` toggle is off; `CamperOut.tiene_comprobante`
@@ -421,7 +422,9 @@ dependency caching means stacking it on a route that's already behind the router
 `ADMIN_USERNAME`/`ADMIN_PASSWORD` env vars) is always created with `role=ADMIN`; every other
 account is created from the panel itself (`/admin/usuarios`, Admin role only) — `POST/PATCH/DELETE
 /api/admin/usuarios/*` guard against an admin deleting their own account, changing their own
-role, or deleting the last remaining Admin.
+role, or deleting the last remaining Admin. In `pages/AdminUsers.tsx`, "Restablecer contraseña" is a real
+`<form>` (Enter submits, `autoComplete="new-password"`) and its "mínimo 8 caracteres" error shows inline under the
+field (`role="alert"`), not as a toast.
 
 The `RECEPCION` role exists solely for camp-day check-in: `PATCH
 /api/admin/registros/{id}/asistencia` (`routers/admin.py`) is gated to
@@ -639,7 +642,8 @@ sucio, Voleibol gigante) en vez de llevarlas en un Excel aparte. Todos los roles
   posiciones se calculan sobre ese total redondeado (empates comparten lugar: 1, 1, 3) y un equipo sin hojas no
   tiene posición. `tabla_general()` suma los juegos (`GET /posiciones`).
 - **Modo `estaciones` (Rally sucio 1000 pts, Búsqueda del tesoro 800)**: las reglas están en
-  `reglas-juegos/Concentrado de puntajes 2026.md` (y las hojas de papel de los encargados en los PDF de esa carpeta);
+  `reglas-juegos/Concentrado de puntajes 2026.md` (y las hojas de papel de los encargados en los PDF de esa carpeta;
+  **esa carpeta está en `.gitignore`** — vive solo en la máquina de Omar, así que `juegos.py` es la fuente de verdad en el repo);
   `juegos.py` las implementa tal cual, **incluidos los supuestos ⚠ del concentrado** (el borde de una franja cuenta
   en la de arriba: 2:40 = 100, 8:00 = 60; nivel ¼ ½ ¾ sin marcar = 0; redondeo al entero más cercano con la mitad
   hacia arriba, hecho con `Fraction` — el `round` de Python redondea 0.5 al par). Cada juego es una tupla de
@@ -842,6 +846,11 @@ quiet moments.
 - **Producción ya tiene historial real** (`comprobante_eventos`): el equipo usa `/admin/conciliacion` a los
   pocos minutos del deploy, así que no asumir que la tabla está vacía ni borrarla al probar.
 - Las credenciales SSH viven en el `.env` raíz local (gitignored); nunca van al repo ni a este archivo.
+
+**Deploy de Juegos (2026-11-12, commits `5358b64`…`e0661c2`, migración `0017`):** sin incidentes; respaldo previo,
+`git pull --ff-only`, `deploy.sh` (la migración corre sola) y 126 registros intactos. No cambió `nginx.conf`, así que no
+hizo falta `nginx -t`. Verificado: `/`, `/api/settings`, `/api/iglesias`, `/admin/juegos` 200, `/api/admin/juegos` 401 sin
+sesión, JS principal en gzip y migración en `0017 (head)`. La tabla `calificaciones` nace vacía.
 
 ### Copying production data into the dev database (for realistic tests)
 

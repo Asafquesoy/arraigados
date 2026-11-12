@@ -8,3 +8,6 @@ data/
 backend/dev.db
 *.tsbuildinfo
 .playwright-mcp/
+
+# Reglas y hojas de los juegos (material local de la organización)
+reglas-juegos/
