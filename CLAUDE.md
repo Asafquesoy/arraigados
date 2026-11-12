@@ -618,7 +618,7 @@ Roles: Admin y `RECEPCION`.
 
 ### Juegos (`/admin/juegos`) — calificaciones por equipo
 
-Para sumar las hojas de los jueces de los juegos del campamento (Sketch, Búsqueda del tesoro, Rally
+Para sumar las hojas de los jueces/encargados de los juegos del campamento (Sketch, Búsqueda del tesoro, Rally
 sucio, Voleibol gigante) en vez de llevarlas en un Excel aparte. Todos los roles del panel ven (menos
 `RECEPCION`, que se redirige a `/admin/recepcion`); **solo Admin captura/edita/borra** (`canEdit`).
 
@@ -626,8 +626,9 @@ sucio, Voleibol gigante) en vez de llevarlas en un Excel aparte. Todos los roles
   catálogo `JUEGOS` — cada `Juego` con sus `Criterio` (`tipo` `escala` = el juez pone 0–100 y se convierte
   proporcional, o `si_no` = todo o nada, más los `puntos` que vale). El formulario y las tablas del frontend se
   dibujan a partir de `GET /api/admin/juegos`, así que **agregar un juego = agregar/llenar una entrada en
-  `JUEGOS`** (los otros tres existen con `criterios=()` y salen como "Reglas pendientes"); sin migración ni
-  cambios de UI. Sketch (600 pts): Historia 200 y Originalidad 200 y Adaptación 100 (escala), Inclusión 50 y
+  `JUEGOS`** (Voleibol gigante existe con `criterios=()` y sale como "Reglas pendientes"); sin migración ni
+  cambios de UI. Hay **dos modos** (`Juego.modo`): `jueces` (Sketch: varios jueces, promedio — lo de abajo) y
+  `estaciones` (Rally sucio y Búsqueda del tesoro — ver el siguiente bloque). Sketch (600 pts): Historia 200 y Originalidad 200 y Adaptación 100 (escala), Inclusión 50 y
   Tiempo 50 (sí/no).
 - **Se guarda lo que puso el juez, no los puntos**: `calificaciones.valores` (JSON: `{"historia": 80,
   "tiempo": true}`), una fila por juez+equipo+juego (`UniqueConstraint`, y el chequeo case-insensitive del router
@@ -637,6 +638,39 @@ sucio, Voleibol gigante) en vez de llevarlas en un Excel aparte. Todos los roles
 - **Puntaje del equipo = promedio de sus hojas** criterio por criterio (`resultados()`), redondeado a 1 decimal; las
   posiciones se calculan sobre ese total redondeado (empates comparten lugar: 1, 1, 3) y un equipo sin hojas no
   tiene posición. `tabla_general()` suma los juegos (`GET /posiciones`).
+- **Modo `estaciones` (Rally sucio 1000 pts, Búsqueda del tesoro 800)**: las reglas están en
+  `reglas-juegos/Concentrado de puntajes 2026.md` (y las hojas de papel de los encargados en los PDF de esa carpeta);
+  `juegos.py` las implementa tal cual, **incluidos los supuestos ⚠ del concentrado** (el borde de una franja cuenta
+  en la de arriba: 2:40 = 100, 8:00 = 60; nivel ¼ ½ ¾ sin marcar = 0; redondeo al entero más cercano con la mitad
+  hacia arriba, hecho con `Fraction` — el `round` de Python redondea 0.5 al par). Cada juego es una tupla de
+  `Estacion` (rally: 10 juegos con su límite de 8 ó 10 min y qué se anota si no terminan — `nivel`/`conteo`/
+  `son_logro`/`lados`; búsqueda: Raíz + 9 frutos con su señal y **el orden de equipos de SU hoja de papel**, que cambia
+  en cada estación, + la capilla). **No hay migración**: se reusa `calificaciones` con **una fila por equipo y estación**
+  y la clave de la estación en el campo `juez`; `valores` guarda lo que marcó el encargado (✔/✖, F/D, tiempo en segundos,
+  «x de y»), nunca puntos. `validar_fila` es estricta y devuelve el renglón limpio (un rally que terminó no guarda
+  «nivel»); `puntos_fila` es tolerante. El total del equipo es la **suma** de sus estaciones (no promedio) y
+  `resultados()` recibe `(equipo_id, juez, valores)`. **Posición dentro del juego = más puntos y, a igual puntaje, menos
+  tiempo** (`_posiciones_con_desempate`): rally suma lo que tardó en cada juego, y un juego sin terminar o sin jugar
+  cuenta con su límite; búsqueda suma el tiempo de las estaciones capturadas (la capilla no cuenta); empatan solo los
+  que igualan en las dos cosas. `tiempo_seg` sale `None` si no hay tiempo.
+  - **API**: `PUT /api/admin/juegos/{clave}/estaciones/{estacion}` (Admin; `routers/juegos.py::guardar_estacion`)
+    guarda la hoja **completa** de una estación en una transacción — crea/actualiza los renglones que vienen y
+    **borra** los que ya no (renglón vaciado), 422 con «Equipo: motivo» y no guarda nada si un renglón es inválido, 409
+    si dos personas chocan al crear la misma fila. La capilla además exige lugares distintos (1.º/2.º/3.º) y no
+    acepta huecos en la pantalla. `POST /hojas` y `PATCH /hojas/{id}` responden 422 para estos juegos.
+  - **UI**: `components/EstacionesCaptura.tsx` (fichas de estaciones con «n/10» y ✔ al completarse; al guardar pasa sola
+    a la siguiente sin capturar; pregunta antes de cambiar de estación con datos sin guardar) → `HojaEstacion.tsx`
+    (rally/búsqueda: **un renglón por equipo, en el orden del papel**, con las mismas marcas ✔/✖, F/D y «min : seg»;
+    un renglón sin tocar no se guarda, uno a medias marca en rojo qué falta; puntos en vivo) o `HojaCapilla.tsx` (aquí el
+    renglón es el *lugar* y se elige el equipo); controles en `ControlesHoja.tsx` (`MarcaSiNo`, `OpcionesChip`,
+    `CampoTiempo`); toda la lógica de borradores/validación/cuentas del lado del cliente en `lib/estaciones.ts`
+    (**espejo de `juegos.py`**: si cambia una regla hay que tocar los dos; la cuenta de verdad la hace el servidor);
+    resultados por estación en `ResultadosEstaciones.tsx` (tabla de columnas fijas desde 1024px — las 10 estaciones caben
+    a ~70px cada una —, tarjetas debajo). Rally en tabla desde 1024px; **la búsqueda solo desde 1280px con mouse**
+    (`pointer: fine`): son 7 pares ✔/✖ y con marcas de 44px (tableta) no caben, ahí se queda en tarjetas. El tiempo se
+    captura en dos casillas «min : seg» como el papel (no un campo «2:15», que en el teclado numérico del celular no
+    tiene dos puntos). Trampa ya vista: el botón «×» de vaciar renglón dentro de la celda del equipo truncaba «Ahuehuetes»;
+    vive en la columna de puntos.
 - Borrar un equipo borra sus calificaciones explícitamente (`equipos.py::borrar_equipo`; SQLite no aplica el
   `ON DELETE CASCADE`). Migración `0017`: **hay que correr `alembic upgrade head`** — sin la tabla, borrar un equipo
   y toda la pantalla dan 500.

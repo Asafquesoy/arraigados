@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 import { Link, Navigate } from "react-router-dom";
 import { useReducedMotion } from "motion/react";
 import { ConfirmButton } from "../components/ConfirmButton";
+import { EstacionesCaptura } from "../components/EstacionesCaptura";
 import { HojaCalificacion } from "../components/HojaCalificacion";
+import { ResultadosEstaciones } from "../components/ResultadosEstaciones";
 import { Reveal } from "../components/Reveal";
 import { Skeleton } from "../components/Skeleton";
 import { Toast } from "../components/Toast";
@@ -10,6 +12,7 @@ import { useAdminAuth } from "../lib/AdminAuthContext";
 import {
   apiFetch,
   ApiError,
+  type FilaEstacion,
   type HojaOut,
   type JuegoDetalle,
   type JuegoInfo,
@@ -306,6 +309,35 @@ function VistaJuego({
   );
 }
 
+interface VistaEstacionesProps {
+  detalle: JuegoDetalle;
+  esEscritorio: boolean;
+  canEdit: boolean;
+  guardando: boolean;
+  errorForm: string | null;
+  onGuardar: (estacion: string, filas: FilaEstacion[]) => Promise<boolean>;
+  onLimpiarError: () => void;
+}
+
+/** Rally sucio y Búsqueda del tesoro: se capturan las hojas de los encargados, estación por estación. */
+function VistaEstaciones({ detalle, esEscritorio, canEdit, guardando, errorForm, onGuardar, onLimpiarError }: VistaEstacionesProps) {
+  return (
+    <>
+      {canEdit &&
+        (detalle.equipos.length === 0 ? (
+          <div className="glass-card juegos-aviso">
+            <p>
+              Primero crea los equipos en <Link to="/admin/equipos">Equipos</Link>.
+            </p>
+          </div>
+        ) : (
+          <EstacionesCaptura detalle={detalle} guardando={guardando} error={errorForm} onGuardar={onGuardar} onLimpiarError={onLimpiarError} />
+        ))}
+      <ResultadosEstaciones detalle={detalle} esEscritorio={esEscritorio} />
+    </>
+  );
+}
+
 export function Juegos() {
   const { username, role, loading: authLoading } = useAdminAuth();
   const canEdit = role === "ADMIN";
@@ -405,6 +437,26 @@ export function Juegos() {
     }
   }
 
+  async function guardarEstacion(estacion: string, filas: FilaEstacion[]): Promise<boolean> {
+    setGuardando(true);
+    setErrorForm(null);
+    try {
+      await apiFetch<HojaOut[]>(`/admin/juegos/${vista}/estaciones/${estacion}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filas }),
+      });
+      setToast("Estación guardada.");
+      await recargar();
+      return true;
+    } catch (err) {
+      setErrorForm(err instanceof ApiError ? err.message : "No se pudo guardar la estación. Intenta de nuevo.");
+      return false;
+    } finally {
+      setGuardando(false);
+    }
+  }
+
   async function borrar(hoja: HojaOut) {
     try {
       await apiFetch(`/admin/juegos/hojas/${hoja.id}`, { method: "DELETE" });
@@ -457,7 +509,7 @@ export function Juegos() {
             onClick={() => setVista(j.clave)}
           >
             {j.nombre}
-            {j.criterios.length === 0 && <span className="juegos-tab-pronto">pronto</span>}
+            {j.criterios.length === 0 && j.modo !== "estaciones" && <span className="juegos-tab-pronto">pronto</span>}
           </button>
         ))}
       </div>
@@ -473,7 +525,18 @@ export function Juegos() {
         ) : vista === "posiciones" ? (
           posiciones && <VistaPosiciones datos={posiciones} esEscritorio={esEscritorio} />
         ) : (
-          detalle && (
+          detalle &&
+          (detalle.juego.modo === "estaciones" ? (
+            <VistaEstaciones
+              detalle={detalle}
+              esEscritorio={esEscritorio}
+              canEdit={canEdit}
+              guardando={guardando}
+              errorForm={errorForm}
+              onGuardar={guardarEstacion}
+              onLimpiarError={() => setErrorForm(null)}
+            />
+          ) : (
             <VistaJuego
               detalle={detalle}
               esEscritorio={esEscritorio}
@@ -490,7 +553,7 @@ export function Juegos() {
               }}
               onBorrar={borrar}
             />
-          )
+          ))
         )}
       </div>
 

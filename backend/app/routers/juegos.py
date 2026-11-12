@@ -2,6 +2,11 @@
 
 Cualquier cuenta del panel puede ver; solo Admin captura, corrige y borra hojas. El catálogo
 de juegos y las cuentas viven en `juegos.py` (puro); aquí solo se arma la respuesta.
+
+Hay dos modos de juego. En `jueces` (Sketch) cada hoja es de un juez (`POST .../hojas`, `PATCH`/
+`DELETE /hojas/{id}`). En `estaciones` (Rally sucio, Búsqueda del tesoro) se captura la hoja de papel
+de una estación completa de un jalón con `PUT /{clave}/estaciones/{estacion}`: una fila por equipo en
+`calificaciones`, con la clave de la estación en el campo `juez`.
 Las rutas literales (`/posiciones`, `/hojas/{id}`) van antes de `/{clave}`.
 """
 
@@ -17,15 +22,20 @@ from ..juegos import (
     JUEGOS,
     Juego,
     obtener_juego,
+    puntos_fila,
     puntos_hoja,
     resultados,
     tabla_general,
+    validar_fila,
+    validar_lugares_capilla,
     validar_valores,
 )
 from ..models import AdminRole, AdminUser, Calificacion, Equipo
 from ..schemas import (
     CriterioOut,
+    EstacionOut,
     HojaCreate,
+    HojaEstacionPut,
     HojaOut,
     HojaUpdate,
     JuegoDetalleOut,
@@ -51,6 +61,22 @@ def _juego_out(j: Juego) -> JuegoOut:
         nombre=j.nombre,
         descripcion=j.descripcion,
         puntos_max=j.puntos_max,
+        modo=j.modo,
+        estaciones=[
+            EstacionOut(
+                clave=e.clave,
+                nombre=e.nombre,
+                tipo=e.tipo,
+                subtitulo=e.subtitulo,
+                limite_seg=e.limite_seg,
+                avance=e.avance,
+                etiqueta_avance=e.etiqueta_avance,
+                total_sugerido=e.total_sugerido,
+                orden_equipos=list(e.orden_equipos),
+                puntos_max=e.puntos_max,
+            )
+            for e in j.estaciones
+        ],
         criterios=[
             CriterioOut(
                 clave=c.clave,
@@ -77,7 +103,12 @@ def _equipos(db: Session) -> list[Equipo]:
 
 
 def _hoja_out(h: Calificacion, juego: Juego) -> HojaOut:
-    por_criterio, total = puntos_hoja(juego, h.valores)
+    if juego.modo == "estaciones":
+        # Una fila de una estación que ya no está en el catálogo se muestra en 0 en vez de romper la pantalla.
+        est = juego.estacion(h.juez)
+        por_criterio, total = puntos_fila(est, h.valores) if est else ({}, 0.0)
+    else:
+        por_criterio, total = puntos_hoja(juego, h.valores)
     return HojaOut(
         id=h.id,
         juego=h.juego,
@@ -101,6 +132,9 @@ def _limpiar_juez(texto: str) -> str:
     return juez
 
 
+_ES_DE_ESTACIONES = "Este juego se captura por estación, con la hoja completa de cada una."
+
+
 def _valores_o_422(juego: Juego, valores: dict) -> dict:
     try:
         return validar_valores(juego, valores)
@@ -121,7 +155,7 @@ def _hay_duplicada(db: Session, juego: str, equipo_id: int, juez: str, excluir_i
 
 def _resultados_de(db: Session, juego: Juego, equipos: list[Equipo]):
     hojas = db.query(Calificacion).filter(Calificacion.juego == juego.clave).all()
-    return resultados(juego, [e.id for e in equipos], [(h.equipo_id, h.valores) for h in hojas])
+    return resultados(juego, [e.id for e in equipos], [(h.equipo_id, h.juez, h.valores) for h in hojas])
 
 
 @router.get("", response_model=list[JuegoOut])
@@ -162,6 +196,8 @@ def editar_hoja(
     juego = obtener_juego(hoja.juego) if hoja else None
     if not hoja or not juego:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Hoja no encontrada")
+    if juego.modo == "estaciones":
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, _ES_DE_ESTACIONES)
 
     if payload.equipo_id is not None:
         if not db.get(Equipo, payload.equipo_id):
@@ -223,6 +259,7 @@ def detalle_juego(clave: str, db: Session = Depends(get_db)):
                 por_criterio=f.por_criterio,
                 total=f.total,
                 posicion=f.posicion,
+                tiempo_seg=f.tiempo_seg,
             )
             for f in filas
         ],
@@ -238,6 +275,8 @@ def crear_hoja(
     db: Session = Depends(get_db),
 ):
     juego = _juego_o_404(clave)
+    if juego.modo == "estaciones":
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, _ES_DE_ESTACIONES)
     if not db.get(Equipo, payload.equipo_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Equipo no encontrado")
     juez = _limpiar_juez(payload.juez)
@@ -260,3 +299,75 @@ def crear_hoja(
         raise HTTPException(status.HTTP_409_CONFLICT, _JUEZ_REPETIDO)
     db.refresh(hoja)
     return _hoja_out(hoja, juego)
+
+
+@router.put("/{clave}/estaciones/{estacion}", response_model=list[HojaOut])
+def guardar_estacion(
+    clave: str,
+    estacion: str,
+    payload: HojaEstacionPut,
+    admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Guarda la hoja completa de una estación. Los equipos que vienen se crean o se actualizan; los
+    que ya estaban guardados y ya no vienen (renglón vaciado) se borran. Todo o nada: si un renglón
+    no es válido no se guarda nada."""
+    juego = _juego_o_404(clave)
+    est = juego.estacion(estacion) if juego.modo == "estaciones" else None
+    if not est:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Estación no encontrada")
+
+    equipos = {e.id: e for e in _equipos(db)}
+    ids = [f.equipo_id for f in payload.filas]
+    if len(set(ids)) != len(ids):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Un equipo aparece dos veces en la hoja.")
+
+    limpias: dict[int, dict] = {}
+    for fila in payload.filas:
+        equipo = equipos.get(fila.equipo_id)
+        if not equipo:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Equipo no encontrado")
+        try:
+            limpias[fila.equipo_id] = validar_fila(est, fila.valores)
+        except ValueError as exc:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"{equipo.nombre}: {exc}") from exc
+    if est.tipo == "capilla":
+        try:
+            validar_lugares_capilla(list(limpias.values()))
+        except ValueError as exc:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+
+    existentes = {
+        h.equipo_id: h
+        for h in db.query(Calificacion).filter(Calificacion.juego == clave, Calificacion.juez == estacion).all()
+    }
+    ahora = datetime.now(timezone.utc)
+    for equipo_id, valores in limpias.items():
+        hoja = existentes.get(equipo_id)
+        if hoja is None:
+            db.add(Calificacion(juego=clave, equipo_id=equipo_id, juez=estacion, valores=valores, creado_por=admin.username))
+        elif hoja.valores != valores:
+            hoja.valores = valores
+            hoja.actualizado_en = ahora
+            hoja.actualizado_por = admin.username
+    for equipo_id, hoja in existentes.items():
+        if equipo_id not in limpias:
+            db.delete(hoja)
+
+    try:
+        db.commit()
+    except IntegrityError:
+        # Dos personas guardaron la misma estación a la vez y chocaron al crear la fila de un equipo.
+        db.rollback()
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Alguien más guardó esta estación al mismo tiempo. Vuelve a abrirla para ver lo último y guarda de nuevo.",
+        )
+
+    hojas = (
+        db.query(Calificacion)
+        .filter(Calificacion.juego == clave, Calificacion.juez == estacion)
+        .order_by(Calificacion.id.asc())
+        .all()
+    )
+    return [_hoja_out(h, juego) for h in hojas]

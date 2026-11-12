@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
@@ -424,12 +425,30 @@ class CriterioOut(BaseModel):
     escala_max: int
 
 
+class EstacionOut(BaseModel):
+    """Una estación de un juego en modo `estaciones` (rally / búsqueda): lo que el frontend necesita
+    para dibujar su hoja de captura."""
+
+    clave: str
+    nombre: str
+    tipo: str  # "rally" | "busqueda" | "capilla"
+    subtitulo: str
+    limite_seg: int
+    avance: str | None  # "nivel" | "conteo" | "son_logro" | "lados"
+    etiqueta_avance: str
+    total_sugerido: int | None
+    orden_equipos: list[str]
+    puntos_max: int
+
+
 class JuegoOut(BaseModel):
     clave: str
     nombre: str
     descripcion: str
     puntos_max: int
+    modo: str  # "jueces" | "estaciones"
     criterios: list[CriterioOut]
+    estaciones: list[EstacionOut]
 
 
 class HojaCreate(BaseModel):
@@ -445,12 +464,26 @@ class HojaUpdate(BaseModel):
     valores: dict[str, int | bool] | None = None
 
 
+class FilaEstacion(BaseModel):
+    """Un renglón de la hoja de una estación: lo que marcó el encargado para un equipo."""
+
+    equipo_id: int
+    # La forma depende del tipo de estación (listas, "F"/"D"…); juegos.validar_fila lo revisa a fondo.
+    valores: dict[str, Any]
+
+
+class HojaEstacionPut(BaseModel):
+    """La hoja completa de una estación (todos los renglones que tienen datos)."""
+
+    filas: list[FilaEstacion] = Field(max_length=50)
+
+
 class HojaOut(BaseModel):
     id: int
     juego: str
     equipo_id: int
-    juez: str
-    valores: dict[str, int | bool]
+    juez: str  # modo estaciones: la clave de la estación
+    valores: dict[str, Any]
     puntos: dict[str, float]
     total: float
     creado_en: datetime
@@ -467,6 +500,7 @@ class ResultadoEquipoOut(BaseModel):
     por_criterio: dict[str, float]
     total: float
     posicion: int | None
+    tiempo_seg: int | None = None  # modo estaciones: tiempo que cuenta para el desempate
 
 
 class JuegoDetalleOut(BaseModel):

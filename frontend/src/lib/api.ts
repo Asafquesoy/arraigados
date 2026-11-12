@@ -344,16 +344,48 @@ export interface CriterioJuego {
   escala_max: number;
 }
 
+export type ModoJuego = "jueces" | "estaciones";
+export type TipoEstacion = "rally" | "busqueda" | "capilla";
+export type TipoAvance = "nivel" | "conteo" | "son_logro" | "lados";
+
+/** Una estación de un juego en modo `estaciones` (rally / búsqueda): lo que hace falta para dibujar su hoja. */
+export interface EstacionInfo {
+  clave: string;
+  nombre: string;
+  tipo: TipoEstacion;
+  /** Búsqueda: la señal de la estación (Luz blanca, Pandero…). */
+  subtitulo: string;
+  /** Rally: tiempo límite del juego, en segundos. */
+  limite_seg: number;
+  /** Rally: qué se anota si no terminaron. */
+  avance: TipoAvance | null;
+  etiqueta_avance: string;
+  total_sugerido: number | null;
+  /** Nombres de los equipos en el orden de los renglones de la hoja de papel. */
+  orden_equipos: string[];
+  puntos_max: number;
+}
+
 export interface JuegoInfo {
   clave: string;
   nombre: string;
   descripcion: string;
   puntos_max: number;
+  modo: ModoJuego;
   criterios: CriterioJuego[];
+  estaciones: EstacionInfo[];
 }
 
 /** Lo que puso el juez: número de 0 a `escala_max` (escala) o true/false (si_no). */
 export type ValoresHoja = Record<string, number | boolean>;
+
+/** Lo que marcó el encargado en un renglón de una estación (la forma depende del tipo de estación). */
+export type ValoresFila = Record<string, number | boolean | string | boolean[]>;
+
+export interface FilaEstacion {
+  equipo_id: number;
+  valores: ValoresFila;
+}
 
 export interface HojaCreate {
   equipo_id: number;
@@ -365,8 +397,9 @@ export interface HojaOut {
   id: number;
   juego: string;
   equipo_id: number;
+  /** En juegos por estaciones es la clave de la estación. */
   juez: string;
-  valores: ValoresHoja;
+  valores: ValoresFila;
   puntos: Record<string, number>;
   total: number;
   creado_en: string;
@@ -383,6 +416,8 @@ export interface ResultadoEquipoJuego {
   por_criterio: Record<string, number>;
   total: number;
   posicion: number | null;
+  /** Juegos por estaciones: tiempo que cuenta para el desempate. */
+  tiempo_seg: number | null;
 }
 
 export interface JuegoDetalle {

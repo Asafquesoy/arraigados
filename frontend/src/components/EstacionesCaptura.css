@@ -1,0 +1,651 @@
+/* ---- Captura de hojas por estación (Rally sucio / Búsqueda del tesoro) ---- */
+
+/* Tamaño de las marcas ✔/✖ y de los chips: compacto con mouse, ≥44px al tacto. */
+.estacion-hoja {
+  --marca: 2rem;
+}
+
+@media (pointer: coarse) {
+  .estacion-hoja {
+    --marca: 2.75rem;
+  }
+}
+
+/* Fichas de estaciones: de un vistazo cuáles ya se capturaron. */
+.estaciones-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: var(--e-2);
+}
+
+.estacion-ficha {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-height: 44px;
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--radio-m);
+  border: 1px solid var(--tarjeta-borde);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--hueso);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-rapida) ease, background var(--dur-rapida) ease;
+}
+
+.estacion-ficha:hover {
+  border-color: var(--amarillo);
+}
+
+.estacion-ficha:focus-visible {
+  outline: 2px solid var(--amarillo);
+  outline-offset: 2px;
+}
+
+.estacion-ficha.is-activa {
+  background: var(--gradiente-raiz);
+  border-color: transparent;
+  color: var(--corteza);
+}
+
+.estacion-ficha-nombre {
+  font-weight: 700;
+  font-size: var(--t-sm);
+  line-height: 1.2;
+}
+
+.estacion-ficha-sub {
+  font-size: var(--t-xs);
+  opacity: 0.8;
+  line-height: 1.2;
+}
+
+.estacion-ficha-estado {
+  font-size: var(--t-xs);
+  color: var(--hueso-tenue);
+}
+
+.estacion-ficha.is-parcial .estacion-ficha-estado {
+  color: var(--amarillo);
+}
+
+.estacion-ficha.is-completa .estacion-ficha-estado {
+  color: var(--verde-claro);
+}
+
+.estacion-ficha.is-activa .estacion-ficha-estado {
+  color: var(--corteza);
+  font-weight: 700;
+}
+
+/* ---- La hoja ---- */
+.estacion-hoja {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+  margin-top: var(--e-5);
+}
+
+.estacion-encabezado .juegos-subtitulo {
+  margin-bottom: var(--e-1, 0.25rem);
+}
+
+.estacion-info {
+  font-size: var(--t-sm);
+}
+
+.estacion-cabecera {
+  display: none;
+}
+
+.estacion-filas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+/* Celular / tablet: cada equipo es una tarjeta (equipo + puntos arriba, marcas debajo). */
+.estacion-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--e-2) var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+  min-width: 0;
+}
+
+.estacion-fila.has-error {
+  border-color: var(--coral-error);
+}
+
+.estacion-celda-equipo {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-width: 0;
+}
+
+.estacion-num {
+  flex: 0 0 auto;
+  min-width: 1.2rem;
+  font-size: var(--t-xs);
+  color: var(--hueso-apagado);
+}
+
+.estacion-equipo {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.25rem 0.8rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: var(--t-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: inset 0 0 0 2px rgba(247, 243, 227, 0.35);
+}
+
+.estacion-vaciar {
+  flex: 0 0 auto;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--tarjeta-borde);
+  background: transparent;
+  color: var(--hueso-tenue);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.estacion-vaciar:hover {
+  border-color: var(--coral-error);
+  color: var(--coral-error);
+}
+
+.estacion-vaciar:focus-visible {
+  outline: 2px solid var(--amarillo);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .estacion-vaciar {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+
+.estacion-pts {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  text-align: right;
+  font-size: var(--t-lg);
+  font-weight: 700;
+  color: var(--amarillo);
+}
+
+.estacion-grupos {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-3) var(--e-5);
+}
+
+.estacion-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+/* Solo dentro de contenedores EN FILA: en uno en columna (`.capilla-lugar`) `flex-basis` se lee como alto. */
+.estacion-grupos > .estacion-grupo.is-ancho,
+.capilla-fila-2 > .estacion-grupo.is-ancho {
+  flex: 1 1 16rem;
+}
+
+.estacion-etiqueta {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--hueso-tenue);
+}
+
+.estacion-grupo-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2) var(--e-3);
+  min-width: 0;
+}
+
+.estacion-error {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.estacion-sin-tiempo {
+  padding-inline: 0.5rem;
+}
+
+/* ---- Marcas ✔ / ✖ ---- */
+.marca-sino {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.marca-btn {
+  width: var(--marca);
+  height: var(--marca);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--tarjeta-borde);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--hueso-tenue);
+  cursor: pointer;
+  transition: background var(--dur-rapida) ease, border-color var(--dur-rapida) ease, color var(--dur-rapida) ease;
+}
+
+.marca-btn:hover {
+  border-color: var(--amarillo);
+}
+
+.marca-btn:focus-visible {
+  outline: 2px solid var(--amarillo);
+  outline-offset: 2px;
+}
+
+.marca-btn.is-si.is-activo {
+  background: var(--verde-claro);
+  border-color: transparent;
+  color: var(--corteza);
+}
+
+.marca-btn.is-no.is-activo {
+  background: var(--coral-error);
+  border-color: transparent;
+  color: var(--corteza);
+}
+
+/* ---- Chips de opción (¼ ½ ¾, 0–4, F/D, recitación) ---- */
+.opciones-chip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.opcion-chip {
+  min-width: var(--marca);
+  min-height: var(--marca);
+  padding: 0 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--tarjeta-borde);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--hueso);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--dur-rapida) ease, border-color var(--dur-rapida) ease, color var(--dur-rapida) ease;
+}
+
+.opcion-chip:hover:not(:disabled) {
+  border-color: var(--amarillo);
+}
+
+.opcion-chip:focus-visible {
+  outline: 2px solid var(--amarillo);
+  outline-offset: 2px;
+}
+
+.opcion-chip.is-activo {
+  background: var(--gradiente-raiz);
+  border-color: transparent;
+  color: var(--corteza);
+}
+
+.opcion-chip:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ---- Campos numéricos: tiempo «__ : __» y «__ de __» ---- */
+.campo-tiempo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.campo-tiempo-sep {
+  font-weight: 700;
+  color: var(--hueso-tenue);
+}
+
+/* Más específicos que `.field input[type="number"]` (global.css): ese pone width: 100% y aquí los campos
+   son cortos. Sin las flechitas del navegador, que se comen medio campo. */
+.estacion-hoja .campo-tiempo .field,
+.estacion-hoja .campo-numero {
+  width: 3.9rem;
+}
+
+.estacion-hoja .campo-tiempo .field input[type="number"],
+.estacion-hoja .campo-numero input[type="number"] {
+  padding: 0.5rem 0.3rem;
+  text-align: center;
+  font-family: var(--fuente-mono);
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.estacion-hoja .campo-tiempo .field input::-webkit-outer-spin-button,
+.estacion-hoja .campo-tiempo .field input::-webkit-inner-spin-button,
+.estacion-hoja .campo-numero input::-webkit-outer-spin-button,
+.estacion-hoja .campo-numero input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@media (pointer: coarse) {
+  .estacion-hoja .campo-tiempo .field input[type="number"],
+  .estacion-hoja .campo-numero input[type="number"] {
+    min-height: 2.75rem;
+  }
+}
+
+.campo-tiempo.is-invalido input,
+.campo-numero.is-invalido input {
+  border-color: var(--coral-error);
+}
+
+/* ---- Rally ---- */
+.estacion-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--marca);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.estacion-check input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--amarillo);
+  cursor: pointer;
+}
+
+.estacion-avance {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.estacion-avance-texto {
+  font-size: var(--t-sm);
+  color: var(--hueso-tenue);
+}
+
+/* ---- Búsqueda ---- */
+.estacion-pregunta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.estacion-fruto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+}
+
+.estacion-fruto-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.estacion-fruto-n {
+  font-size: var(--t-xs);
+  color: var(--hueso-apagado);
+}
+
+/* ---- Escritorio: la hoja como tabla, igual que la de papel (una fila por equipo) ---- */
+.estacion-hoja--rally .estacion-cabecera,
+.estacion-hoja--busqueda .estacion-cabecera {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--hueso-tenue);
+}
+
+.estacion-cabecera-pts {
+  text-align: right;
+}
+
+@media (min-width: 1024px) {
+  .estacion-hoja--rally .estacion-cabecera,
+  .estacion-hoja--rally .estacion-fila {
+    display: grid;
+    grid-template-columns: 9.5rem 5rem 8.4rem minmax(0, 1fr) 5rem;
+    column-gap: 0.75rem;
+    align-items: center;
+  }
+
+  .estacion-hoja--rally .estacion-cabecera {
+    padding: 0 var(--e-3);
+  }
+
+  .estacion-hoja--rally .estacion-fila {
+    padding: 0.4rem var(--e-3);
+  }
+
+  .estacion-hoja--rally .estacion-celda-equipo,
+  .estacion-hoja--rally .estacion-pts {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .estacion-hoja--rally .estacion-grupos {
+    display: contents;
+  }
+
+  .estacion-hoja--rally .estacion-etiqueta {
+    display: none;
+  }
+}
+
+/* La búsqueda tiene 7 columnas con 7 pares ✔/✖: solo cabe como tabla con mouse y pantalla ancha;
+   en tabletas (aunque sean anchas) se queda en tarjetas con marcas de 44px. */
+@media (min-width: 1280px) and (pointer: fine) {
+  .estacion-hoja--busqueda .estacion-cabecera,
+  .estacion-hoja--busqueda .estacion-fila {
+    display: grid;
+    grid-template-columns: 8.8rem 4.6rem 9.6rem 4.6rem minmax(15.5rem, 1fr) 7.9rem 4.6rem;
+    column-gap: 0.75rem;
+    align-items: center;
+  }
+
+  .estacion-hoja--busqueda .estacion-cabecera {
+    padding: 0 var(--e-3);
+  }
+
+  .estacion-hoja--busqueda .estacion-fila {
+    padding: 0.4rem var(--e-3);
+  }
+
+  .estacion-hoja--busqueda .estacion-celda-equipo,
+  .estacion-hoja--busqueda .estacion-pts {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .estacion-hoja--busqueda .estacion-grupos {
+    display: contents;
+  }
+
+  .estacion-hoja--busqueda .estacion-etiqueta {
+    display: none;
+  }
+
+  /* El nombre más largo («Ahuehuetes») tiene que caber sin «…» en una columna angosta. */
+  .estacion-hoja--busqueda .estacion-equipo {
+    padding-inline: 0.55rem;
+  }
+
+  .estacion-hoja--busqueda .estacion-celda-equipo {
+    gap: 0.4rem;
+  }
+}
+
+/* En tabla el renglón no necesita aire entre las marcas de un mismo grupo. */
+@media (min-width: 1024px) {
+  .estacion-hoja--rally .estacion-grupo,
+  .estacion-hoja--rally .estacion-grupo-control {
+    gap: 0.25rem 0.5rem;
+  }
+}
+
+/* ---- Capilla ---- */
+.capilla-lugares {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+
+.capilla-lugar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.capilla-lugar.has-error {
+  border-color: var(--coral-error);
+}
+
+.capilla-lugar-cabecera {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e-3);
+}
+
+.capilla-lugar-n {
+  font-size: var(--t-xl);
+  font-weight: 700;
+  color: var(--amarillo);
+}
+
+.capilla-lugar-vale {
+  font-size: var(--t-sm);
+}
+
+.capilla-lugar .capilla-lugar-pts {
+  margin-left: auto;
+  grid-column: auto;
+  grid-row: auto;
+}
+
+.capilla-etiqueta {
+  display: block;
+}
+
+.capilla-equipos,
+.capilla-recitacion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.capilla-fila-2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-3) var(--e-5);
+}
+
+.capilla-op-pts {
+  font-size: var(--t-xs);
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.capilla-resumen {
+  margin: 0;
+  font-size: var(--t-sm);
+}
+
+/* ---- Resultados por estación ---- */
+.juegos-tabla.juegos-tabla-estaciones {
+  table-layout: fixed;
+}
+
+.juegos-tabla-estaciones th,
+.juegos-tabla-estaciones td {
+  padding-inline: 0.25rem;
+}
+
+/* Columnas fijas angostas para que las 10 estaciones (≈70px cada una) quepan sin desbordar. */
+.juegos-tabla-estaciones .juegos-col-pos {
+  width: 2.5rem;
+}
+
+.juegos-tabla-estaciones .col-equipo {
+  width: 7.4rem;
+}
+
+.juegos-tabla-estaciones .col-total {
+  width: 4.2rem;
+}
+
+.juegos-tabla-estaciones .col-tiempo {
+  width: 4rem;
+}
+
+/* Los nombres de estación van en sentido normal (no en mayúsculas espaciadas) para que quepan. */
+.juegos-tabla-estaciones th.col-estacion {
+  font-size: 0.62rem;
+  padding-inline: 0.1rem;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.15;
+  overflow-wrap: break-word;
+}
+
+.juegos-desglose.juegos-desglose-estaciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem var(--e-4);
+}
