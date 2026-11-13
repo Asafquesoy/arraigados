@@ -217,3 +217,21 @@ class Calificacion(Base):
     creado_por: Mapped[str] = mapped_column(String(100), nullable=False)
     actualizado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     actualizado_por: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+
+class PuntosExtra(Base):
+    """Puntos que el Admin suma (positivo) o quita (negativo) a un equipo, con el motivo.
+    `juego` = clave de un juego de `juegos.py` (cuenta en ese juego y mueve su podio) o `NULL`
+    (general: solo cuenta en el total de todos los juegos)."""
+
+    __tablename__ = "puntos_extra"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    equipo_id: Mapped[int] = mapped_column(ForeignKey("equipos.id", ondelete="CASCADE"), index=True)
+    juego: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
+    puntos: Mapped[int] = mapped_column(Integer)
+    motivo: Mapped[str] = mapped_column(String(200))
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
+    creado_por: Mapped[str] = mapped_column(String(100), nullable=False)
+    actualizado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    actualizado_por: Mapped[str | None] = mapped_column(String(100), nullable=True)

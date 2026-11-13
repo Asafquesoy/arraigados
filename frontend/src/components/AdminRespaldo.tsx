@@ -10,6 +10,7 @@ interface Conteos {
   equipos: number;
   registros: number;
   calificaciones: number;
+  puntos_extra: number;
 }
 
 interface Resumen {
@@ -23,17 +24,17 @@ interface Resumen {
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
 function textoConteos(c: Conteos) {
-  return `${plural(c.registros, "registro", "registros")}, ${plural(c.equipos, "equipo", "equipos")} y ${plural(
+  return `${plural(c.registros, "registro", "registros")}, ${plural(c.equipos, "equipo", "equipos")}, ${plural(
     c.calificaciones,
     "calificación",
     "calificaciones"
-  )}`;
+  )} y ${plural(c.puntos_extra, "punto extra", "puntos extra")}`;
 }
 
 /**
  * Respaldo completo para la laptop sin internet (ver `backend/app/respaldo.py`).
  * "Descargar" baja un .zip de CSVs con todo (registros, equipos con colores,
- * calificaciones de Juegos y ajustes). "Importar" REEMPLAZA lo que hay en esta
+ * calificaciones y puntos extra de Juegos, y ajustes). "Importar" REEMPLAZA lo que hay en esta
  * computadora con ese archivo y solo aparece si el servidor lo permite
  * (`PERMITIR_IMPORTAR_RESPALDO=true`, o sea la laptop del campamento): en
  * producción queda apagado para que nadie pise los registros con un archivo viejo.
@@ -95,7 +96,7 @@ export function AdminRespaldo() {
         </div>
 
         <p className="admin-respaldo-ayuda muted">
-          Un solo archivo con los registros, los equipos (con sus colores) y las calificaciones de Juegos. Descárgalo
+          Un solo archivo con los registros, los equipos (con sus colores), las calificaciones y los puntos extra de Juegos. Descárgalo
           antes del campamento: si allá no hay internet, se importa en la laptop y el equipo entra a la página desde
           ahí. Los comprobantes (imágenes) y las cuentas de admin no viajan.
         </p>
@@ -118,7 +119,7 @@ export function AdminRespaldo() {
           {importarPermitido && (
             <>
               <p className="admin-respaldo-aviso">
-                Importar <strong>reemplaza</strong> todos los registros, equipos y calificaciones de esta computadora
+                Importar <strong>reemplaza</strong> todos los registros, equipos, calificaciones y puntos extra de esta computadora
                 por los del archivo. Antes se guarda una copia de lo que había.
               </p>
 

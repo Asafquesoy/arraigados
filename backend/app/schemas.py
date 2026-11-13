@@ -505,12 +505,78 @@ class HojaOut(BaseModel):
     actualizado_por: str | None
 
 
+PUNTOS_EXTRA_MAX = 10_000
+
+
+class PuntosExtraCreate(BaseModel):
+    """Puntos extra (+) o descuento (−) para un equipo. `juego` = clave del juego, o `None` = general."""
+
+    equipo_id: int
+    juego: str | None = Field(default=None, max_length=40)
+    puntos: int = Field(ge=-PUNTOS_EXTRA_MAX, le=PUNTOS_EXTRA_MAX)
+    motivo: str = Field(min_length=1, max_length=200)
+
+    @field_validator("puntos")
+    @classmethod
+    def _puntos_no_cero(cls, v: int) -> int:
+        if v == 0:
+            raise ValueError("Escribe cuántos puntos sumar o quitar (no puede ser 0).")
+        return v
+
+    @field_validator("motivo")
+    @classmethod
+    def _motivo_limpio(cls, v: str) -> str:
+        v = " ".join(v.split())
+        if not v:
+            raise ValueError("Escribe el motivo.")
+        return v
+
+
+class PuntosExtraUpdate(BaseModel):
+    equipo_id: int | None = None
+    juego: str | None = Field(default=None, max_length=40)  # con `exclude_unset`, null explícito = pasar a general
+    puntos: int | None = Field(default=None, ge=-PUNTOS_EXTRA_MAX, le=PUNTOS_EXTRA_MAX)
+    motivo: str | None = Field(default=None, min_length=1, max_length=200)
+
+    @field_validator("puntos")
+    @classmethod
+    def _puntos_no_cero(cls, v: int | None) -> int | None:
+        if v == 0:
+            raise ValueError("Escribe cuántos puntos sumar o quitar (no puede ser 0).")
+        return v
+
+    @field_validator("motivo")
+    @classmethod
+    def _motivo_limpio(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = " ".join(v.split())
+        if not v:
+            raise ValueError("Escribe el motivo.")
+        return v
+
+
+class PuntosExtraOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    equipo_id: int
+    juego: str | None
+    puntos: int
+    motivo: str
+    creado_en: datetime
+    creado_por: str
+    actualizado_en: datetime | None
+    actualizado_por: str | None
+
+
 class ResultadoEquipoOut(BaseModel):
     equipo_id: int
     nombre: str
     color: str
     hojas: int
     por_criterio: dict[str, float]
+    extra: float = 0  # puntos extra/descuentos de este juego, ya incluidos en `total`
     total: float
     posicion: int | None
     tiempo_seg: int | None = None  # modo estaciones: tiempo que cuenta para el desempate
@@ -520,6 +586,7 @@ class JuegoDetalleOut(BaseModel):
     juego: JuegoOut
     equipos: list[ResultadoEquipoOut]
     hojas: list[HojaOut]
+    puntos_extra: list[PuntosExtraOut] = []  # solo los de este juego
 
 
 class PosicionOut(BaseModel):
@@ -527,6 +594,8 @@ class PosicionOut(BaseModel):
     nombre: str
     color: str
     por_juego: dict[str, float | None]
+    posicion_por_juego: dict[str, int | None] = {}
+    extra: float = 0  # puntos extra generales (sin juego), ya incluidos en `total`
     total: float
     posicion: int | None
 
@@ -534,3 +603,4 @@ class PosicionOut(BaseModel):
 class PosicionesOut(BaseModel):
     juegos: list[JuegoOut]
     equipos: list[PosicionOut]
+    puntos_extra: list[PuntosExtraOut] = []  # todos, generales y de cada juego

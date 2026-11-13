@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Reveal } from "./Reveal";
 import { CopyIcon } from "./icons";
 import { apiFetch, ApiError, type TallaStatsResponse } from "../lib/api";
+import { copiarTexto } from "../lib/copiar";
 import { CAMP_NAME } from "../config";
 import "./AdminResumen.css";
 
@@ -77,12 +78,8 @@ export function AdminResumen() {
 
   async function handleCopy() {
     setCopyError(null);
-    try {
-      await navigator.clipboard.writeText(resumen);
-      setCopied(true);
-    } catch {
-      setCopyError("No se pudo copiar. Selecciona el texto y cópialo a mano.");
-    }
+    if (await copiarTexto(resumen)) setCopied(true);
+    else setCopyError("No se pudo copiar. Selecciona el texto y cópialo a mano.");
   }
 
   return (

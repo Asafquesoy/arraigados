@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useReducedMotion } from "motion/react";
+import { BotonCopiar } from "../components/BotonCopiar";
 import { ConfirmButton } from "../components/ConfirmButton";
 import { EstacionesCaptura } from "../components/EstacionesCaptura";
 import { HojaCalificacion } from "../components/HojaCalificacion";
+import { fmtExtra, PuntosExtra } from "../components/PuntosExtra";
 import { ResultadosEstaciones } from "../components/ResultadosEstaciones";
 import { Reveal } from "../components/Reveal";
 import { Skeleton } from "../components/Skeleton";
@@ -21,6 +23,7 @@ import {
 } from "../lib/api";
 import { textoSobre } from "../lib/colorEquipo";
 import { fmtPts } from "../lib/juegos";
+import { filasDeJuego, filasGenerales, juegoTienePodio, textoPosiciones, textoTodo } from "../lib/podio";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { useToast } from "../lib/useToast";
 import "./Juegos.css";
@@ -43,8 +46,24 @@ function Posicion({ valor }: { valor: number | null }) {
   );
 }
 
+/** Celda/valor de puntos extra: «+100» en verde, «−50» en rojo, y un guion apagado si no hay. */
+function ValorExtra({ puntos }: { puntos: number }) {
+  if (!puntos) return <span className="muted">—</span>;
+  return <span className={`juegos-extra ${puntos > 0 ? "is-suma" : "is-resta"}`}>{fmtExtra(puntos)}</span>;
+}
+
 /** Tabla de posiciones general: una columna por juego y el total. Tarjetas en pantallas angostas. */
-function VistaPosiciones({ datos, esEscritorio }: { datos: Posiciones; esEscritorio: boolean }) {
+function VistaPosiciones({
+  datos,
+  esEscritorio,
+  canEdit,
+  onCambioExtra,
+}: {
+  datos: Posiciones;
+  esEscritorio: boolean;
+  canEdit: boolean;
+  onCambioExtra: (mensaje: string) => Promise<void>;
+}) {
   const { juegos, equipos } = datos;
   if (equipos.length === 0) {
     return (
@@ -57,10 +76,28 @@ function VistaPosiciones({ datos, esEscritorio }: { datos: Posiciones; esEscrito
     );
   }
   const hayPuntos = equipos.some((e) => e.posicion !== null);
+  const hayExtraGeneral = equipos.some((e) => e.extra !== 0);
+  const juegosConPodio = juegos.filter((j) => juegoTienePodio(datos, j));
 
   return (
+    <>
     <div className="glass-card juegos-tarjeta">
       {!hayPuntos && <p className="muted juegos-nota">Aún no hay calificaciones capturadas. Entra a un juego para empezar.</p>}
+      {hayPuntos && (
+        <div className="juegos-copiar" role="group" aria-label="Copiar posiciones para compartir">
+          <span className="muted juegos-copiar-titulo">Copiar para compartir:</span>
+          <BotonCopiar label="Total general" texto={() => textoPosiciones("Total general", filasGenerales(datos))} />
+          {juegosConPodio.map((j) => (
+            <BotonCopiar key={j.clave} label={j.nombre} texto={() => textoPosiciones(j.nombre, filasDeJuego(datos, j))} />
+          ))}
+          {juegosConPodio.length > 0 && <BotonCopiar label="Todo junto" className="btn-sm btn-copiar-todo" texto={() => textoTodo(datos)} />}
+        </div>
+      )}
+      {hayPuntos && (
+        <p className="muted juegos-nota">
+          El total suma los juegos{hayExtraGeneral || datos.puntos_extra.length > 0 ? " y los puntos extra o descuentos" : ""}.
+        </p>
+      )}
       {esEscritorio ? (
         <table className="juegos-tabla">
           <thead>
@@ -73,6 +110,11 @@ function VistaPosiciones({ datos, esEscritorio }: { datos: Posiciones; esEscrito
                   {j.puntos_max > 0 && <small>/ {j.puntos_max}</small>}
                 </th>
               ))}
+              {hayExtraGeneral && (
+                <th className="num" title="Puntos extra o descuentos generales (no de un juego en particular)">
+                  Extra
+                </th>
+              )}
               <th className="num">Total</th>
             </tr>
           </thead>
@@ -93,6 +135,11 @@ function VistaPosiciones({ datos, esEscritorio }: { datos: Posiciones; esEscrito
                     </td>
                   );
                 })}
+                {hayExtraGeneral && (
+                  <td className="num">
+                    <ValorExtra puntos={e.extra} />
+                  </td>
+                )}
                 <td className="num juegos-total">{e.posicion === null ? <span className="muted">—</span> : fmtPts(e.total)}</td>
               </tr>
             ))}
@@ -117,17 +164,37 @@ function VistaPosiciones({ datos, esEscritorio }: { datos: Posiciones; esEscrito
                     </div>
                   );
                 })}
+                {e.extra !== 0 && (
+                  <div>
+                    <dt className="muted">Extra general</dt>
+                    <dd className="mono">
+                      <ValorExtra puntos={e.extra} />
+                    </dd>
+                  </div>
+                )}
               </dl>
             </li>
           ))}
         </ul>
       )}
     </div>
+    <PuntosExtra
+      juegoClave={null}
+      juegos={juegos}
+      equipos={equipos}
+      puntosExtra={datos.puntos_extra}
+      canEdit={canEdit}
+      onCambio={onCambioExtra}
+    />
+    </>
   );
 }
 
 interface VistaJuegoProps {
   detalle: JuegoDetalle;
+  /** Todos los juegos, para el «Aplica a» de los puntos extra. */
+  juegos: JuegoInfo[];
+  onCambioExtra: (mensaje: string) => Promise<void>;
   esEscritorio: boolean;
   canEdit: boolean;
   editando: HojaOut | null;
@@ -142,6 +209,8 @@ interface VistaJuegoProps {
 
 function VistaJuego({
   detalle,
+  juegos,
+  onCambioExtra,
   esEscritorio,
   canEdit,
   editando,
@@ -169,6 +238,8 @@ function VistaJuego({
 
   const equipoDe = new Map(equipos.map((e) => [e.equipo_id, e]));
   const conHojas = equipos.filter((e) => e.hojas > 0);
+  const hayExtra = equipos.some((e) => e.extra !== 0);
+  const hayPodio = equipos.some((e) => e.posicion !== null);
 
   return (
     <>
@@ -198,9 +269,23 @@ function VistaJuego({
       )}
 
       <div className="glass-card juegos-tarjeta">
-        <h2 className="juegos-subtitulo">Resultados</h2>
+        <div className="juegos-cabecera-tarjeta">
+          <h2 className="juegos-subtitulo">Resultados</h2>
+          {hayPodio && (
+            <BotonCopiar
+              label="Copiar posiciones"
+              texto={() =>
+                textoPosiciones(
+                  juego.nombre,
+                  equipos.map((e) => ({ posicion: e.posicion, nombre: e.nombre, total: e.total })),
+                )
+              }
+            />
+          )}
+        </div>
         <p className="muted juegos-nota">
-          El puntaje de cada equipo es el promedio de sus hojas (una por juez). El juego vale {juego.puntos_max} puntos.
+          El puntaje de cada equipo es el promedio de sus hojas (una por juez). El juego vale {juego.puntos_max} puntos
+          {hayExtra ? "; el total ya incluye los puntos extra o descuentos." : "."}
         </p>
         {esEscritorio ? (
           <table className="juegos-tabla">
@@ -215,6 +300,7 @@ function VistaJuego({
                     <small>/ {c.puntos}</small>
                   </th>
                 ))}
+                {hayExtra && <th className="num">Extra</th>}
                 <th className="num">
                   Total<small>/ {juego.puntos_max}</small>
                 </th>
@@ -235,7 +321,12 @@ function VistaJuego({
                       {e.hojas ? fmtPts(e.por_criterio[c.clave] ?? 0) : <span className="muted">—</span>}
                     </td>
                   ))}
-                  <td className="num juegos-total">{e.hojas ? fmtPts(e.total) : <span className="muted">—</span>}</td>
+                  {hayExtra && (
+                    <td className="num">
+                      <ValorExtra puntos={e.extra} />
+                    </td>
+                  )}
+                  <td className="num juegos-total">{e.hojas || e.extra ? fmtPts(e.total) : <span className="muted">—</span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -247,21 +338,30 @@ function VistaJuego({
                 <div className="juegos-equipo-card-cabecera">
                   <Posicion valor={e.posicion} />
                   <EquipoChip nombre={e.nombre} color={e.color} />
-                  <span className="juegos-total mono">{e.hojas ? fmtPts(e.total) : "—"}</span>
+                  <span className="juegos-total mono">{e.hojas || e.extra ? fmtPts(e.total) : "—"}</span>
                 </div>
                 <p className="muted juegos-nota">
                   {e.hojas === 0 ? "Sin hojas todavía" : e.hojas === 1 ? "1 hoja" : `${e.hojas} hojas`}
                 </p>
-                {e.hojas > 0 && (
+                {(e.hojas > 0 || e.extra !== 0) && (
                   <dl className="juegos-desglose">
-                    {juego.criterios.map((c) => (
-                      <div key={c.clave}>
-                        <dt className="muted">
-                          {c.nombre} <small>/ {c.puntos}</small>
-                        </dt>
-                        <dd className="mono">{fmtPts(e.por_criterio[c.clave] ?? 0)}</dd>
+                    {e.hojas > 0 &&
+                      juego.criterios.map((c) => (
+                        <div key={c.clave}>
+                          <dt className="muted">
+                            {c.nombre} <small>/ {c.puntos}</small>
+                          </dt>
+                          <dd className="mono">{fmtPts(e.por_criterio[c.clave] ?? 0)}</dd>
+                        </div>
+                      ))}
+                    {e.extra !== 0 && (
+                      <div>
+                        <dt className="muted">Extra</dt>
+                        <dd className="mono">
+                          <ValorExtra puntos={e.extra} />
+                        </dd>
                       </div>
-                    ))}
+                    )}
                   </dl>
                 )}
               </li>
@@ -269,6 +369,15 @@ function VistaJuego({
           </ul>
         )}
       </div>
+
+      <PuntosExtra
+        juegoClave={juego.clave}
+        juegos={juegos}
+        equipos={equipos}
+        puntosExtra={detalle.puntos_extra}
+        canEdit={canEdit}
+        onCambio={onCambioExtra}
+      />
 
       {conHojas.length > 0 && (
         <div className="glass-card juegos-tarjeta">
@@ -311,6 +420,8 @@ function VistaJuego({
 
 interface VistaEstacionesProps {
   detalle: JuegoDetalle;
+  juegos: JuegoInfo[];
+  onCambioExtra: (mensaje: string) => Promise<void>;
   esEscritorio: boolean;
   canEdit: boolean;
   guardando: boolean;
@@ -320,7 +431,17 @@ interface VistaEstacionesProps {
 }
 
 /** Rally sucio y Búsqueda del tesoro: se capturan las hojas de los encargados, estación por estación. */
-function VistaEstaciones({ detalle, esEscritorio, canEdit, guardando, errorForm, onGuardar, onLimpiarError }: VistaEstacionesProps) {
+function VistaEstaciones({
+  detalle,
+  juegos,
+  onCambioExtra,
+  esEscritorio,
+  canEdit,
+  guardando,
+  errorForm,
+  onGuardar,
+  onLimpiarError,
+}: VistaEstacionesProps) {
   return (
     <>
       {canEdit &&
@@ -334,6 +455,14 @@ function VistaEstaciones({ detalle, esEscritorio, canEdit, guardando, errorForm,
           <EstacionesCaptura detalle={detalle} guardando={guardando} error={errorForm} onGuardar={onGuardar} onLimpiarError={onLimpiarError} />
         ))}
       <ResultadosEstaciones detalle={detalle} esEscritorio={esEscritorio} />
+      <PuntosExtra
+        juegoClave={detalle.juego.clave}
+        juegos={juegos}
+        equipos={detalle.equipos}
+        puntosExtra={detalle.puntos_extra}
+        canEdit={canEdit}
+        onCambio={onCambioExtra}
+      />
     </>
   );
 }
@@ -477,6 +606,12 @@ export function Juegos() {
 
   const juegos: JuegoInfo[] = posiciones?.juegos ?? [];
 
+  /** Después de sumar, editar o borrar puntos extra: avisa y vuelve a pedir posiciones y el juego abierto. */
+  async function alCambiarExtra(mensaje: string) {
+    setToast(mensaje);
+    await recargar();
+  }
+
   return (
     <div className="page-container juegos">
       <Reveal>
@@ -523,12 +658,16 @@ export function Juegos() {
             <Skeleton height={14} width="72%" className="juegos-skeleton" />
           </div>
         ) : vista === "posiciones" ? (
-          posiciones && <VistaPosiciones datos={posiciones} esEscritorio={esEscritorio} />
+          posiciones && (
+            <VistaPosiciones datos={posiciones} esEscritorio={esEscritorio} canEdit={canEdit} onCambioExtra={alCambiarExtra} />
+          )
         ) : (
           detalle &&
           (detalle.juego.modo === "estaciones" ? (
             <VistaEstaciones
               detalle={detalle}
+              juegos={juegos}
+              onCambioExtra={alCambiarExtra}
               esEscritorio={esEscritorio}
               canEdit={canEdit}
               guardando={guardando}
@@ -539,6 +678,8 @@ export function Juegos() {
           ) : (
             <VistaJuego
               detalle={detalle}
+              juegos={juegos}
+              onCambioExtra={alCambiarExtra}
               esEscritorio={esEscritorio}
               canEdit={canEdit}
               editando={editando}

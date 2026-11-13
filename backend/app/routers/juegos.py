@@ -7,7 +7,9 @@ Hay dos modos de juego. En `jueces` (Sketch) cada hoja es de un juez (`POST .../
 `DELETE /hojas/{id}`). En `estaciones` (Rally sucio, Búsqueda del tesoro) se captura la hoja de papel
 de una estación completa de un jalón con `PUT /{clave}/estaciones/{estacion}`: una fila por equipo en
 `calificaciones`, con la clave de la estación en el campo `juez`.
-Las rutas literales (`/posiciones`, `/hojas/{id}`) van antes de `/{clave}`.
+Los puntos extra/descuentos (`/puntos-extra`, tabla `puntos_extra`) se suman al total del juego al que
+se aplican (y mueven su posición) o, sin juego, solo al total general.
+Las rutas literales (`/posiciones`, `/hojas/{id}`, `/puntos-extra`) van antes de `/{clave}`.
 """
 
 from datetime import datetime, timezone
@@ -30,7 +32,7 @@ from ..juegos import (
     validar_lugares_capilla,
     validar_valores,
 )
-from ..models import AdminRole, AdminUser, Calificacion, Equipo
+from ..models import AdminRole, AdminUser, Calificacion, Equipo, PuntosExtra
 from ..schemas import (
     CriterioOut,
     EstacionOut,
@@ -42,6 +44,9 @@ from ..schemas import (
     JuegoOut,
     PosicionesOut,
     PosicionOut,
+    PuntosExtraCreate,
+    PuntosExtraOut,
+    PuntosExtraUpdate,
     ResultadoEquipoOut,
 )
 from ..security import get_current_admin, require_role
@@ -153,9 +158,27 @@ def _hay_duplicada(db: Session, juego: str, equipo_id: int, juez: str, excluir_i
     return q.first() is not None
 
 
-def _resultados_de(db: Session, juego: Juego, equipos: list[Equipo]):
+def _extra_por_equipo(extras: list[PuntosExtra], juego: str | None) -> dict[int, float]:
+    """Suma de puntos extra por equipo para un juego (`None` = los generales)."""
+    suma: dict[int, float] = {}
+    for x in extras:
+        if x.juego == juego:
+            suma[x.equipo_id] = suma.get(x.equipo_id, 0.0) + x.puntos
+    return suma
+
+
+def _todos_los_extra(db: Session) -> list[PuntosExtra]:
+    return db.query(PuntosExtra).order_by(PuntosExtra.creado_en.desc(), PuntosExtra.id.desc()).all()
+
+
+def _resultados_de(db: Session, juego: Juego, equipos: list[Equipo], extras: list[PuntosExtra]):
     hojas = db.query(Calificacion).filter(Calificacion.juego == juego.clave).all()
-    return resultados(juego, [e.id for e in equipos], [(h.equipo_id, h.juez, h.valores) for h in hojas])
+    return resultados(
+        juego,
+        [e.id for e in equipos],
+        [(h.equipo_id, h.juez, h.valores) for h in hojas],
+        _extra_por_equipo(extras, juego.clave),
+    )
 
 
 @router.get("", response_model=list[JuegoOut])
@@ -167,8 +190,9 @@ def listar_juegos():
 def posiciones(db: Session = Depends(get_db)):
     equipos = _equipos(db)
     por_id = {e.id: e for e in equipos}
-    por_juego = {j.clave: _resultados_de(db, j, equipos) for j in JUEGOS}
-    filas = tabla_general([e.id for e in equipos], por_juego)
+    extras = _todos_los_extra(db)
+    por_juego = {j.clave: _resultados_de(db, j, equipos, extras) for j in JUEGOS}
+    filas = tabla_general([e.id for e in equipos], por_juego, _extra_por_equipo(extras, None))
     return PosicionesOut(
         juegos=[_juego_out(j) for j in JUEGOS],
         equipos=[
@@ -177,12 +201,88 @@ def posiciones(db: Session = Depends(get_db)):
                 nombre=por_id[f.equipo_id].nombre,
                 color=por_id[f.equipo_id].color,
                 por_juego=f.por_juego,
+                posicion_por_juego=f.posicion_por_juego,
+                extra=f.extra,
                 total=f.total,
                 posicion=f.posicion,
             )
             for f in filas
         ],
+        puntos_extra=[PuntosExtraOut.model_validate(x) for x in extras],
     )
+
+
+# ---- Puntos extra y descuentos (declarados antes de `/{clave}`) ----------------------------
+
+
+def _juego_extra_o_422(juego: str | None) -> None:
+    """`None` = general; si no, tiene que ser un juego del catálogo."""
+    if juego is not None and not obtener_juego(juego):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Ese juego no existe.")
+
+
+@router.post("/puntos-extra", response_model=PuntosExtraOut, status_code=status.HTTP_201_CREATED)
+def crear_puntos_extra(
+    payload: PuntosExtraCreate,
+    admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    if not db.get(Equipo, payload.equipo_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Equipo no encontrado")
+    _juego_extra_o_422(payload.juego)
+    x = PuntosExtra(
+        equipo_id=payload.equipo_id,
+        juego=payload.juego,
+        puntos=payload.puntos,
+        motivo=payload.motivo,
+        creado_por=admin.username,
+    )
+    db.add(x)
+    db.commit()
+    db.refresh(x)
+    return x
+
+
+@router.patch("/puntos-extra/{extra_id}", response_model=PuntosExtraOut)
+def editar_puntos_extra(
+    extra_id: int,
+    payload: PuntosExtraUpdate,
+    admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    x = db.get(PuntosExtra, extra_id)
+    if not x:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Registro no encontrado")
+    cambios = payload.model_dump(exclude_unset=True)
+    if cambios.get("equipo_id") is not None:
+        if not db.get(Equipo, cambios["equipo_id"]):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Equipo no encontrado")
+        x.equipo_id = cambios["equipo_id"]
+    if "juego" in cambios:  # null explícito = pasar a general
+        _juego_extra_o_422(cambios["juego"])
+        x.juego = cambios["juego"]
+    if cambios.get("puntos") is not None:
+        x.puntos = cambios["puntos"]
+    if cambios.get("motivo") is not None:
+        x.motivo = cambios["motivo"]
+    x.actualizado_en = datetime.now(timezone.utc)
+    x.actualizado_por = admin.username
+    db.commit()
+    db.refresh(x)
+    return x
+
+
+@router.delete("/puntos-extra/{extra_id}", status_code=status.HTTP_204_NO_CONTENT)
+def borrar_puntos_extra(
+    extra_id: int,
+    _admin: AdminUser = Depends(require_role(AdminRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    x = db.get(PuntosExtra, extra_id)
+    if not x:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Registro no encontrado")
+    db.delete(x)
+    db.commit()
 
 
 @router.patch("/hojas/{hoja_id}", response_model=HojaOut)
@@ -241,7 +341,8 @@ def detalle_juego(clave: str, db: Session = Depends(get_db)):
     juego = _juego_o_404(clave)
     equipos = _equipos(db)
     por_id = {e.id: e for e in equipos}
-    filas = _resultados_de(db, juego, equipos)
+    extras = [x for x in _todos_los_extra(db) if x.juego == clave]
+    filas = _resultados_de(db, juego, equipos, extras)
     hojas = (
         db.query(Calificacion)
         .filter(Calificacion.juego == clave)
@@ -257,6 +358,7 @@ def detalle_juego(clave: str, db: Session = Depends(get_db)):
                 color=por_id[f.equipo_id].color,
                 hojas=f.hojas,
                 por_criterio=f.por_criterio,
+                extra=f.extra,
                 total=f.total,
                 posicion=f.posicion,
                 tiempo_seg=f.tiempo_seg,
@@ -264,6 +366,7 @@ def detalle_juego(clave: str, db: Session = Depends(get_db)):
             for f in filas
         ],
         hojas=[_hoja_out(h, juego) for h in hojas],
+        puntos_extra=[PuntosExtraOut.model_validate(x) for x in extras],
     )
 
 

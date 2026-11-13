@@ -1,0 +1,46 @@
+.boton-copiar {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e-2);
+  max-width: 100%;
+}
+
+.boton-copiar .btn {
+  gap: 0.5rem;
+}
+
+/* Solo para lectores de pantalla: anuncia "Copiado" sin mover el diseño. */
+.boton-copiar-estado {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.boton-copiar-manual {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-1);
+  width: min(100%, 32rem);
+}
+
+/* 16px mínimo en cualquier campo de texto: en iOS menos que eso hace zoom al enfocar. */
+.boton-copiar-manual textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radio-m);
+  border: 1px solid var(--tarjeta-borde);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--hueso);
+  font-size: var(--t-input);
+  resize: vertical;
+}
+
+@media (pointer: coarse) {
+  .boton-copiar .btn {
+    min-height: 44px;
+  }
+}

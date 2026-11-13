@@ -419,13 +419,14 @@ inside this direction rather than introducing an unrelated palette or mood.
 
 ### Data model
 
-Six tables (`backend/app/models.py`): `campers` (registration + `folio` unique short code +
+Seven tables (`backend/app/models.py`): `campers` (registration + `folio` unique short code +
 `pago_verificado`/`verificado_en`/`verificado_por` audit fields, plus the matching
 `asistio`/`asistio_en`/`asistio_por` trio for camp-day check-in, plus `equipo_id`/`equipo_fijado`/
 `es_staff` — see Equipos below), `admin_users` (username/bcrypt hash/`role`), `equipos` (id/nombre/color/
 orden — see below), `app_settings` (single row, `id=1` — runtime-editable flags, see the
 Runtime settings pattern above), `comprobante_eventos` (append-only receipt/payment history, see
-*Conciliación*), and `calificaciones` (game scores per team, migration `0017`, see *Juegos*). `Sexo`, `TallaCamisa`, and `AdminRole`
+*Conciliación*), `calificaciones` (game scores per team, migration `0017`, see *Juegos*), and `puntos_extra`
+(bonus/penalty points per team with a reason, migration `0019`, see *Juegos*). `Sexo`, `TallaCamisa`, and `AdminRole`
 (`ADMIN`/`VERIFICADOR_PAGO`/`VISUALIZADOR`/`RECEPCION`) are Python/DB enums defined in `models.py`
 and reused in `schemas.py`. `campers.ticket_path`/`ticket_mime` are nullable — a registration can
 exist without a receipt when the `pedir_comprobante` toggle is off; `CamperOut.tiene_comprobante`
@@ -725,6 +726,34 @@ sucio, Voleibol gigante) en vez de llevarlas en un Excel aparte. Todos los roles
 - Borrar un equipo borra sus calificaciones explícitamente (`equipos.py::borrar_equipo`; SQLite no aplica el
   `ON DELETE CASCADE`). Migración `0017`: **hay que correr `alembic upgrade head`** — sin la tabla, borrar un equipo
   y toda la pantalla dan 500.
+- **Puntos extra y descuentos** (tabla `puntos_extra`, migración `0019`: **hay que correr `alembic upgrade head`**; sin
+  ella `/posiciones` y el detalle de cada juego dan 500). El Admin suma o quita puntos a un equipo y **el motivo es
+  obligatorio** (`models.py::PuntosExtra`: `equipo_id`, `juego` nullable, `puntos` ≠ 0 y |p| ≤ 10 000, `motivo` ≤ 200,
+  auditoría `creado_*`/`actualizado_*`). `juego = NULL` es **general** (solo cuenta en el total de todos los juegos);
+  con la clave de un juego **cuenta en ese juego** (entra a su total, mueve su podio y por lo tanto también el total
+  general). API en `routers/juegos.py`: `POST/PATCH/DELETE /api/admin/juegos/puntos-extra[/{id}]` (solo Admin; el PATCH
+  usa `exclude_unset`, así que `juego: null` explícito = pasar a general), declaradas **antes** de `/{clave}`; la lista
+  viaja dentro de `GET /posiciones` (todos) y `GET /{clave}` (solo los de ese juego), sin endpoint de lectura aparte.
+  `juegos.py` sigue puro: `resultados(..., extra=)` y `tabla_general(..., extra_general)` reciben sumas por equipo.
+  **Reglas**: un equipo tiene lugar si tiene hojas **o** puntos extra (un descuento antes de calificar también cuenta);
+  en modo estaciones un equipo con solo extra pierde cualquier desempate por tiempo (`_TIEMPO_SIN_HOJAS`);
+  `ResultadoEquipo.extra`/`PosicionGeneral.extra` ya están incluidos en `total` (no sumarlos otra vez en el cliente).
+  Como cualquier tabla con FK a `equipos`: `borrar_equipo` y `respaldo.importar` la borran a mano (SQLite no aplica
+  `ON DELETE`), y **viaja en el zip del respaldo** (`puntos_extra.csv`; un zip hecho antes de `0019` ya no se acepta
+  y el mensaje dice que se descargue uno nuevo — laptop y producción deben estar en el mismo commit).
+  UI: `components/PuntosExtra.tsx` (formulario Sumar/Quitar + lista con Editar/Borrar `ConfirmButton`; se usa en
+  Posiciones —ve todos, arranca en «General»— y en la pestaña de cada juego —solo los suyos, arranca en ese juego—;
+  los demás roles ven la lista sin formulario) y una columna/renglón «Extra» (`ValorExtra`, verde/rojo) que solo
+  aparece si algún equipo tiene extra.
+- **Copiar posiciones** (`components/BotonCopiar.tsx` + `lib/podio.ts`, visible para todos los roles): texto listo para
+  WhatsApp con todos los equipos en orden, 🥇🥈🥉 a los lugares 1–3 (los empates comparten lugar y medalla), puntos, los
+  equipos sin lugar nombrados aparte («Sin puntos todavía») y «Actualizado». En Posiciones hay un botón por «Total
+  general», por cada juego con podio y «Todo junto» (`textoTodo`, una sola línea de «Actualizado»); en cada juego,
+  «Copiar posiciones» en la tarjeta de Resultados. El texto se arma **al hacer clic** (`texto: () => string`), no al
+  dibujar. `lib/copiar.ts::copiarTexto` usa `navigator.clipboard` y, si no existe o falla, un `<textarea>` oculto +
+  `document.execCommand("copy")`: en el campamento se entra por `http://<ip-laptop>:5173`, que **no es contexto seguro**
+  y ahí `navigator.clipboard` es `undefined` (también lo usa `AdminResumen.tsx`). Si ni así se puede, `BotonCopiar`
+  muestra el texto en un cuadro ya seleccionado para copiarlo a mano.
 - UI: `pages/Juegos.tsx` (pestañas Posiciones + una por juego; tabla desde 1024px, tarjetas debajo, vía
   `useMediaQuery`; sin raíces, como toda pantalla admin) + `components/HojaCalificacion.tsx` (formulario
   genérico: Sí/No de 44px, subtotal en vivo, conserva el juez al guardar y deshabilita los equipos que ese juez ya
@@ -806,7 +835,7 @@ laptop que corre la app localmente (compartiendo su internet/hotspot, el equipo 
 laptop pasa a ser la principal, no hay importación de regreso a producción. Solo Admin.
 
 - **Archivo**: `.zip` de CSV UTF-8 con BOM — `manifiesto.json` (formato, `alembic_version`, fecha, conteos),
-  `equipos.csv`, `registros.csv`, `calificaciones.csv` (todas las columnas, **ids originales** para no romper `equipo_id`) y
+  `equipos.csv`, `registros.csv`, `calificaciones.csv`, `puntos_extra.csv` (todas las columnas, **ids originales** para no romper `equipo_id`) y
   `ajustes.csv`. `app/respaldo.py` (módulo + CLI) serializa de forma genérica desde `Model.__table__`, así que una
   columna nueva viaja sola. **No viajan**: las imágenes de comprobantes (`ticket_path`/`ticket_mime`/`ocr_texto` se
   excluyen: en la laptop quedan "sin comprobante" en vez de un "Ver comprobante" que daría 404), `admin_users` (las cuentas de

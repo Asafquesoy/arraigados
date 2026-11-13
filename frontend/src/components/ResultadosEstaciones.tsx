@@ -1,7 +1,10 @@
+import { BotonCopiar } from "./BotonCopiar";
+import { fmtExtra } from "./PuntosExtra";
 import type { JuegoDetalle } from "../lib/api";
 import { textoSobre } from "../lib/colorEquipo";
 import { fmtTiempo } from "../lib/estaciones";
 import { fmtPts } from "../lib/juegos";
+import { textoPosiciones } from "../lib/podio";
 import "./EstacionesCaptura.css";
 
 function Pos({ valor }: { valor: number | null }) {
@@ -10,6 +13,11 @@ function Pos({ valor }: { valor: number | null }) {
       {valor ?? "–"}
     </span>
   );
+}
+
+function ValorExtra({ puntos }: { puntos: number }) {
+  if (!puntos) return <span className="muted">—</span>;
+  return <span className={`juegos-extra ${puntos > 0 ? "is-suma" : "is-resta"}`}>{fmtExtra(puntos)}</span>;
 }
 
 function Chip({ nombre, color }: { nombre: string; color: string }) {
@@ -34,12 +42,30 @@ export function ResultadosEstaciones({ detalle, esEscritorio }: { detalle: Juego
       : "Si hay empate gana quien sumó menos tiempo en las estaciones que completó (la capilla no cuenta para el tiempo).";
 
   const tiempo = (s: number | null) => (s === null ? "—" : fmtTiempo(s));
+  const hayExtra = equipos.some((e) => e.extra !== 0);
+  const hayPodio = equipos.some((e) => e.posicion !== null);
+  // Con solo puntos extra (sin estaciones capturadas) el equipo ya tiene lugar y total.
+  const conTotal = (e: (typeof equipos)[number]) => e.hojas > 0 || e.extra !== 0;
 
   return (
     <div className="glass-card juegos-tarjeta">
-      <h2 className="juegos-subtitulo">Resultados</h2>
+      <div className="juegos-cabecera-tarjeta">
+        <h2 className="juegos-subtitulo">Resultados</h2>
+        {hayPodio && (
+          <BotonCopiar
+            label="Copiar posiciones"
+            texto={() =>
+              textoPosiciones(
+                juego.nombre,
+                equipos.map((e) => ({ posicion: e.posicion, nombre: e.nombre, total: e.total })),
+              )
+            }
+          />
+        )}
+      </div>
       <p className="muted juegos-nota">
-        El puntaje de cada equipo es la suma de sus estaciones; el juego vale {juego.puntos_max} puntos. {regla}
+        El puntaje de cada equipo es la suma de sus estaciones; el juego vale {juego.puntos_max} puntos
+        {hayExtra ? " y el total ya incluye los puntos extra o descuentos" : ""}. {regla}
       </p>
 
       {esEscritorio ? (
@@ -53,6 +79,7 @@ export function ResultadosEstaciones({ detalle, esEscritorio }: { detalle: Juego
                   {e.nombre}
                 </th>
               ))}
+              {hayExtra && <th className="num col-extra">Extra</th>}
               <th className="num col-total">
                 Total<small>/ {juego.puntos_max}</small>
               </th>
@@ -73,7 +100,12 @@ export function ResultadosEstaciones({ detalle, esEscritorio }: { detalle: Juego
                     {s.clave in e.por_criterio ? fmtPts(e.por_criterio[s.clave]) : <span className="muted">—</span>}
                   </td>
                 ))}
-                <td className="num juegos-total">{e.hojas ? fmtPts(e.total) : <span className="muted">—</span>}</td>
+                {hayExtra && (
+                  <td className="num">
+                    <ValorExtra puntos={e.extra} />
+                  </td>
+                )}
+                <td className="num juegos-total">{conTotal(e) ? fmtPts(e.total) : <span className="muted">—</span>}</td>
                 <td className="num">{e.hojas ? tiempo(e.tiempo_seg) : <span className="muted">—</span>}</td>
               </tr>
             ))}
@@ -86,20 +118,29 @@ export function ResultadosEstaciones({ detalle, esEscritorio }: { detalle: Juego
               <div className="juegos-equipo-card-cabecera">
                 <Pos valor={e.posicion} />
                 <Chip nombre={e.nombre} color={e.color} />
-                <span className="juegos-total mono">{e.hojas ? fmtPts(e.total) : "—"}</span>
+                <span className="juegos-total mono">{conTotal(e) ? fmtPts(e.total) : "—"}</span>
               </div>
               <p className="muted juegos-nota">
                 {e.hojas === 0 ? "Sin estaciones todavía" : `${e.hojas} de ${estaciones.length} estaciones`}
                 {e.hojas > 0 && ` · tiempo ${tiempo(e.tiempo_seg)}`}
               </p>
-              {e.hojas > 0 && (
+              {(e.hojas > 0 || e.extra !== 0) && (
                 <dl className="juegos-desglose juegos-desglose-estaciones">
-                  {estaciones.map((s) => (
-                    <div key={s.clave}>
-                      <dt className="muted">{s.nombre}</dt>
-                      <dd className="mono">{s.clave in e.por_criterio ? fmtPts(e.por_criterio[s.clave]) : "—"}</dd>
+                  {e.hojas > 0 &&
+                    estaciones.map((s) => (
+                      <div key={s.clave}>
+                        <dt className="muted">{s.nombre}</dt>
+                        <dd className="mono">{s.clave in e.por_criterio ? fmtPts(e.por_criterio[s.clave]) : "—"}</dd>
+                      </div>
+                    ))}
+                  {e.extra !== 0 && (
+                    <div>
+                      <dt className="muted">Extra</dt>
+                      <dd className="mono">
+                        <ValorExtra puntos={e.extra} />
+                      </dd>
                     </div>
-                  ))}
+                  )}
                 </dl>
               )}
             </li>

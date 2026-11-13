@@ -9,7 +9,7 @@ Se descarga desde la página en línea y se importa en la laptop del campamento:
 
 Contenido del zip (CSV UTF-8 con BOM, ids originales para no romper `equipo_id`):
   - `manifiesto.json`: formato, versión de alembic, fecha y conteos.
-  - `equipos.csv`, `registros.csv`, `calificaciones.csv`: todas las columnas.
+  - `equipos.csv`, `registros.csv`, `calificaciones.csv`, `puntos_extra.csv`: todas las columnas.
     `registros` no lleva `ticket_path`/`ticket_mime` (las imágenes no viajan: en la
     laptop quedan "sin comprobante" en vez de un "Ver comprobante" que daría 404)
     ni `ocr_texto` (pesa y no sirve fuera de la conciliación).
@@ -17,7 +17,7 @@ Contenido del zip (CSV UTF-8 con BOM, ids originales para no romper `equipo_id`)
     registro está abierto o cerrado lo decide la laptop, no el archivo.
 No viajan `admin_users` (las cuentas de la laptop se quedan) ni `comprobante_eventos`.
 
-Importar REEMPLAZA registros, equipos y calificaciones. Todo se valida antes de tocar
+Importar REEMPLAZA registros, equipos, calificaciones y puntos extra. Todo se valida antes de tocar
 la base y el reemplazo es una sola transacción. Las columnas se (de)serializan de
 forma genérica desde `Model.__table__`, así que una columna nueva viaja sola — pero
 la versión de alembic de la laptop debe coincidir con la del archivo.
@@ -43,7 +43,7 @@ from sqlalchemy.orm import Session
 
 from .concurrencia import candado_equipos
 from .config import settings
-from .models import AppSettings, Calificacion, Camper, ComprobanteEvento, Equipo
+from .models import AppSettings, Calificacion, Camper, ComprobanteEvento, Equipo, PuntosExtra
 
 log = logging.getLogger("arraigados.respaldo")
 
@@ -56,6 +56,7 @@ TABLAS = {
     "equipos": (Equipo, ()),
     "registros": (Camper, ("ticket_path", "ticket_mime", "ocr_texto")),
     "calificaciones": (Calificacion, ()),
+    "puntos_extra": (PuntosExtra, ()),
 }
 AJUSTES_EXCLUIDOS = ("id", "registro_abierto", "registro_cierre_en")
 NOMBRES_ZIP = {"manifiesto.json", "ajustes.csv", *(f"{t}.csv" for t in TABLAS)}
@@ -243,6 +244,9 @@ def _revisar_relaciones(tablas: dict[str, list[dict]]) -> None:
     for n, c in enumerate(tablas["calificaciones"], start=2):
         if c["equipo_id"] not in ids_equipos:
             raise RespaldoError(f"calificaciones.csv, renglón {n}: equipo_id {c['equipo_id']} no existe en equipos.csv.")
+    for n, x in enumerate(tablas["puntos_extra"], start=2):
+        if x["equipo_id"] not in ids_equipos:
+            raise RespaldoError(f"puntos_extra.csv, renglón {n}: equipo_id {x['equipo_id']} no existe en equipos.csv.")
 
 
 def leer_zip(datos: bytes) -> Respaldo:
@@ -257,7 +261,10 @@ def leer_zip(datos: bytes) -> Respaldo:
         if nombres != NOMBRES_ZIP:
             faltan = sorted(NOMBRES_ZIP - nombres)
             sobran = sorted(nombres - NOMBRES_ZIP)
-            raise RespaldoError(f"El zip no es un respaldo de Arraigados (faltan: {faltan or '—'}; sobran: {sobran or '—'}).")
+            raise RespaldoError(
+                f"El zip no es un respaldo de Arraigados de esta versión (faltan: {faltan or '—'}; sobran: {sobran or '—'}). "
+                "Si es un respaldo viejo, descarga uno nuevo desde la página en línea ya actualizada."
+            )
         try:
             manifiesto = json.loads(_leer_miembro(zf, "manifiesto.json"))
         except json.JSONDecodeError:
@@ -313,6 +320,7 @@ def importar(db: Session, respaldo: Respaldo) -> dict[str, int]:
     with candado_equipos(db):
         try:
             # Borrado explícito y en este orden: SQLite no aplica los ON DELETE.
+            db.query(PuntosExtra).delete()
             db.query(Calificacion).delete()
             db.query(ComprobanteEvento).delete()
             db.query(Camper).delete()

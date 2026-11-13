@@ -1,0 +1,149 @@
+.extra-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+
+/* Dos campos por fila desde tablet; uno debajo del otro en celular. */
+.extra-form-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-3);
+}
+
+@media (min-width: 640px) {
+  .extra-form-fila {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.extra-etiqueta {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--hueso-tenue);
+}
+
+.extra-contador {
+  font-size: var(--t-xs);
+  font-weight: 400;
+  margin-left: auto;
+}
+
+.extra-signo {
+  display: flex;
+  gap: var(--e-2);
+}
+
+.extra-signo-btn {
+  flex: 1 1 0;
+  min-height: 44px;
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--tarjeta-borde);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--hueso);
+  font-size: var(--t-base);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--dur-rapida) ease, border-color var(--dur-rapida) ease, color var(--dur-rapida) ease;
+}
+
+.extra-signo-btn:hover {
+  border-color: var(--amarillo);
+}
+
+.extra-signo-btn:focus-visible {
+  outline: 2px solid var(--amarillo);
+  outline-offset: 2px;
+}
+
+.extra-signo-btn.is-suma {
+  background: var(--verde-claro);
+  border-color: transparent;
+  color: var(--corteza);
+}
+
+.extra-signo-btn.is-resta {
+  background: var(--coral-error);
+  border-color: transparent;
+  color: var(--corteza);
+}
+
+.extra-form-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+
+.extra-vacio {
+  margin-top: var(--e-4);
+}
+
+.extra-lista {
+  list-style: none;
+  margin: var(--e-5) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.extra-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--e-2) var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.extra-item.is-editando {
+  border-color: var(--amarillo);
+}
+
+.extra-valor {
+  min-width: 4.5rem;
+  font-size: var(--t-lg);
+  font-weight: 700;
+}
+
+.extra-valor.is-suma {
+  color: var(--verde-claro);
+}
+
+.extra-valor.is-resta {
+  color: var(--coral-error);
+}
+
+.extra-info {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.extra-motivo {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.extra-meta {
+  margin-top: 0.25rem;
+  font-size: var(--t-xs);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.4rem;
+}
+
+.extra-acciones {
+  display: flex;
+  gap: var(--e-2);
+}
+
+/* Navegación táctil: botones de 44px, como en el resto del panel. */
+@media (pointer: coarse) {
+  .extra-acciones .btn {
+    min-height: 44px;
+  }
+}

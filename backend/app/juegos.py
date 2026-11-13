@@ -476,8 +476,9 @@ class ResultadoEquipo:
     hojas: int  # modo jueces: hojas capturadas · modo estaciones: estaciones capturadas
     por_criterio: dict[str, float]  # modo estaciones: puntos por estación (clave de la estación)
     total: float
-    posicion: int | None  # None = todavía sin hojas
+    posicion: int | None  # None = todavía sin hojas ni puntos extra
     tiempo_seg: int | None = None  # solo modo estaciones: desempate
+    extra: float = 0.0  # puntos extra (+) o descuentos (−) de este juego; ya incluidos en `total`
 
 
 def _posiciones(totales: list[float | None]) -> list[int | None]:
@@ -495,7 +496,9 @@ def _posiciones_con_desempate(claves: list[tuple[float, int] | None]) -> list[in
     return [None if k is None else 1 + sum(1 for o in validas if o < k) for k in llaves]
 
 
-def _resultados_jueces(juego: Juego, equipo_ids: list[int], hojas: list[tuple[int, str, dict]]) -> list[ResultadoEquipo]:
+def _resultados_jueces(
+    juego: Juego, equipo_ids: list[int], hojas: list[tuple[int, str, dict]], extra: dict[int, float]
+) -> list[ResultadoEquipo]:
     por_equipo: dict[int, list[dict[str, float]]] = {}
     for equipo_id, _juez, valores in hojas:
         por_equipo.setdefault(equipo_id, []).append(puntos_hoja(juego, valores)[0])
@@ -505,7 +508,8 @@ def _resultados_jueces(juego: Juego, equipo_ids: list[int], hojas: list[tuple[in
         lista = por_equipo.get(equipo_id, [])
         n = len(lista)
         promedio = {c.clave: (sum(h[c.clave] for h in lista) / n if n else 0.0) for c in juego.criterios}
-        total = round(sum(promedio.values()), 1)
+        ex = round(extra.get(equipo_id, 0.0), 1)
+        total = round(sum(promedio.values()) + ex, 1)
         filas.append(
             ResultadoEquipo(
                 equipo_id=equipo_id,
@@ -513,15 +517,23 @@ def _resultados_jueces(juego: Juego, equipo_ids: list[int], hojas: list[tuple[in
                 por_criterio={k: round(v, 1) for k, v in promedio.items()},
                 total=total,
                 posicion=None,
+                extra=ex,
             )
         )
 
-    for fila, pos in zip(filas, _posiciones([f.total if f.hojas else None for f in filas])):
+    # Tiene lugar quien ya tiene hojas o puntos extra (un descuento antes de calificar también cuenta).
+    for fila, pos in zip(filas, _posiciones([f.total if (f.hojas or f.extra) else None for f in filas])):
         fila.posicion = pos
     return sorted(filas, key=lambda f: (f.posicion is None, f.posicion or 0))
 
 
-def _resultados_estaciones(juego: Juego, equipo_ids: list[int], hojas: list[tuple[int, str, dict]]) -> list[ResultadoEquipo]:
+# Tiempo de desempate de un equipo sin hojas pero con puntos extra: pierde cualquier desempate.
+_TIEMPO_SIN_HOJAS = 10**9
+
+
+def _resultados_estaciones(
+    juego: Juego, equipo_ids: list[int], hojas: list[tuple[int, str, dict]], extra: dict[int, float]
+) -> list[ResultadoEquipo]:
     por_equipo: dict[int, dict[str, dict]] = {}
     for equipo_id, estacion_clave, valores in hojas:
         por_equipo.setdefault(equipo_id, {})[estacion_clave] = valores
@@ -540,56 +552,76 @@ def _resultados_estaciones(juego: Juego, equipo_ids: list[int], hojas: list[tupl
             t = tiempo_estacion(est, valores)
             if t is not None:
                 tiempo += t
+        ex = round(extra.get(equipo_id, 0.0), 1)
         filas.append(
             ResultadoEquipo(
                 equipo_id=equipo_id,
                 hojas=n,
                 por_criterio=por_estacion,
-                total=round(sum(por_estacion.values()), 1),
+                total=round(sum(por_estacion.values()) + ex, 1),
                 posicion=None,
                 tiempo_seg=tiempo or None,  # sin tiempo (nada capturado, o solo la capilla) = None
+                extra=ex,
             )
         )
 
-    claves = [(f.total, f.tiempo_seg or 0) if f.hojas else None for f in filas]
+    claves = [
+        (f.total, f.tiempo_seg or 0) if f.hojas else ((f.total, _TIEMPO_SIN_HOJAS) if f.extra else None)
+        for f in filas
+    ]
     for fila, pos in zip(filas, _posiciones_con_desempate(claves)):
         fila.posicion = pos
     return sorted(filas, key=lambda f: (f.posicion is None, f.posicion or 0))
 
 
 def resultados(
-    juego: Juego, equipo_ids: list[int], hojas: list[tuple[int, str, dict]]
+    juego: Juego,
+    equipo_ids: list[int],
+    hojas: list[tuple[int, str, dict]],
+    extra: dict[int, float] | None = None,
 ) -> list[ResultadoEquipo]:
-    """Resultado de un juego por equipo, ordenado por posición (los que aún no tienen hojas van al
-    final, en el orden en que llegaron en `equipo_ids`). `hojas` = `(equipo_id, juez, valores)`; en
-    modo estaciones `juez` es la clave de la estación."""
+    """Resultado de un juego por equipo, ordenado por posición (los que aún no tienen hojas ni puntos
+    extra van al final, en el orden en que llegaron en `equipo_ids`). `hojas` = `(equipo_id, juez,
+    valores)`; en modo estaciones `juez` es la clave de la estación. `extra` = puntos extra (+) o
+    descuentos (−) de ESTE juego por equipo: se suman al total y por lo tanto mueven la posición."""
+    extra = extra or {}
     if juego.modo == "estaciones":
-        return _resultados_estaciones(juego, equipo_ids, hojas)
-    return _resultados_jueces(juego, equipo_ids, hojas)
+        return _resultados_estaciones(juego, equipo_ids, hojas, extra)
+    return _resultados_jueces(juego, equipo_ids, hojas, extra)
 
 
 @dataclass
 class PosicionGeneral:
     equipo_id: int
-    por_juego: dict[str, float | None]  # None = sin hojas en ese juego
+    por_juego: dict[str, float | None]  # None = sin hojas ni extra en ese juego (ya incluye el extra del juego)
+    posicion_por_juego: dict[str, int | None]  # lugar del equipo dentro de cada juego
+    extra: float  # puntos extra generales (sin juego); ya incluidos en `total`
     total: float
     posicion: int | None
 
 
 def tabla_general(
-    equipo_ids: list[int], resultados_por_juego: dict[str, list[ResultadoEquipo]]
+    equipo_ids: list[int],
+    resultados_por_juego: dict[str, list[ResultadoEquipo]],
+    extra_general: dict[int, float] | None = None,
 ) -> list[PosicionGeneral]:
-    """Suma de los juegos por equipo. Un equipo sin hojas en ningún juego no tiene posición."""
+    """Suma de los juegos (cada uno con sus puntos extra) más los puntos extra generales. Un equipo sin
+    hojas en ningún juego y sin ningún punto extra no tiene posición."""
+    extra_general = extra_general or {}
     filas: list[PosicionGeneral] = []
     for equipo_id in equipo_ids:
         por_juego: dict[str, float | None] = {}
+        posicion_por_juego: dict[str, int | None] = {}
         for clave, res in resultados_por_juego.items():
             fila = next((r for r in res if r.equipo_id == equipo_id), None)
-            por_juego[clave] = fila.total if fila and fila.hojas else None
-        total = round(sum(v for v in por_juego.values() if v is not None), 1)
-        filas.append(PosicionGeneral(equipo_id, por_juego, total, None))
+            con_datos = bool(fila and (fila.hojas or fila.extra))
+            por_juego[clave] = fila.total if con_datos else None
+            posicion_por_juego[clave] = fila.posicion if fila else None
+        ex = round(extra_general.get(equipo_id, 0.0), 1)
+        total = round(sum(v for v in por_juego.values() if v is not None) + ex, 1)
+        filas.append(PosicionGeneral(equipo_id, por_juego, posicion_por_juego, ex, total, None))
 
-    totales = [f.total if any(v is not None for v in f.por_juego.values()) else None for f in filas]
+    totales = [f.total if f.extra or any(v is not None for v in f.por_juego.values()) else None for f in filas]
     for fila, pos in zip(filas, _posiciones(totales)):
         fila.posicion = pos
     return sorted(filas, key=lambda f: (f.posicion is None, f.posicion or 0))

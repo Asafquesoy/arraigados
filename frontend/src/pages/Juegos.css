@@ -306,3 +306,44 @@
   display: flex;
   gap: var(--e-2);
 }
+
+/* Título de una tarjeta con su botón «Copiar posiciones» a la derecha (debajo en pantallas angostas). */
+.juegos-cabecera-tarjeta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--e-2) var(--e-4);
+  margin-bottom: var(--e-3);
+}
+
+.juegos-cabecera-tarjeta .juegos-subtitulo {
+  margin: 0;
+}
+
+/* Botones «Copiar para compartir» arriba de la tabla de Posiciones. */
+.juegos-copiar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  margin-bottom: var(--e-3);
+}
+
+.juegos-copiar-titulo {
+  font-size: var(--t-sm);
+  margin-right: var(--e-1);
+}
+
+/* Puntos extra en tablas y tarjetas: verde si suman, rojo si restan. */
+.juegos-extra {
+  font-weight: 700;
+}
+
+.juegos-extra.is-suma {
+  color: var(--verde-claro);
+}
+
+.juegos-extra.is-resta {
+  color: var(--coral-error);
+}

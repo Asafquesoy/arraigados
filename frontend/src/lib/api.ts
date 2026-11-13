@@ -416,23 +416,52 @@ export interface ResultadoEquipoJuego {
   color: string;
   hojas: number;
   por_criterio: Record<string, number>;
+  /** Puntos extra (+) o descuentos (−) de este juego; ya están incluidos en `total`. */
+  extra: number;
   total: number;
   posicion: number | null;
   /** Juegos por estaciones: tiempo que cuenta para el desempate. */
   tiempo_seg: number | null;
 }
 
+/** Puntos que se suman (positivo) o quitan (negativo) a un equipo, con el motivo. `juego` null = general. */
+export interface PuntosExtra {
+  id: number;
+  equipo_id: number;
+  juego: string | null;
+  puntos: number;
+  motivo: string;
+  creado_en: string;
+  creado_por: string;
+  actualizado_en: string | null;
+  actualizado_por: string | null;
+}
+
+export interface PuntosExtraDatos {
+  equipo_id: number;
+  juego: string | null;
+  puntos: number;
+  motivo: string;
+}
+
 export interface JuegoDetalle {
   juego: JuegoInfo;
   equipos: ResultadoEquipoJuego[];
   hojas: HojaOut[];
+  /** Solo los puntos extra de este juego. */
+  puntos_extra: PuntosExtra[];
 }
 
 export interface PosicionEquipo {
   equipo_id: number;
   nombre: string;
   color: string;
+  /** Total de cada juego (con el extra de ese juego incluido); null = sin hojas ni extra. */
   por_juego: Record<string, number | null>;
+  /** Lugar del equipo dentro de cada juego. */
+  posicion_por_juego: Record<string, number | null>;
+  /** Puntos extra generales (sin juego); ya están incluidos en `total`. */
+  extra: number;
   total: number;
   posicion: number | null;
 }
@@ -440,4 +469,6 @@ export interface PosicionEquipo {
 export interface Posiciones {
   juegos: JuegoInfo[];
   equipos: PosicionEquipo[];
+  /** Todos los puntos extra, generales y de cada juego. */
+  puntos_extra: PuntosExtra[];
 }

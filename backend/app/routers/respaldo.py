@@ -37,6 +37,7 @@ class ConteosOut(BaseModel):
     equipos: int
     registros: int
     calificaciones: int
+    puntos_extra: int
 
 
 class ResumenOut(BaseModel):
