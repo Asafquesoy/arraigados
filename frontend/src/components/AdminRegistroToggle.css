@@ -50,3 +50,76 @@
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--tarjeta-borde);
 }
+
+/* ---- Cierre automático ---- */
+.admin-registro-cierre {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--tarjeta-borde);
+}
+
+.admin-registro-cierre h3 {
+  margin: 0 0 0.4rem;
+  font-size: var(--t-base);
+  color: var(--hueso);
+}
+
+.admin-registro-cierre-estado,
+.admin-registro-cierre-ayuda {
+  margin: 0;
+  font-size: var(--t-sm);
+}
+
+.admin-registro-cierre-estado strong {
+  color: var(--amarillo-suave);
+}
+
+.admin-registro-cierre-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 0.85rem;
+}
+
+.admin-registro-cierre-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: min(100%, 22rem);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--hueso-tenue);
+}
+
+.admin-registro-cierre-campo input {
+  width: 100%;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-s);
+  padding: 0.75rem 0.9rem;
+  color: var(--hueso);
+  font-family: inherit;
+  font-size: var(--t-input);
+  /* el icono y el selector nativos salen oscuros sobre fondo oscuro si no se avisa */
+  color-scheme: dark;
+  outline: none;
+}
+
+.admin-registro-cierre-campo input:focus {
+  border-color: var(--amarillo);
+  box-shadow: 0 0 0 3px rgba(255, 200, 0, 0.14);
+}
+
+.admin-registro-cierre-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-registro-cierre-nota {
+  font-size: var(--t-xs);
+}

@@ -14,6 +14,8 @@ import { ZONA_LABEL, ZonaField } from "../../components/ZonaField";
 import { CalendarIcon, ChurchIcon, DropIcon, PhoneIcon, TagIcon, UserIcon } from "../../components/icons";
 import { ApiError } from "../../lib/api";
 import type { Sexo, Zona } from "../../lib/api";
+import { VENUE } from "../../config";
+import { formatFechaHora } from "../../lib/fecha";
 import { fieldError, HOY, INITIAL_STATE, type FieldKey, type FormState } from "../../lib/camperForm";
 import { useSettings } from "../../lib/SettingsContext";
 import { useAvisoSalida } from "../../lib/useAvisoSalida";
@@ -34,7 +36,7 @@ const STEP_FIELDS: FieldKey[][] = [
 export function FormularioRegistro() {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
-  const { showShirtSize, pedirComprobante, registroAbierto } = useSettings();
+  const { showShirtSize, pedirComprobante, registroAbierto, registroCierreEn } = useSettings();
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   // Arranca en false a propósito: si el primer campo tuviera autoFocus desde
@@ -175,13 +177,15 @@ export function FormularioRegistro() {
       <section className="section-container form-section" id="registro-form">
         <Reveal>
           <p className="eyebrow">Formulario</p>
-          <h2 className="display-title form-title">Registro cerrado</h2>
-          <p className="muted">El registro no está disponible por el momento. Vuelve a intentarlo más tarde.</p>
+          <h2 className="display-title form-title">Registro en línea finalizado</h2>
+          <p className="muted">¡Todavía te puedes inscribir el día del campamento!</p>
         </Reveal>
 
         <Reveal delay={0.1}>
           <div className="glass-card form-card form-closed-card">
-            <p>El equipo organizador cerró temporalmente el registro de nuevos camperos.</p>
+            <p>
+              Llega a {VENUE.name} y acércate a la mesa de inscripciones; ahí te registramos.
+            </p>
           </div>
         </Reveal>
       </section>
@@ -197,6 +201,11 @@ export function FormularioRegistro() {
           Completa tus datos{pedirComprobante ? " y sube tu comprobante de pago" : ""}. Tu registro será verificado
           por el equipo organizador. <a href="#pago">¿Todavía no pagas? Consulta los datos de pago.</a>
         </p>
+        {registroCierreEn && (
+          <p className="muted form-cierre">
+            El registro en línea cierra el <strong>{formatFechaHora(registroCierreEn.toISOString())}</strong>
+          </p>
+        )}
       </Reveal>
 
       <Reveal delay={0.1}>

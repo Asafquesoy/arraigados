@@ -133,6 +133,8 @@ export interface AppSettings {
   precio_mxn: number;
   pedir_comprobante: boolean;
   registro_abierto: boolean;
+  /** ISO (UTC) de la hora a la que el registro se cierra solo; null = sin cierre programado. */
+  registro_cierre_en: string | null;
 }
 
 export interface ComprobanteStats {

@@ -80,6 +80,17 @@
   margin-top: 0.5rem;
 }
 
+.hero-cierre {
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.hero-cierre-texto {
+  margin: 0 0 var(--e-3);
+  font-size: var(--t-sm);
+  color: var(--hueso-tenue);
+}
+
 .hero-cta {
   margin-top: 1.75rem;
   font-size: var(--t-lg);
@@ -122,5 +133,11 @@
   }
   .hero-cta {
     margin-top: 1rem;
+  }
+  .hero-cierre {
+    margin-top: 0.75rem;
+  }
+  .hero-cierre-texto {
+    margin-bottom: var(--e-2);
   }
 }

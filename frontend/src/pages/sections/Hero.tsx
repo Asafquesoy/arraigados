@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { m, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { CuentaRegresiva } from "../../components/CuentaRegresiva";
 import { RootGrow } from "../../components/RootGrow";
 import { useMediaQuery } from "../../lib/useMediaQuery";
 import { useSettings } from "../../lib/SettingsContext";
@@ -12,7 +13,7 @@ export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
   const reduce = useReducedMotion();
   const isCoarse = useMediaQuery("(pointer: coarse)");
   const heroRef = useRef<HTMLElement>(null);
-  const { registroAbierto } = useSettings();
+  const { registroAbierto, registroCierreEn } = useSettings();
 
   // Parallax escrito directo al DOM por motion (sin pasar por setState/render de
   // React en cada scroll) y acotado al alto del propio hero, no de toda la página.
@@ -95,6 +96,18 @@ export function Hero({ onScrollToForm }: { onScrollToForm: () => void }) {
         >
           <RootGrow delay={0.9} />
         </m.div>
+
+        {registroAbierto && registroCierreEn && (
+          <m.div
+            className="hero-cierre"
+            initial={reduce ? { opacity: 1 } : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <p className="hero-cierre-texto">El registro en línea cierra en</p>
+            <CuentaRegresiva hasta={registroCierreEn} />
+          </m.div>
+        )}
 
         <m.button
           type="button"

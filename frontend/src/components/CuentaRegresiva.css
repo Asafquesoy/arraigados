@@ -1,0 +1,45 @@
+.cuenta-regresiva {
+  display: flex;
+  justify-content: center;
+  gap: var(--e-2);
+}
+
+.cuenta-regresiva-caja {
+  /* minmax(0) en vez de ancho fijo: a 320px las cuatro cajas deben caber en una fila */
+  flex: 0 1 4.5rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--e-3) var(--e-2);
+  border-radius: var(--radio-m);
+  background: rgba(11, 21, 9, 0.62);
+  border: 1px solid rgba(255, 200, 0, 0.28);
+  box-shadow: var(--sombra-suave);
+}
+
+.cuenta-regresiva-valor {
+  font-size: var(--t-xl);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--amarillo);
+  /* cifras del mismo ancho: los dígitos no bailan al cambiar cada segundo */
+  font-variant-numeric: tabular-nums;
+}
+
+.cuenta-regresiva-nombre {
+  margin-top: 0.15rem;
+  font-size: var(--t-xs);
+  color: var(--hueso-tenue);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 380px) {
+  .cuenta-regresiva {
+    gap: var(--e-1);
+  }
+  .cuenta-regresiva-caja {
+    padding-inline: 0.25rem;
+  }
+}

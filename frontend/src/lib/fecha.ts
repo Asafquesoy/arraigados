@@ -24,11 +24,23 @@ const FORMATO_FECHA_CORTA = new Intl.DateTimeFormat("es-MX", {
  * UTC — se normaliza agregando `Z` cuando la cadena no trae zona.
  */
 export function formatFechaHora(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  const d = parseFechaUtc(iso);
+  return d ? FORMATO_FECHA_HORA.format(d) : "—";
+}
+
+/** Parsea un datetime ISO del backend (UTC) a `Date`; `null` si falta o es inválido.
+ * Misma normalización con `Z` que explica `formatFechaHora`. */
+export function parseFechaUtc(iso: string | null | undefined): Date | null {
+  if (!iso) return null;
   const normalizado = /[zZ]|[+-]\d\d:\d\d$/.test(iso) ? iso : `${iso}Z`;
   const d = new Date(normalizado);
-  if (Number.isNaN(d.getTime())) return "—";
-  return FORMATO_FECHA_HORA.format(d);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** `YYYY-MM-DDTHH:mm` en hora LOCAL, el formato que usa `<input type="datetime-local">`. */
+export function aInputLocal(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 /**

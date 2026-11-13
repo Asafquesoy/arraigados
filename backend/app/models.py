@@ -172,6 +172,10 @@ class AppSettings(Base):
     precio_mxn: Mapped[int] = mapped_column(Integer, default=350)
     pedir_comprobante: Mapped[bool] = mapped_column(Boolean, default=True)
     registro_abierto: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Hora (UTC) a la que el registro público se cierra solo; null = sin cierre
+    # programado. Se aplica de forma perezosa (ver registro_cierre.py) y se borra
+    # al cumplirse.
+    registro_cierre_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     equipos_auto: Mapped[bool] = mapped_column(Boolean, default=True)
     eq_balance_edad: Mapped[bool] = mapped_column(Boolean, default=True)
     eq_balance_bautismo: Mapped[bool] = mapped_column(Boolean, default=True)

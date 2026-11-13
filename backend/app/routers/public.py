@@ -10,6 +10,7 @@ from ..iglesias import canonicalizar_iglesia, iglesias_de_zona
 from ..models import AppSettings, Camper, Sexo, TallaCamisa, TipoParticipante, Zona
 from ..procesar_comprobantes import procesar_registro_nuevo
 from ..ratelimit import rate_limit
+from ..registro_cierre import aplicar_cierre_programado
 from ..registro_sitio import guardar_con_folio_unico
 from ..schemas import CamperCreateResponse
 from ..storage import save_ticket
@@ -64,6 +65,10 @@ async def crear_registro(
     # toggle admin puede haber cambiado entre que el navegador cargó el
     # formulario y este POST).
     settings_row = db.get(AppSettings, 1)
+    # Cierre programado: si ya llegó la hora se cierra aquí mismo, sin depender
+    # de que alguien haya pedido GET /api/settings ni del reloj del navegador.
+    if aplicar_cierre_programado(settings_row):
+        db.commit()
     registro_abierto = settings_row.registro_abierto if settings_row else True
     if not registro_abierto:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "El registro está cerrado por ahora.")

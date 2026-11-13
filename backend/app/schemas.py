@@ -1,7 +1,7 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
 from .models import AdminRole, Sexo, TallaCamisa, TipoParticipante, Zona
 
@@ -172,6 +172,7 @@ class AppSettingsOut(BaseModel):
     precio_mxn: int
     pedir_comprobante: bool
     registro_abierto: bool
+    registro_cierre_en: datetime | None = None
 
 
 class AppSettingsUpdate(BaseModel):
@@ -184,6 +185,18 @@ class AppSettingsUpdate(BaseModel):
     precio_mxn: int | None = Field(default=None, ge=0, le=100_000)
     pedir_comprobante: bool | None = None
     registro_abierto: bool | None = None
+    registro_cierre_en: datetime | None = None
+
+    @field_validator("registro_cierre_en")
+    @classmethod
+    def _cierre_en_futuro(cls, v: datetime | None) -> datetime | None:
+        if v is None:
+            return None  # null explícito = quitar el cierre programado
+        if v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+        if v <= datetime.now(timezone.utc):
+            raise ValueError("La hora de cierre ya pasó.")
+        return v
 
 
 class ComprobanteStatsResponse(BaseModel):

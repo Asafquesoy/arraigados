@@ -110,6 +110,24 @@ panel section, first card in `AdminPanel.tsx`, same `canEdit` gating). When off,
 Like `pedir_comprobante`, this is re-checked server-side in `routers/public.py::crear_registro`
 (rejects with 403 before any field validation) — the frontend gating is UX only, not the real gate.
 
+**Cierre programado del registro** (`app_settings.registro_cierre_en`, `DateTime(tz)` nullable, migración `0018` —
+**hay que correr `alembic upgrade head`** al desplegar): el Admin fija día y hora desde la misma tarjeta "Registro de
+camperos" (`AdminRegistroToggle.tsx`, bloque "Cierre automático", `datetime-local` en hora del dispositivo; el PATCH rechaza
+horas pasadas con 422 y `null` quita el cierre) y el registro se cierra solo. **No hay cron: el cierre es perezoso** —
+`registro_cierre.py::aplicar_cierre_programado` (apaga `registro_abierto` y **borra** la hora, para que reabrir a mano no
+lo vuelva a cerrar con la hora vieja) se llama en los tres sitios que leen la fila: `GET /api/settings`,
+`POST /api/registros` (antes del chequeo de 403, así el servidor es la puerta real aunque el reloj del teléfono mienta) y
+`PATCH /api/admin/settings` (antes de aplicar el PATCH, para que reabrir funcione con una hora ya vencida).
+`registro_cierre.py::settings_out` arma `AppSettingsOut` en esos sitios (antes estaba duplicado). En el cliente,
+`SettingsContext` expone `registroCierreEn: Date | null` y un `registroAbierto` que **ya descuenta la hora**: un
+`setTimeout` (partido en tramos de ≤2³¹−1 ms; arriba de ~24.8 días se dispararía de inmediato) lo pone en `false` al llegar
+la hora y vuelve a pedir `/settings` para sincronizarse; si el servidor sigue abierto (reloj local adelantado) reintenta cada
+5 s. Por eso Hero, formulario y panel pasan solos a "cerrado" sin recargar. `patch()` aplica la **respuesta completa** del
+PATCH, no solo el campo enviado. `components/CuentaRegresiva.tsx` (días/horas/min/seg, `role="timer"` sin `aria-live`) se
+muestra en `Hero.tsx` mientras haya hora futura y el formulario abierto dice "cierra el …". Ojo conocido: si el cierre
+llega con alguien a media captura, el formulario se reemplaza por el aviso y pierde lo escrito (el servidor igual lo habría
+rechazado con 403).
+
 **Use this pattern — DB-backed setting + context, not a `config.ts` constant — for any other
 value the organizing team should be able to change without a redeploy.** `config.ts` remains the
 right place only for values that genuinely need a code change to alter (copy strings, social

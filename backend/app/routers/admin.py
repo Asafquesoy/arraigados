@@ -37,6 +37,7 @@ from ..schemas import (
     TallaStatsItem,
     TallaStatsResponse,
 )
+from ..registro_cierre import aplicar_cierre_programado, settings_out
 from ..registro_sitio import buscar_similares, guardar_con_folio_unico
 from ..security import get_current_admin, hash_password, require_role
 from ..validacion_camper import normalizar_datos_camper, validar_datos_camper
@@ -614,16 +615,14 @@ def actualizar_settings(
         # sembrada faltara por alguna razón, se crea aquí en vez de fallar.
         row = AppSettings(id=1)
         db.add(row)
+    # Primero el cierre programado que ya venció (si lo hay) y después lo que
+    # manda el PATCH: así reabrir a mano funciona aunque la hora vieja ya pasó.
+    aplicar_cierre_programado(row)
     for field, value in updates.items():
         setattr(row, field, value)
     db.commit()
     db.refresh(row)
-    return AppSettingsOut(
-        show_shirt_size=row.show_shirt_size,
-        precio_mxn=row.precio_mxn,
-        pedir_comprobante=row.pedir_comprobante,
-        registro_abierto=row.registro_abierto,
-    )
+    return settings_out(row)
 
 
 # ---- Gestión de cuentas de admin (todas exigen rol Admin) ----
