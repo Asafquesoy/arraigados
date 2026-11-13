@@ -1,0 +1,111 @@
+.admin-respaldo {
+  margin-top: 1.75rem;
+}
+
+.admin-respaldo-card {
+  padding: 1.5rem;
+}
+
+.admin-respaldo-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  color: var(--amarillo);
+}
+
+.admin-respaldo-header h2 {
+  margin: 0;
+  font-size: var(--t-lg);
+  color: var(--hueso);
+}
+
+.admin-respaldo-ayuda {
+  margin: 0.75rem 0 0;
+  font-size: var(--t-sm);
+}
+
+.admin-respaldo-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.admin-respaldo-importar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radio-m);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--tarjeta-borde);
+}
+
+.admin-respaldo-importar h3 {
+  margin: 0;
+  font-size: var(--t-base);
+  color: var(--hueso);
+}
+
+.admin-respaldo-importar .admin-respaldo-ayuda {
+  margin-top: 0;
+}
+
+.admin-respaldo-aviso {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--hueso-tenue);
+}
+
+.admin-respaldo-aviso strong {
+  color: var(--ambar);
+}
+
+.admin-respaldo-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: min(100%, 26rem);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--hueso-tenue);
+}
+
+.admin-respaldo-campo input {
+  width: 100%;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-s);
+  padding: 0.6rem 0.75rem;
+  color: var(--hueso);
+  font-family: inherit;
+  font-size: var(--t-input);
+  color-scheme: dark;
+}
+
+.admin-respaldo-resumen {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.admin-respaldo-resumen p {
+  margin: 0;
+  font-size: var(--t-sm);
+}
+
+.admin-respaldo-resumen strong {
+  color: var(--amarillo-suave);
+}
+
+.admin-respaldo-listo {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--verde-claro);
+}

@@ -19,6 +19,12 @@ class Settings(BaseSettings):
 
     camp_name: str = "Arraigados"
 
+    # Respaldo para la laptop sin internet (ver respaldo.py). IMPORTAR reemplaza
+    # todos los registros, así que solo se enciende en la laptop del campamento
+    # (PERMITIR_IMPORTAR_RESPALDO=true en backend/.env); en producción queda apagado.
+    permitir_importar_respaldo: bool = False
+    respaldos_dir: str = "./data/respaldos"
+
     # Lectura automática de comprobantes (conciliacion). Gemini es el lector
     # principal (plan gratis de Google AI Studio); sin key o sin cuota cae a
     # Tesseract local. Ambos son opcionales: sin ninguno, el encargado captura a mano.

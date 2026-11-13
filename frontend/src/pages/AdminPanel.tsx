@@ -5,6 +5,7 @@ import { AdminAjustes } from "../components/AdminAjustes";
 import { AdminCamperCard } from "../components/AdminCamperCard";
 import { AdminComprobanteStats } from "../components/AdminComprobanteStats";
 import { AdminRegistroToggle } from "../components/AdminRegistroToggle";
+import { AdminRespaldo } from "../components/AdminRespaldo";
 import { AdminResumen } from "../components/AdminResumen";
 import { AdminShirtStats } from "../components/AdminShirtStats";
 import { CamperDetalle } from "../components/CamperDetalle";
@@ -226,6 +227,8 @@ export function AdminPanel() {
       <AdminRegistroToggle canEdit={role === "ADMIN"} />
 
       <AdminAjustes canEdit={role === "ADMIN"} />
+
+      {role === "ADMIN" && <AdminRespaldo />}
 
       {/* Estos tres piden `/admin/stats/*` al montarse: sin esperar a que
           `/auth/me` confirme la sesión disparaban 401 antes del redirect al

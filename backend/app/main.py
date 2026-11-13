@@ -8,7 +8,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 from .config import settings
 from .database import SessionLocal
 from .models import AdminRole, AdminUser, AppSettings
-from .routers import admin, auth, comprobantes, equipos, juegos, public, settings as settings_router
+from .routers import admin, auth, comprobantes, equipos, juegos, public, respaldo, settings as settings_router
 from .security import hash_password
 
 logger = logging.getLogger("arraigados")
@@ -92,6 +92,7 @@ app.include_router(admin.usuarios_router)
 app.include_router(equipos.router)
 app.include_router(juegos.router)
 app.include_router(comprobantes.router)
+app.include_router(respaldo.router)
 app.include_router(settings_router.router)
 
 

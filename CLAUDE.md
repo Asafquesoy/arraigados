@@ -790,6 +790,51 @@ transferencia y avisa si el dinero no alcanza. Roles: Admin y `VERIFICADOR_PAGO`
   n.º de cupón (`MOTIVOS_FUERTES`); si el vínculo es solo referencia o parecido visual, queda como
   "posible" (media) para que lo confirme una persona.
 
+### Respaldo para la laptop sin internet (`/admin`, tarjeta "Respaldo para la laptop")
+
+Para llevar al campamento una copia completa de la página en línea y, si allá no hay internet, importarla en una
+laptop que corre la app localmente (compartiendo su internet/hotspot, el equipo entra a esa laptop). Solo **de ida**: la
+laptop pasa a ser la principal, no hay importación de regreso a producción. Solo Admin.
+
+- **Archivo**: `.zip` de CSV UTF-8 con BOM — `manifiesto.json` (formato, `alembic_version`, fecha, conteos),
+  `equipos.csv`, `registros.csv`, `calificaciones.csv` (todas las columnas, **ids originales** para no romper `equipo_id`) y
+  `ajustes.csv`. `app/respaldo.py` (módulo + CLI) serializa de forma genérica desde `Model.__table__`, así que una
+  columna nueva viaja sola. **No viajan**: las imágenes de comprobantes (`ticket_path`/`ticket_mime`/`ocr_texto` se
+  excluyen: en la laptop quedan "sin comprobante" en vez de un "Ver comprobante" que daría 404), `admin_users` (las cuentas de
+  la laptop se quedan) ni `comprobante_eventos`. `ajustes.csv` **no** trae `registro_abierto`/`registro_cierre_en`: eso lo
+  decide la laptop. A diferencia del exportar de Excel, aquí **no** se antepone `'` a valores que empiezan con `=+-@`
+  (corrompería el viaje de ida y vuelta); no abrir este zip en Excel y guardarlo.
+- **API** (`routers/respaldo.py`, todo Admin): `GET /api/admin/respaldo/descargar`, `GET .../info`
+  (`importar_permitido`, versión) y `POST .../importar` (multipart `archivo` + `confirmar`): sin `confirmar` solo revisa y
+  responde qué reemplazaría; con `confirmar` guarda primero una copia de lo actual en `RESPALDOS_DIR`
+  (`antes_de_importar_<fecha>.zip`, por si se subió el archivo equivocado) y reemplaza. La importación corre en threadpool
+  para no congelar el bucle de eventos. Por consola: `python -m app.respaldo exportar|importar archivo.zip [--si]`
+  desde `backend/` (plan B si el panel falla).
+- **Importar está apagado por defecto** (`PERMITIR_IMPORTAR_RESPALDO=false`, `config.py`): reemplaza todos los registros, así que
+  solo se enciende en `backend/.env` de la laptop; en producción el endpoint responde 403 y la tarjeta solo muestra
+  "Descargar". Tampoco se importa si la versión de alembic del archivo no coincide con la local (409: `git pull` +
+  `alembic upgrade head`).
+- **Es todo o nada y se valida antes de tocar la base**: zip con exactamente los archivos esperados, lectura acotada
+  (anti zip-bomb), encabezados idénticos a las columnas, tipos, ids/folios/nombres de equipo únicos y que cada `equipo_id`
+  exista → 422 con «archivo, renglón, columna: motivo». El reemplazo es una sola transacción bajo `candado_equipos`
+  (borrado explícito en el orden calificaciones → comprobante_eventos → campers → equipos, porque SQLite no aplica los
+  `ON DELETE`) y, en Postgres, ajusta las secuencias con `setval(pg_get_serial_sequence(...), max(id))` — sin eso el
+  siguiente alta chocaría de id al haber insertado ids explícitos.
+- **Medido (2026-11-12)**: ida y vuelta desde una copia de `dev.db` (114 registros, 10 equipos, calificaciones) hacia una
+  base nueva: 0 diferencias columna por columna; en SQLite y en Postgres 17 real (los ids nuevos siguen en 15/128/3);
+  archivos rotos (edad "abc", falta un CSV, `equipo_id` huérfano, no-zip) → 422 sin cambiar nada; versión distinta → 409;
+  bandera apagada → 403; flujo completo en el panel a 375px y escritorio (descargar, revisar, reemplazar), sin desborde ni
+  controles <44px.
+- **Runbook de la laptop** (hacerlo con tiempo, antes de perder la señal): (1) mismo commit que producción y
+  `alembic upgrade head`; (2) `backend/.env` con `PERMITIR_IMPORTAR_RESPALDO=true` y el `ADMIN_USERNAME/ADMIN_PASSWORD` de ahí;
+  (3) crear de antemano en `/admin/usuarios` las cuentas de recepción y jueces (**no viajan en el respaldo**); (4) descargar
+  el respaldo en línea lo más tarde posible y guardarlo también en USB/nube; (5) con el internet ya compartido, levantar
+  `uvicorn app.main:app --host 0.0.0.0` (desde `backend/`) y `npm run dev -- --host` (desde `frontend/`; el proxy de Vite
+  manda `/api` al backend local, así que los teléfonos solo hablan con `:5173`); (6) permitir Python/Node en el firewall de
+  Windows (red privada), ver la IP con `ipconfig` y abrir `http://<ip-laptop>:5173` desde otro dispositivo; (7) en
+  `/admin` → "Respaldo para la laptop" elegir el `.zip`, "Revisar archivo" y "Reemplazar todo". Ojo: en esa máquina `:5173`
+  puede estar ocupado por otro proyecto (ver la nota de puertos en *Testing the app with the Playwright MCP*).
+
 ## Deployment
 
 Three services in `docker-compose.yml`: `db` (Postgres with healthcheck + `pgdata` volume),
