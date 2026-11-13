@@ -1,7 +1,12 @@
+/* El Hero debe caber ENTERO en la primera pantalla (logo, título, contador y botón),
+   en teléfono y en computadora: por eso mide lo que queda bajo el navbar y cada pieza
+   se dimensiona también por la ALTURA disponible (--dvh), no solo por el ancho. Al
+   agregar un elemento nuevo hay que quitarle espacio a otro, no empujar el botón
+   fuera de la pantalla. */
 .hero {
   position: relative;
-  min-height: min(92vh, 820px);
-  min-height: min(calc(var(--alto-viewport) * 0.92), 820px);
+  /* min-height y no height: si en un caso extremo no cupiera, crece en vez de recortar. */
+  min-height: calc(var(--alto-viewport) - var(--alto-navbar));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -47,25 +52,25 @@
 .hero-content {
   width: min(760px, 100% - 2.5rem);
   text-align: center;
-  padding-block: clamp(3rem, 10vw, 5rem);
+  padding-block: clamp(0.75rem, calc(var(--dvh) * 3), 3rem);
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* Un solo espacio entre piezas (antes eran margin-top sueltos en cada una). */
+  gap: clamp(0.5rem, calc(var(--dvh) * 2), 1.5rem);
 }
 
 .hero-logo {
-  width: min(340px, 70vw);
+  /* Proporción 700×279: el alto es 0.4 × el ancho. */
+  width: min(340px, 70vw, calc(var(--dvh) * 34));
   height: auto;
   filter: drop-shadow(0 8px 32px rgba(255, 200, 0, 0.28));
 }
 
-.hero-badge {
-  margin-top: 1.25rem;
-}
-
 .hero-title {
-  font-size: var(--t-hero);
-  margin: 1.1rem 0 0;
+  font-size: min(var(--t-hero), calc(var(--dvh) * 6.5), 9vw);
+  line-height: 1.08;
+  margin: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -76,25 +81,42 @@
 }
 
 .hero-root {
-  width: min(220px, 60vw);
-  margin-top: 0.5rem;
+  /* viewBox 240×170: el alto es ~0.71 × el ancho. */
+  width: min(220px, 60vw, calc(var(--dvh) * 20));
 }
 
 .hero-cierre {
-  margin-top: 1.5rem;
   width: 100%;
 }
 
 .hero-cierre-texto {
-  margin: 0 0 var(--e-3);
-  font-size: var(--t-sm);
+  margin: 0 0 0.4rem;
+  font-size: var(--t-xs);
   color: var(--hueso-tenue);
 }
 
+/* Contador compacto dentro del Hero (el genérico es más holgado). */
+.hero-cierre .cuenta-regresiva {
+  gap: var(--e-1);
+}
+
+.hero-cierre .cuenta-regresiva-caja {
+  flex-basis: 4rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: var(--radio-s);
+}
+
+.hero-cierre .cuenta-regresiva-valor {
+  font-size: clamp(1.25rem, calc(var(--dvh) * 3.6 + 0.4rem), 2.1rem);
+}
+
+.hero-cierre .cuenta-regresiva-nombre {
+  font-size: 0.7rem;
+}
+
 .hero-cta {
-  margin-top: 1.75rem;
   font-size: var(--t-lg);
-  padding: 1rem 2.4rem;
+  padding: clamp(0.7rem, calc(var(--dvh) * 1.8), 1rem) 2.4rem;
 }
 
 .hero-scroll-hint {
@@ -106,38 +128,25 @@
   font-size: 1.4rem;
 }
 
-@media (max-width: 640px) {
+/* La flechita se encimaría con el botón en pantallas poco altas o angostas. */
+@media (max-width: 640px), (max-height: 760px) {
   .hero-scroll-hint {
     display: none;
   }
 }
 
-/* Móvil en horizontal: el hero completo (logo + badge + título + raíz + CTA)
-   no cabe en un alto tan corto — se reduce todo para que quepa sin recortes. */
-@media (orientation: landscape) and (max-height: 520px) {
-  .hero {
-    min-height: 100%;
-  }
-  .hero-content {
-    padding-block: 1.5rem;
-  }
-  .hero-logo {
-    width: min(180px, 40vw);
-  }
-  .hero-title {
-    font-size: clamp(1.8rem, 4vw + 1rem, 3rem);
-  }
+/* Poco alto: primero se sacrifica lo decorativo (la raíz); contador y botón nunca. */
+@media (max-height: 640px) {
   .hero-root {
-    width: min(140px, 30vw);
-    margin-top: 0.25rem;
+    display: none;
   }
-  .hero-cta {
-    margin-top: 1rem;
-  }
-  .hero-cierre {
-    margin-top: 0.75rem;
-  }
-  .hero-cierre-texto {
-    margin-bottom: var(--e-2);
+}
+
+/* Teléfono horizontal: también se oculta el badge de la fecha. */
+@media (max-height: 520px) {
+  /* `.hero .hero-badge`: `.badge` (global.css) trae `display: inline-flex` con la misma
+     especificidad y, según el orden de carga, ganaba. */
+  .hero .hero-badge {
+    display: none;
   }
 }

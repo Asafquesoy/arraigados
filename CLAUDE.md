@@ -369,6 +369,15 @@ inside this direction rather than introducing an unrelated palette or mood.
   `--alto-viewport` (100vh, overridden to 100dvh where supported via `@supports`) should back
   any full-viewport-height layout instead of raw `vh` — raw `vh` on mobile is sized to the
   viewport with the URL bar hidden, so content gets clipped while the bar is showing.
+- **El Hero debe caber entero en la primera pantalla** (logo, título, contador y botón "Comenzar mi registro"),
+  en teléfono y en computadora: `Hero.css` mide `calc(var(--alto-viewport) - var(--alto-navbar))` y dimensiona cada pieza
+  también por **altura** (`calc(var(--dvh) * N)`, tokens en `tokens.css`) además del ancho; los espacios son un solo `gap`, no
+  `margin-top` sueltos. Cuando de verdad no cabe se sacrifica lo decorativo (raíz con `max-height: 640px`, badge de la fecha con
+  `520px`), nunca el contador ni el botón. Al agregar un elemento al Hero hay que quitarle espacio a otro, no empujar el botón
+  fuera: cuando se agregó el contador sin hacerlo, el botón quedó ~170px bajo el borde. Medido (2026-11-12) en 320×568 …
+  1920×1080 y horizontales hasta 568×320: botón y contador dentro de la pantalla, sin desborde, y la sección siguiente
+  empieza justo en el borde. Ojo: `.badge` (global.css) trae `display: inline-flex`; para ocultar el badge del Hero hace
+  falta `.hero .hero-badge` (misma especificidad que `.badge` pierde según el orden de carga).
 - **Glassmorphism is scoped to `Navbar.css` only** — `backdrop-filter: blur(...)` must not
   spread to other components; `.glass-card` (the general card style, `global.css`) also uses a
   light blur but that's the pre-existing baseline, not a new instance to imitate elsewhere.

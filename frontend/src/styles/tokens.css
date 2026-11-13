@@ -108,6 +108,11 @@
   /* ---- Viewport ---- */
   /* 100vh en móvil incluye el área bajo la barra de URL dinámica; 100dvh no. */
   --alto-viewport: 100vh;
+  /* 1% del alto de la pantalla, para dimensionar por altura: calc(var(--dvh) * 34).
+     Misma razón que --alto-viewport (dvh donde existe, vh de respaldo). */
+  --dvh: 1vh;
+  /* Alto del navbar sticky: el Hero lo descuenta para caber en la primera pantalla. */
+  --alto-navbar: 64px;
 
   /* ---- Capas ---- */
   --z-fondo: 0;
@@ -125,5 +130,6 @@
 @supports (height: 100dvh) {
   :root {
     --alto-viewport: 100dvh;
+    --dvh: 1dvh;
   }
 }

@@ -19,7 +19,7 @@
 .navbar-inner {
   width: min(1040px, 100% - 2.5rem);
   margin-inline: auto;
-  height: 64px;
+  height: var(--alto-navbar);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -128,7 +128,7 @@
 
 .navbar-drawer {
   position: fixed;
-  top: calc(64px + 1px);
+  top: calc(var(--alto-navbar) + 1px);
   left: var(--e-4);
   right: var(--e-4);
   z-index: calc(var(--z-drawer) + 1);
@@ -141,7 +141,7 @@
   border-radius: var(--radio-l);
   box-shadow: var(--sombra-alta);
   padding: var(--e-3) var(--e-4) var(--e-4);
-  max-height: calc(100dvh - 64px - var(--e-6));
+  max-height: calc(100dvh - var(--alto-navbar) - var(--e-6));
   overflow-y: auto;
 }
 
