@@ -10,6 +10,7 @@ import { ResultadosEstaciones } from "../components/ResultadosEstaciones";
 import { Reveal } from "../components/Reveal";
 import { Skeleton } from "../components/Skeleton";
 import { Toast } from "../components/Toast";
+import { TorneoVoleibol } from "../components/TorneoVoleibol";
 import { useAdminAuth } from "../lib/AdminAuthContext";
 import {
   apiFetch,
@@ -467,6 +468,42 @@ function VistaEstaciones({
   );
 }
 
+interface VistaTorneoProps {
+  detalle: JuegoDetalle;
+  juegos: JuegoInfo[];
+  onCambio: (mensaje: string) => Promise<void>;
+  onAviso: (mensaje: string) => void;
+  esEscritorio: boolean;
+  canEdit: boolean;
+}
+
+/** Voleibol gigante: sorteo, partidos, tabla y finales (`TorneoVoleibol`) más los puntos extra del juego. */
+function VistaTorneo({ detalle, juegos, onCambio, onAviso, esEscritorio, canEdit }: VistaTorneoProps) {
+  return (
+    <>
+      {detalle.torneo && (
+        <TorneoVoleibol
+          clave={detalle.juego.clave}
+          torneo={detalle.torneo}
+          nEquipos={detalle.equipos.length}
+          canEdit={canEdit}
+          esEscritorio={esEscritorio}
+          onCambio={onCambio}
+          onAviso={onAviso}
+        />
+      )}
+      <PuntosExtra
+        juegoClave={detalle.juego.clave}
+        juegos={juegos}
+        equipos={detalle.equipos}
+        puntosExtra={detalle.puntos_extra}
+        canEdit={canEdit}
+        onCambio={onCambio}
+      />
+    </>
+  );
+}
+
 export function Juegos() {
   const { username, role, loading: authLoading } = useAdminAuth();
   const canEdit = role === "ADMIN";
@@ -644,7 +681,7 @@ export function Juegos() {
             onClick={() => setVista(j.clave)}
           >
             {j.nombre}
-            {j.criterios.length === 0 && j.modo !== "estaciones" && <span className="juegos-tab-pronto">pronto</span>}
+            {j.criterios.length === 0 && j.modo === "jueces" && <span className="juegos-tab-pronto">pronto</span>}
           </button>
         ))}
       </div>
@@ -663,7 +700,16 @@ export function Juegos() {
           )
         ) : (
           detalle &&
-          (detalle.juego.modo === "estaciones" ? (
+          (detalle.juego.modo === "torneo" ? (
+            <VistaTorneo
+              detalle={detalle}
+              juegos={juegos}
+              onCambio={alCambiarExtra}
+              onAviso={setToast}
+              esEscritorio={esEscritorio}
+              canEdit={canEdit}
+            />
+          ) : detalle.juego.modo === "estaciones" ? (
             <VistaEstaciones
               detalle={detalle}
               juegos={juegos}

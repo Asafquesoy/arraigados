@@ -12,7 +12,7 @@ const MEDALLAS: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
 
 const FECHA = new Intl.DateTimeFormat("es-MX", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
 
-function actualizado(): string {
+export function actualizado(): string {
   return `Actualizado: ${FECHA.format(new Date()).replace(",", "")}`;
 }
 

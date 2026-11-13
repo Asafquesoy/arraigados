@@ -657,9 +657,10 @@ sucio, Voleibol gigante) en vez de llevarlas en un Excel aparte. Todos los roles
   catálogo `JUEGOS` — cada `Juego` con sus `Criterio` (`tipo` `escala` = el juez pone 0–100 y se convierte
   proporcional, o `si_no` = todo o nada, más los `puntos` que vale). El formulario y las tablas del frontend se
   dibujan a partir de `GET /api/admin/juegos`, así que **agregar un juego = agregar/llenar una entrada en
-  `JUEGOS`** (Voleibol gigante existe con `criterios=()` y sale como "Reglas pendientes"); sin migración ni
-  cambios de UI. Hay **dos modos** (`Juego.modo`): `jueces` (Sketch: varios jueces, promedio — lo de abajo) y
-  `estaciones` (Rally sucio y Búsqueda del tesoro — ver el siguiente bloque). Sketch (600 pts): Historia 200 y Originalidad 200 y Adaptación 100 (escala), Inclusión 50 y
+  `JUEGOS`** (un juego de modo `jueces` con `criterios=()` sale como "Reglas pendientes"); sin migración ni
+  cambios de UI. Hay **tres modos** (`Juego.modo`): `jueces` (Sketch: varios jueces, promedio — lo de abajo),
+  `estaciones` (Rally sucio y Búsqueda del tesoro — ver el siguiente bloque) y `torneo` (Voleibol gigante — ver más
+  abajo). Sketch (600 pts): Historia 200 y Originalidad 200 y Adaptación 100 (escala), Inclusión 50 y
   Tiempo 50 (sí/no).
 - **Se guarda lo que puso el juez, no los puntos**: `calificaciones.valores` (JSON: `{"historia": 80,
   "tiempo": true}`), una fila por juez+equipo+juego (`UniqueConstraint`, y el chequeo case-insensitive del router
@@ -723,6 +724,51 @@ sucio, Voleibol gigante) en vez de llevarlas en un Excel aparte. Todos los roles
       667×375 y 844×390, tabletas 768×1024, 820×1180 y 1024×768, y escritorio 1280×800 y 1440×900; por cada una se midió
       desborde horizontal, controles <44px, texto recortado y que la barra no tape la casilla enfocada. La página tiene
       `scroll-behavior: smooth`: al medir hay que desplazar con `behavior: 'instant'` o se mide a mitad de un scroll.
+- **Modo `torneo` (Voleibol gigante, 500 pts)**: las reglas están en `reglas-juegos/Formato del torneo - Voleibol gigante
+  2026.md` y `Concentrado de puntos - Voleibol gigante 2026.md` (misma carpeta ignorada por git); la fuente de verdad en el
+  repo es `backend/app/voleibol.py` (módulo puro, como `juegos.py`), con los supuestos ⚠ de esos documentos. Flujo: **sorteo**
+  (lo hace la app con `SystemRandom`; se puede repetir mientras no haya marcadores) → ronda 1 → **tabla** (más victorias →
+  mejor diferencia F−C → más puntos a favor → desempate) → **ronda 2 por la tabla sin revanchas** (1.º–2.º, 3.º–4.º…; si una
+  pareja ya jugó, el de arriba se cambia con el primero de la pareja de abajo —o de la de arriba si es la última—, se vuelve
+  a revisar tras cada cambio y, si no alcanza, `_emparejar_cercano` busca el emparejamiento más cercano a la tabla) → **tercer
+  lugar** (3.º–4.º, se puede saltar) y **gran final** (1.º–2.º) → lugar final → `PUNTOS_LUGAR` 500/460/430/400/380/360/340/
+  320/300/280. Los lugares 5–10 salen de la tabla tras la ronda 2 (acumulada, ronda 1 + ronda 2).
+  - **Sin migración**: se reusa `calificaciones` (como las estaciones). Un partido = una fila con el *slot* en `juez`
+    (`r1-1`…, `r2-1`…, `tercero`, `final`), `equipo_id` = equipo A y `valores = {"b", "pa", "pb", "termino", "saltado"}`;
+    se guarda el marcador, nunca puntos. Un desempate = una fila `juez = "volado-<r1|r2>-<ids>"` con `valores =
+    {"orden": [ids], "como": "app"|"cancha"}`, y **solo vale si el grupo hoy empatado es exactamente ese conjunto** (si se
+    corrige un marcador y el empate cambia, se vuelve a pedir). Como todo está en `calificaciones`, viaja en el respaldo
+    de la laptop y `borrar_equipo` borra los partidos donde el equipo es A; los partidos donde era B quedan huérfanos y
+    `estado_torneo` los ignora (con un aviso que pide reiniciar) — no borrar equipos con el torneo en marcha.
+  - **Los puntos entran al marcador general solo al terminar** (`Estado.definitivo`: final capturada, tercer lugar capturado
+    o saltado y ningún empate por resolver); antes, `/posiciones` no muestra voleibol y la pestaña enseña lugares
+    *provisionales*. `juegos.py::_resultados_torneo` convierte el lugar en puntos (los puntos extra del juego se suman como
+    en los demás); `Juego.puntos_max` es 500.
+  - **Empates** (`empates_pendientes`): tras la ronda 1 todo empate exacto importa (decide las parejas); tras la ronda 2 solo
+    los que cambian un lugar final o quién juega la final/el tercer lugar (1.º y 2.º entre sí no importan, 3.º y 4.º tampoco
+    si se juega el tercer lugar, ni del 10.º en adelante). `bloquea` = impide armar la siguiente ronda; los de abajo (5.º–10.º)
+    no impiden armar las finales pero sí cerrar el torneo. Si son dos equipos y deciden quién va a la final o al tercer lugar,
+    el texto dice «punto de oro». Se resuelven con «Hacer volado aquí» (al azar en el servidor) o «Lo decidimos en la cancha»
+    (se tocan los equipos en el orden en que quedaron).
+  - **API** (`routers/juegos.py`, solo Admin, 422 si el juego no es torneo): `POST /{clave}/torneo/sorteo`, `PUT
+    .../partidos/{slot}` (`{pa,pb,termino}` o `{limpiar}`; `validar_marcador` exige 0–7, sin empates, `normal` = alguien llega a 7
+    —o a 5 si se recortó—, `siguiente_punto` = diferencia de 1, `volado` = 7–0), `POST .../desempates`, `POST .../ronda2` y
+    `.../finales` (409 con el motivo si faltan marcadores o hay empates), `POST/DELETE .../tercero/saltar`, `DELETE
+    .../ronda2|finales` (solo sin marcadores, para rearmar) y `DELETE .../torneo` (reinicia). `GET /{clave}` trae `torneo`
+    (`TorneoOut`: fase, partidos, tablas, empates, `siguiente`, `propuesta`, lugares, avisos). `POST /hojas`, `PATCH` y
+    `DELETE /hojas/{id}` responden 422 para este juego. Si se corrige un marcador con la ronda siguiente ya armada, no se
+    rearma sola: el estado trae un aviso.
+  - **UI** (`components/TorneoVoleibol.tsx` + `TorneoPartido.tsx` + `TorneoVoleibol.css`, `lib/torneo.ts`): arriba una tarjeta
+    **«Qué sigue»** (sortear → «Ronda 1: faltan 4 partidos · En cancha / Sigue» → empates → «¡Ronda 1 terminada!» con la
+    propuesta de la ronda 2 y sus cambios por revancha → finales → terminado), luego los partidos (lo más reciente primero; los
+    grupos ya jugados se pliegan), las tablas y los lugares con sus puntos. Cada partido es **un equipo por renglón con su
+    marcador a la derecha** (se lee igual a 320px); el que está en cancha trae el formulario abierto, escribir el primer
+    marcador pasa el cursor al segundo, «cómo terminó» se deduce de los puntos y se puede cambiar. «Copiar partidos / tabla /
+    lugares» arma texto para WhatsApp (`lib/torneo.ts`, mismo estilo que `lib/podio.ts`). Otros roles lo ven todo sin controles.
+  - **Cómo se probó**: el torneo de ejemplo del documento (sección 8) da exactamente sus tablas, el cambio Sequoias↔Ahuehuetes y
+    los lugares/puntos Jacarandas 500 … Palmas 280; `TestClient` sobre SQLite temporal (permisos, 409/422, re-sorteo, rearmar
+    rondas, saltar el tercero, desempates de la app y de la cancha, puntos en `/posiciones`, puntos extra, reinicio); y
+    Playwright táctil en 320–1280 px sin desborde, sin controles <44px y sin texto recortado.
 - Borrar un equipo borra sus calificaciones explícitamente (`equipos.py::borrar_equipo`; SQLite no aplica el
   `ON DELETE CASCADE`). Migración `0017`: **hay que correr `alembic upgrade head`** — sin la tabla, borrar un equipo
   y toda la pantalla dan 500.
@@ -981,3 +1027,10 @@ out of git and don't share the file. Delete any temporary export right after imp
   delay `load`.
 - Element screenshots of sections under the sticky navbar show the navbar painted in the middle of
   the image; that's a capture artifact, not a layout bug.
+- `POST /api/auth/login` está limitado a 8 por 5 min por IP: si una matriz de pruebas abre un contexto por tamaño de pantalla
+  y entra en cada uno, a la tercera vuelta responde 429 y la página se queda en `/admin` sin pestañas. Inicia sesión **una
+  vez** y reutiliza `page.context().storageState()` en cada `browser.newContext({ storageState })` (o fabrica la cookie
+  `arraigados_session` con `security.create_access_token`).
+- `browser_take_screenshot` solo guarda dentro del proyecto o de `.playwright-mcp/` (ignorada por git): una ruta en el
+  scratchpad da «File access denied». Para pantallas altas (12 000 px) recorta por elemento (`locator.screenshot`) en vez de
+  `fullPage`: la imagen completa se encoge tanto que no se lee.

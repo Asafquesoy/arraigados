@@ -1,0 +1,469 @@
+/* Torneo de Voleibol gigante (/admin/juegos → Voleibol gigante). Pantalla de trabajo: sin raíces. */
+
+.torneo-solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.torneo-ayuda {
+  margin: var(--e-2) 0 0;
+  font-size: var(--t-sm);
+}
+
+.torneo-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  margin-top: var(--e-3);
+}
+
+.torneo-aviso {
+  margin: var(--e-3) 0 0;
+  padding: var(--e-3);
+  border-radius: var(--radio-s);
+  border: 1px solid var(--ambar);
+  background: rgba(245, 166, 35, 0.1);
+  color: var(--amarillo-suave);
+  font-size: var(--t-sm);
+}
+
+/* Enlace que es un botón (para «Mejor jugarlo»). */
+.torneo-enlace {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--amarillo);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.torneo-enlace:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (pointer: coarse) {
+  .torneo-enlace {
+    min-height: 44px;
+    padding-inline: 0.4rem;
+  }
+}
+
+/* ---- Qué sigue ---- */
+
+.torneo-siguiente {
+  border-color: rgba(255, 200, 0, 0.35);
+}
+
+.torneo-siguiente .eyebrow {
+  margin: 0 0 var(--e-1);
+}
+
+.torneo-siguiente-cuerpo p {
+  margin: 0;
+}
+
+.torneo-turnos,
+.torneo-propuesta,
+.torneo-empates {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.torneo-turnos li,
+.torneo-propuesta li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e-3);
+  min-width: 0;
+}
+
+.torneo-turnos li > span:last-child,
+.torneo-propuesta li > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.torneo-propuesta-etiqueta {
+  flex: 0 0 6.5rem;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--amarillo-suave);
+}
+
+.torneo-situacion {
+  flex-shrink: 0;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--tarjeta-borde);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--hueso-tenue);
+  white-space: nowrap;
+}
+
+.torneo-situacion.is-en_cancha {
+  background: var(--gradiente-raiz);
+  border-color: transparent;
+  color: var(--corteza);
+}
+
+.torneo-situacion.is-proximo {
+  border-color: var(--verde-follaje);
+  color: var(--verde-claro);
+}
+
+/* ---- Empates ---- */
+
+.torneo-empates {
+  margin-top: var(--e-4);
+}
+
+.torneo-empate {
+  padding: var(--e-4);
+  border-radius: var(--radio-m);
+  border: 1px dashed var(--ambar);
+  background: rgba(245, 166, 35, 0.06);
+  min-width: 0;
+}
+
+.torneo-empate-titulo {
+  margin: 0 0 var(--e-2);
+  font-weight: 700;
+  color: var(--amarillo-suave);
+}
+
+.torneo-empate-equipos,
+.torneo-orden {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+
+.torneo-orden {
+  margin-top: var(--e-2);
+}
+
+/* Botón-pastilla (cómo terminó el partido, orden de un empate). */
+.torneo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--tarjeta-borde);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--hueso-tenue);
+  font: inherit;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--dur-rapida) ease, background var(--dur-rapida) ease, color var(--dur-rapida) ease;
+}
+
+.torneo-chip:hover:not(:disabled) {
+  border-color: var(--amarillo);
+}
+
+.torneo-chip:focus-visible {
+  outline: 2px solid var(--amarillo);
+  outline-offset: 2px;
+}
+
+.torneo-chip:disabled {
+  cursor: not-allowed;
+}
+
+.torneo-chip.is-activo {
+  background: var(--gradiente-raiz);
+  border-color: transparent;
+  color: var(--corteza);
+}
+
+/* El equipo ya elegido en un orden queda deshabilitado, pero tiene que seguir leyéndose igual de claro. */
+.torneo-chip.is-activo:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.torneo-orden-num {
+  font-size: var(--t-xs);
+}
+
+@media (pointer: coarse) {
+  .torneo-chip {
+    min-height: 44px;
+  }
+}
+
+/* ---- Partidos ---- */
+
+.torneo-partidos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--e-3);
+  align-items: start; /* una tarjeta de partido jugado no se estira a la altura de la que tiene el formulario abierto */
+}
+
+@media (min-width: 640px) {
+  .torneo-partidos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .torneo-partidos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.torneo-partido {
+  padding: var(--e-4);
+  border-radius: var(--radio-m);
+  border: 1px solid var(--tarjeta-borde);
+  background: var(--tarjeta-fondo);
+  min-width: 0;
+}
+
+.torneo-partido.is-en_cancha {
+  border-color: var(--amarillo);
+  box-shadow: 0 0 0 1px rgba(255, 200, 0, 0.25);
+}
+
+.torneo-partido.is-saltado {
+  opacity: 0.65;
+}
+
+.torneo-partido-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  margin-bottom: var(--e-3);
+}
+
+.torneo-partido-nombre {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hueso-tenue);
+}
+
+/* Un equipo por renglón, con su puntaje a la derecha: se lee igual en un teléfono de 320px. */
+.torneo-marcador,
+.torneo-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.torneo-equipo-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  min-width: 0;
+}
+
+.torneo-equipo-nombre {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.torneo-puntos {
+  min-width: 2.2rem;
+  text-align: right;
+  font-size: var(--t-xl);
+  line-height: 1;
+  color: var(--hueso-tenue);
+}
+
+.torneo-equipo-fila.is-ganador .torneo-puntos {
+  color: var(--amarillo);
+  font-weight: 700;
+}
+
+.torneo-equipo-fila.is-ganador .juegos-equipo {
+  box-shadow: inset 0 0 0 2px var(--amarillo);
+}
+
+.torneo-puntos-input {
+  width: 3.6rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: var(--t-input);
+  font-weight: 700;
+  color: var(--hueso);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--hueso-apagado);
+  border-radius: var(--radio-s);
+}
+
+.torneo-puntos-input:focus {
+  outline: 2px solid var(--amarillo);
+  outline-offset: 1px;
+}
+
+.torneo-puntos-input:disabled {
+  opacity: 0.6;
+}
+
+.torneo-volado {
+  flex-shrink: 0;
+}
+
+/* Cuatro opciones en 2 × 2: así ocupan 2 renglones parejos en cualquier ancho (en vez de 3 desiguales). */
+.torneo-termino {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e-2);
+  margin-top: var(--e-2);
+}
+
+.torneo-termino .torneo-chip {
+  justify-content: center;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.torneo-form .torneo-ayuda,
+.torneo-marcador + .torneo-ayuda {
+  margin-top: var(--e-1);
+}
+
+.torneo-form .field-error {
+  margin: 0;
+}
+
+/* ---- Tabla (tarjetas en celular) ---- */
+
+.torneo-marca {
+  display: inline-block;
+  margin-left: var(--e-1);
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--tarjeta-borde);
+  font-size: var(--t-xs);
+  color: var(--hueso-tenue);
+  white-space: nowrap;
+}
+
+.torneo-marca.is-empate {
+  border-color: var(--ambar);
+  color: var(--amarillo-suave);
+}
+
+.torneo-tabla-lista,
+.torneo-lugares {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.torneo-tabla-fila,
+.torneo-lugar {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-3) 0;
+  border-bottom: 1px solid var(--tarjeta-borde);
+  min-width: 0;
+}
+
+.torneo-tabla-fila:last-child,
+.torneo-lugar:last-child {
+  border-bottom: none;
+}
+
+.torneo-tabla-equipo,
+.torneo-lugar-equipo {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.torneo-tabla-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--e-3);
+  margin: var(--e-1) 0 0;
+  font-size: var(--t-xs);
+}
+
+.torneo-tabla-datos span {
+  white-space: nowrap;
+}
+
+.torneo-lugar-equipo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e-1);
+}
+
+.torneo-lugar .torneo-ayuda {
+  margin: 0;
+}
+
+/* «500 pts» nunca se parte: si falta ancho, es el texto del origen («Ganó la gran final») el que baja. */
+.torneo-lugar .juegos-total {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ---- Plegables ---- */
+
+.torneo-plegable summary,
+.torneo-opciones summary {
+  cursor: pointer;
+  color: var(--amarillo-suave);
+  font-weight: 600;
+}
+
+.torneo-plegable summary:focus-visible,
+.torneo-opciones summary:focus-visible {
+  outline: 2px solid var(--amarillo);
+  outline-offset: 2px;
+}
+
+.torneo-plegable .torneo-partidos {
+  margin-top: var(--e-3);
+}
+
+@media (pointer: coarse) {
+  .torneo-plegable summary,
+  .torneo-opciones summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+.torneo-opciones > .juegos-nota {
+  margin-top: var(--e-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .torneo-chip {
+    transition: none;
+  }
+}

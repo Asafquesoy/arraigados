@@ -582,11 +582,119 @@ class ResultadoEquipoOut(BaseModel):
     tiempo_seg: int | None = None  # modo estaciones: tiempo que cuenta para el desempate
 
 
+class EquipoRefOut(BaseModel):
+    """Un equipo dentro del torneo: lo mínimo para pintar su chip."""
+
+    id: int
+    nombre: str
+    color: str
+
+
+class PartidoOut(BaseModel):
+    slot: str  # r1-1 … r2-5 · tercero · final
+    ronda: str  # "r1" | "r2" | "tercero" | "final"
+    etiqueta: str  # «Ronda 1 · Partido 2», «Tercer lugar», «Gran final»
+    a: EquipoRefOut
+    b: EquipoRefOut
+    pa: int | None
+    pb: int | None
+    termino: str | None  # "normal" | "tope" | "siguiente_punto" | "volado"
+    jugado: bool
+    saltado: bool
+    ganador_id: int | None
+    estado: str  # "jugado" | "en_cancha" | "proximo" | "pendiente" | "saltado"
+
+
+class FilaTablaOut(BaseModel):
+    equipo: EquipoRefOut
+    lugar: int
+    jugados: int
+    victorias: int
+    f: int
+    c: int
+    dif: int
+    empate: bool  # sigue empatado: falta el volado
+    por_volado: bool  # el orden lo decidió un desempate
+
+
+class EmpateOut(BaseModel):
+    ronda: str  # "r1" | "r2"
+    equipos: list[EquipoRefOut]
+    primero: int
+    ultimo: int
+    tipo: str  # "volado" | "punto_oro"
+    bloquea: bool
+
+
+class PropuestaPartidoOut(BaseModel):
+    slot: str
+    etiqueta: str
+    a: EquipoRefOut
+    b: EquipoRefOut
+
+
+class PropuestaOut(BaseModel):
+    tipo: str  # "ronda2" | "finales"
+    partidos: list[PropuestaPartidoOut]
+    cambios: list[str]  # «Sequoias y Acacias ya jugaron en la ronda 1: Sequoias se cambia con Ahuehuetes.»
+    ajustada: bool
+    con_revancha: bool
+
+
+class LugarFinalOut(BaseModel):
+    equipo: EquipoRefOut
+    lugar: int
+    puntos: int
+    origen: str  # "final" | "tercero" | "tabla"
+
+
+class SiguienteOut(BaseModel):
+    accion: str  # sortear | sin_equipos | capturar | desempatar | armar_ronda2 | armar_finales | terminado
+    faltan: int
+    en_cancha: str | None
+    proximo: str | None
+
+
+class TorneoOut(BaseModel):
+    fase: str  # sin_sorteo | ronda1 | ronda2 | finales | terminado
+    definitivo: bool  # los puntos ya cuentan en el marcador general
+    n_equipos: int
+    partidos: list[PartidoOut]
+    tabla_r1: list[FilaTablaOut] | None
+    tabla_r2: list[FilaTablaOut] | None
+    empates: list[EmpateOut]
+    siguiente: SiguienteOut
+    propuesta: PropuestaOut | None
+    lugares: list[LugarFinalOut] | None  # provisional mientras no `definitivo`
+    tercero_saltado: bool
+    hay_marcadores: bool  # si hay alguno, ya no se puede volver a sortear
+    avisos: list[str]
+
+
+class MarcadorPut(BaseModel):
+    """Marcador de un partido, o `limpiar=True` para dejarlo sin jugar. `voleibol.validar_marcador` lo revisa a fondo."""
+
+    pa: int | None = None
+    pb: int | None = None
+    termino: str | None = None
+    limpiar: bool = False
+
+
+class DesempatePost(BaseModel):
+    """Resuelve un empate exacto. Sin `orden` la app hace el volado al azar; con `orden` (ids de `equipos`,
+    el que gana primero) se registra lo que se decidió en la cancha."""
+
+    ronda: str = Field(pattern="^(r1|r2)$")
+    equipos: list[int] = Field(min_length=2, max_length=30)
+    orden: list[int] | None = Field(default=None, max_length=30)
+
+
 class JuegoDetalleOut(BaseModel):
     juego: JuegoOut
     equipos: list[ResultadoEquipoOut]
     hojas: list[HojaOut]
     puntos_extra: list[PuntosExtraOut] = []  # solo los de este juego
+    torneo: TorneoOut | None = None  # solo en modo `torneo`
 
 
 class PosicionOut(BaseModel):

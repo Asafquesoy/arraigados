@@ -346,7 +346,7 @@ export interface CriterioJuego {
   escala_max: number;
 }
 
-export type ModoJuego = "jueces" | "estaciones";
+export type ModoJuego = "jueces" | "estaciones" | "torneo";
 export type TipoEstacion = "rally" | "busqueda" | "capilla";
 export type TipoAvance = "nivel" | "conteo" | "son_logro" | "lados";
 
@@ -444,12 +444,123 @@ export interface PuntosExtraDatos {
   motivo: string;
 }
 
+// ---- Torneo (Voleibol gigante) ----
+export interface EquipoRef {
+  id: number;
+  nombre: string;
+  color: string;
+}
+
+export type TerminoPartido = "normal" | "tope" | "siguiente_punto" | "volado";
+export type SituacionPartido = "jugado" | "en_cancha" | "proximo" | "pendiente" | "saltado";
+export type FaseTorneo = "sin_sorteo" | "ronda1" | "ronda2" | "finales" | "terminado";
+export type AccionTorneo =
+  | "sortear"
+  | "sin_equipos"
+  | "capturar"
+  | "desempatar"
+  | "armar_ronda2"
+  | "armar_finales"
+  | "terminado";
+
+export interface PartidoTorneo {
+  /** r1-1 … r2-5 · tercero · final */
+  slot: string;
+  ronda: "r1" | "r2" | "tercero" | "final";
+  etiqueta: string;
+  a: EquipoRef;
+  b: EquipoRef;
+  pa: number | null;
+  pb: number | null;
+  termino: TerminoPartido | null;
+  jugado: boolean;
+  saltado: boolean;
+  ganador_id: number | null;
+  estado: SituacionPartido;
+}
+
+export interface FilaTablaTorneo {
+  equipo: EquipoRef;
+  lugar: number;
+  jugados: number;
+  victorias: number;
+  /** Puntos a favor / en contra / diferencia. */
+  f: number;
+  c: number;
+  dif: number;
+  /** Sigue empatado: falta el volado. */
+  empate: boolean;
+  /** El orden lo decidió un volado o punto de oro. */
+  por_volado: boolean;
+}
+
+export interface EmpateTorneo {
+  ronda: "r1" | "r2";
+  equipos: EquipoRef[];
+  primero: number;
+  ultimo: number;
+  tipo: "volado" | "punto_oro";
+  /** Impide armar la siguiente ronda mientras no se resuelva. */
+  bloquea: boolean;
+}
+
+export interface PropuestaTorneo {
+  tipo: "ronda2" | "finales";
+  partidos: { slot: string; etiqueta: string; a: EquipoRef; b: EquipoRef }[];
+  /** «Sequoias y Acacias ya jugaron en la ronda 1: Sequoias se cambia con Ahuehuetes.» */
+  cambios: string[];
+  ajustada: boolean;
+  con_revancha: boolean;
+}
+
+export interface LugarFinal {
+  equipo: EquipoRef;
+  lugar: number;
+  puntos: number;
+  origen: "final" | "tercero" | "tabla";
+}
+
+export interface SiguienteTorneo {
+  accion: AccionTorneo;
+  faltan: number;
+  en_cancha: string | null;
+  proximo: string | null;
+}
+
+export interface Torneo {
+  fase: FaseTorneo;
+  /** Los puntos ya cuentan en el marcador general. */
+  definitivo: boolean;
+  n_equipos: number;
+  partidos: PartidoTorneo[];
+  tabla_r1: FilaTablaTorneo[] | null;
+  tabla_r2: FilaTablaTorneo[] | null;
+  empates: EmpateTorneo[];
+  siguiente: SiguienteTorneo;
+  propuesta: PropuestaTorneo | null;
+  /** Provisionales mientras no `definitivo`. */
+  lugares: LugarFinal[] | null;
+  tercero_saltado: boolean;
+  /** Con algún marcador ya no se puede volver a sortear. */
+  hay_marcadores: boolean;
+  avisos: string[];
+}
+
+export interface MarcadorTorneo {
+  pa: number | null;
+  pb: number | null;
+  termino: TerminoPartido | null;
+  limpiar?: boolean;
+}
+
 export interface JuegoDetalle {
   juego: JuegoInfo;
   equipos: ResultadoEquipoJuego[];
   hojas: HojaOut[];
   /** Solo los puntos extra de este juego. */
   puntos_extra: PuntosExtra[];
+  /** Solo en juegos de modo `torneo`. */
+  torneo?: Torneo | null;
 }
 
 export interface PosicionEquipo {

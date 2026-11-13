@@ -7,9 +7,12 @@ captura y las tablas a partir de este catálogo, y la base de datos guarda solo 
 crudos que puso quien calificó (`80`, `true`/`false`, un tiempo en segundos), nunca los puntos ya
 convertidos — así que si cambia lo que vale algo, todo se recalcula solo y no hace falta migración.
 
-Hay dos modos de juego (`Juego.modo`):
+Hay tres modos de juego (`Juego.modo`):
 
-**`jueces`** (Sketch, Voleibol): cada juez califica a cada equipo con una hoja de criterios.
+**`torneo`** (Voleibol gigante): sorteo, tabla y rondas hasta la final; los puntos dependen solo del lugar
+final (500 … 280). Toda la lógica vive en `voleibol.py`; aquí solo se convierte el lugar en puntos.
+
+**`jueces`** (Sketch): cada juez califica a cada equipo con una hoja de criterios.
 - `escala`: el juez pone un número de 0 a `escala_max` (100) y se convierte proporcional
   (80 de 100 en un criterio de 200 puntos = 160).
 - `si_no`: el juez solo marca sí/no; sí da todos los puntos del criterio y no da 0.
@@ -28,8 +31,10 @@ from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Literal
 
+from . import voleibol
+
 TipoCriterio = Literal["escala", "si_no"]
-ModoJuego = Literal["jueces", "estaciones"]
+ModoJuego = Literal["jueces", "estaciones", "torneo"]
 TipoEstacion = Literal["rally", "busqueda", "capilla"]
 # Cómo se mide lo que lograron en un juego del rally que no terminaron (concentrado 2.4):
 # nivel = ¼ ½ ¾ · conteo = «__ de __» · son_logro = «son __ · cruzaron __» · lados = 0 a 4.
@@ -77,6 +82,8 @@ class Juego:
 
     @property
     def puntos_max(self) -> int:
+        if self.modo == "torneo":
+            return voleibol.PUNTOS_LUGAR[0]
         if self.modo == "estaciones":
             return sum(e.puntos_max for e in self.estaciones)
         return sum(c.puntos for c in self.criterios)
@@ -189,8 +196,15 @@ JUEGOS: tuple[Juego, ...] = (
         modo="estaciones",
         estaciones=_ESTACIONES_RALLY,
     ),
-    # Reglas pendientes: se llenan con `criterios=(...)` cuando se definan.
-    Juego(clave="voleibol_gigante", nombre="Voleibol gigante", descripcion=""),
+    Juego(
+        clave="voleibol_gigante",
+        nombre="Voleibol gigante",
+        descripcion=(
+            "Torneo de los 10 equipos: ronda 1 por sorteo, ronda 2 por la tabla, tercer lugar y gran final. "
+            "Los puntos dependen solo del lugar final: 500 al 1.º, 460, 430, 400, 380 … 280 al 10.º."
+        ),
+        modo="torneo",
+    ),
 )
 
 _POR_CLAVE = {j.clave: j for j in JUEGOS}
@@ -574,6 +588,36 @@ def _resultados_estaciones(
     return sorted(filas, key=lambda f: (f.posicion is None, f.posicion or 0))
 
 
+def _resultados_torneo(
+    equipo_ids: list[int], hojas: list[tuple[int, str, dict]], extra: dict[int, float]
+) -> list[ResultadoEquipo]:
+    """Voleibol: los puntos entran al marcador general **al terminar el torneo** (final y tercer lugar
+    capturados, o el tercero saltado, y sin empates por resolver). Antes, los equipos no tienen lugar."""
+    partidos, desempates = voleibol.leer_filas(hojas)
+    estado = voleibol.estado_torneo(equipo_ids, partidos, desempates)
+    puntos = estado.puntos or {}
+    lugares = estado.lugares or {}
+
+    filas: list[ResultadoEquipo] = []
+    for equipo_id in equipo_ids:
+        con_lugar = equipo_id in puntos
+        ex = round(extra.get(equipo_id, 0.0), 1)
+        base = float(puntos[equipo_id]) if con_lugar else 0.0
+        filas.append(
+            ResultadoEquipo(
+                equipo_id=equipo_id,
+                hojas=1 if con_lugar else 0,
+                por_criterio={"lugar": float(lugares[equipo_id])} if con_lugar else {},
+                total=round(base + ex, 1),
+                posicion=None,
+                extra=ex,
+            )
+        )
+    for fila, pos in zip(filas, _posiciones([f.total if (f.hojas or f.extra) else None for f in filas])):
+        fila.posicion = pos
+    return sorted(filas, key=lambda f: (f.posicion is None, f.posicion or 0))
+
+
 def resultados(
     juego: Juego,
     equipo_ids: list[int],
@@ -582,9 +626,12 @@ def resultados(
 ) -> list[ResultadoEquipo]:
     """Resultado de un juego por equipo, ordenado por posición (los que aún no tienen hojas ni puntos
     extra van al final, en el orden en que llegaron en `equipo_ids`). `hojas` = `(equipo_id, juez,
-    valores)`; en modo estaciones `juez` es la clave de la estación. `extra` = puntos extra (+) o
-    descuentos (−) de ESTE juego por equipo: se suman al total y por lo tanto mueven la posición."""
+    valores)`; en modo estaciones `juez` es la clave de la estación y en modo torneo el *slot* del partido.
+    `extra` = puntos extra (+) o descuentos (−) de ESTE juego por equipo: se suman al total y por lo tanto
+    mueven la posición."""
     extra = extra or {}
+    if juego.modo == "torneo":
+        return _resultados_torneo(equipo_ids, hojas, extra)
     if juego.modo == "estaciones":
         return _resultados_estaciones(juego, equipo_ids, hojas, extra)
     return _resultados_jueces(juego, equipo_ids, hojas, extra)
