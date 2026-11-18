@@ -769,6 +769,16 @@ sucio, Voleibol gigante) en vez de llevarlas en un Excel aparte. Todos los roles
     los lugares/puntos Jacarandas 500 … Palmas 280; `TestClient` sobre SQLite temporal (permisos, 409/422, re-sorteo, rearmar
     rondas, saltar el tercero, desempates de la app y de la cancha, puntos en `/posiciones`, puntos extra, reinicio); y
     Playwright táctil en 320–1280 px sin desborde, sin controles <44px y sin texto recortado.
+  - **Cierre real del torneo 2026 (15 nov 2026)**: en el campamento solo se jugó la ronda 1 y la final **Sauces 7–5 Cedros**
+    (ganó Sauces); la ronda 2 y el tercer lugar no se jugaron. Lugares finales: 1 Sauces, 2 Cedros, 3 Jacarandas, 4 Sequoias,
+    5 Acacias, 6 Palmas, 7 Olivos, 8 Robles, 9 Ahuehuetes, 10 Cipreses (500/460/…/280). Como la app solo da puntos con el torneo
+    terminado, `backend/app/voleibol_cierre_2026.py` escribe el torneo completo: la ronda 1 real, sus dos volados, la ronda 2
+    con **marcadores de relleno**, el tercero `saltado` y la final. Equipos por nombre; borra y reescribe solo las
+    `calificaciones` de `voleibol_gigante` en una transacción, hace copia previa de `dev.db` en `backend/data/` (SQLite) y no
+    guarda nada si `estado_torneo` no da exactamente esos lugares. **Importar un respaldo del servidor reemplaza
+    `calificaciones` y deshace esto**: después hay que correr, desde `backend/`,
+    `.venv/bin/python -m app.voleibol_cierre_2026` (vista previa) y `... --si` (aplicar). Es idempotente. Solo laptop: producción
+    no se tocó. Trampa: `validar_marcador` rechaza 7–6 como `normal` (usa `siguiente_punto`).
 - Borrar un equipo borra sus calificaciones explícitamente (`equipos.py::borrar_equipo`; SQLite no aplica el
   `ON DELETE CASCADE`). Migración `0017`: **hay que correr `alembic upgrade head`** — sin la tabla, borrar un equipo
   y toda la pantalla dan 500.
@@ -800,6 +810,19 @@ sucio, Voleibol gigante) en vez de llevarlas en un Excel aparte. Todos los roles
   `document.execCommand("copy")`: en el campamento se entra por `http://<ip-laptop>:5173`, que **no es contexto seguro**
   y ahí `navigator.clipboard` es `undefined` (también lo usa `AdminResumen.tsx`). Si ni así se puede, `BotonCopiar`
   muestra el texto en un cuadro ya seleccionado para copiarlo a mano.
+- **Imagen de posiciones (PNG)** (`components/BotonImagen.tsx` + `lib/imagenPosiciones.ts`, visible para todos los roles): en
+  Posiciones, grupo «Descargar imagen:» con «Tabla general» (una columna de puntos por juego, «Extra» si algún equipo tiene,
+  y el total) y un botón por juego con podio; en la tarjeta «Resultados» de los juegos de jueces, un botón «Imagen». Se dibuja
+  con **Canvas 2D** a 1080 px × escala 2, sin dependencias (nada de html2canvas): colores leídos de los tokens con
+  `getComputedStyle`, y antes de dibujar se espera `document.fonts.load` de las tres fuentes (auto-hospedadas, funcionan sin
+  internet). `BotonImagen` usa `navigator.share({ files })` si `canShare` lo permite (teléfono con HTTPS) y, si no —como en
+  `http://<ip-laptop>`, que no es contexto seguro—, descarga `posiciones-<clave>-<fecha>.png`. `colorEquipo.ts::esClaro()`
+  decide el texto sobre el color del equipo. La tabla general **omite los juegos que ningún equipo ha jugado** (serían una
+  columna de guiones) y parte los encabezados largos en 2 líneas en vez de cortarlos con «…». Revisada visualmente con las
+  descargas reales (tabla general, Sketch, Voleibol) en Playwright.
+  Para probar con el MCP de Playwright hizo falta instalar Google Chrome (`.deb` oficial con `apt install`: el
+  `playwright install chrome` se niega en Linux Mint) y entrar con una cookie `arraigados_session` fabricada con
+  `security.create_access_token("admin")`, sin tocar la contraseña.
 - UI: `pages/Juegos.tsx` (pestañas Posiciones + una por juego; tabla desde 1024px, tarjetas debajo, vía
   `useMediaQuery`; sin raíces, como toda pantalla admin) + `components/HojaCalificacion.tsx` (formulario
   genérico: Sí/No de 44px, subtotal en vivo, conserva el juez al guardar y deshabilita los equipos que ese juez ya
@@ -918,6 +941,21 @@ laptop pasa a ser la principal, no hay importación de regreso a producción. So
   Windows (red privada), ver la IP con `ipconfig` y abrir `http://<ip-laptop>:5173` desde otro dispositivo; (7) en
   `/admin` → "Respaldo para la laptop" elegir el `.zip`, "Revisar archivo" y "Reemplazar todo". Ojo: en esa máquina `:5173`
   puede estar ocupado por otro proyecto (ver la nota de puertos en *Testing the app with the Playwright MCP*).
+
+## Local server mode (this laptop as an offline camp server)
+
+Besides the Droplet, the system also runs **natively on the owner's laptop** (`lap-asaf`) so that, at the
+camp, phones and laptops joining the laptop's own wifi hotspot (`Arraigados`, `http://arraigados.lan` /
+`http://10.42.0.1`) can use it without internet. No Docker: system **nginx** serves the built `frontend/dist`
+(copied to `/var/www/arraigados`) and proxies `/api/` to a **systemd service** `arraigados-backend` (uvicorn,
+127.0.0.1:8000, **one worker** — required by `ratelimit.py`/`concurrencia.py`, with `--proxy-headers` so the
+rate limit is per phone), SQLite in `backend/dev.db`, receipts in `backend/data/tickets/`, Tesseract as the
+local receipt reader. Same origin for page and API, so CORS/cookies need nothing special (`PUBLIC_ORIGIN` is
+http → non-`secure` cookie, correct for a LAN). It is an independent copy: its data is separate from production.
+Operational details (firewall, hotspot, desktop shortcuts, rebuild/restart commands, where the admin password
+lives) are documented in the workstation-level `~/CLAUDE.md`, section "Servidor local Arraigados". After
+changing frontend code the local copy needs `npm run build` + re-copying `dist/`; after backend changes,
+`alembic upgrade head` + `sudo systemctl restart arraigados-backend`.
 
 ## Deployment
 

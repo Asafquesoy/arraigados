@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 import { Link, Navigate } from "react-router-dom";
 import { useReducedMotion } from "motion/react";
 import { BotonCopiar } from "../components/BotonCopiar";
+import { BotonImagen } from "../components/BotonImagen";
 import { ConfirmButton } from "../components/ConfirmButton";
 import { EstacionesCaptura } from "../components/EstacionesCaptura";
 import { HojaCalificacion } from "../components/HojaCalificacion";
@@ -24,6 +25,7 @@ import {
 } from "../lib/api";
 import { textoSobre } from "../lib/colorEquipo";
 import { fmtPts } from "../lib/juegos";
+import { imagenGeneral, imagenJuego } from "../lib/imagenPosiciones";
 import { filasDeJuego, filasGenerales, juegoTienePodio, textoPosiciones, textoTodo } from "../lib/podio";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { useToast } from "../lib/useToast";
@@ -92,6 +94,15 @@ function VistaPosiciones({
             <BotonCopiar key={j.clave} label={j.nombre} texto={() => textoPosiciones(j.nombre, filasDeJuego(datos, j))} />
           ))}
           {juegosConPodio.length > 0 && <BotonCopiar label="Todo junto" className="btn-sm btn-copiar-todo" texto={() => textoTodo(datos)} />}
+        </div>
+      )}
+      {hayPuntos && (
+        <div className="juegos-copiar" role="group" aria-label="Descargar posiciones como imagen">
+          <span className="muted juegos-copiar-titulo">Descargar imagen:</span>
+          <BotonImagen label="Tabla general" nombre="posiciones-general" generar={() => imagenGeneral(datos)} />
+          {juegosConPodio.map((j) => (
+            <BotonImagen key={j.clave} label={j.nombre} nombre={`posiciones-${j.clave}`} generar={() => imagenJuego(datos, j)} />
+          ))}
         </div>
       )}
       {hayPuntos && (
@@ -193,6 +204,8 @@ function VistaPosiciones({
 
 interface VistaJuegoProps {
   detalle: JuegoDetalle;
+  /** Posiciones generales, para la imagen del podio. */
+  posiciones: Posiciones | null;
   /** Todos los juegos, para el «Aplica a» de los puntos extra. */
   juegos: JuegoInfo[];
   onCambioExtra: (mensaje: string) => Promise<void>;
@@ -210,6 +223,7 @@ interface VistaJuegoProps {
 
 function VistaJuego({
   detalle,
+  posiciones,
   juegos,
   onCambioExtra,
   esEscritorio,
@@ -273,6 +287,10 @@ function VistaJuego({
         <div className="juegos-cabecera-tarjeta">
           <h2 className="juegos-subtitulo">Resultados</h2>
           {hayPodio && (
+            <div className="juegos-copiar">
+            {posiciones && (
+              <BotonImagen label="Imagen" nombre={`posiciones-${juego.clave}`} generar={() => imagenJuego(posiciones, juego)} />
+            )}
             <BotonCopiar
               label="Copiar posiciones"
               texto={() =>
@@ -282,6 +300,7 @@ function VistaJuego({
                 )
               }
             />
+            </div>
           )}
         </div>
         <p className="muted juegos-nota">
@@ -724,6 +743,7 @@ export function Juegos() {
           ) : (
             <VistaJuego
               detalle={detalle}
+              posiciones={posiciones}
               juegos={juegos}
               onCambioExtra={alCambiarExtra}
               esEscritorio={esEscritorio}
